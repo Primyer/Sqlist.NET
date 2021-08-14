@@ -1,0 +1,96 @@
+﻿using Sqlist.NET.Utilities;
+
+using System;
+using System.Data.Common;
+using System.Reflection;
+
+namespace Sqlist.NET.Infrastructure
+{
+    /// <summary>
+    ///     Provides the API to configure <see cref="DbOptions"/>.
+    /// </summary>
+    public class DbOptionsBuilder
+    {
+        private readonly DbOptions _opts;
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="DbOptionsBuilder"/> class.
+        /// </summary>
+        public DbOptionsBuilder()
+        {
+            _opts = new DbOptions();
+        }
+
+        /// <summary>
+        ///     Gets the configured instance of <see cref="DbOptions"/>.
+        /// </summary>
+        internal DbOptions Options => _opts;
+
+        /// <summary>
+        ///     Sets the <see cref="DbProviderFactory"/> the be used as a source of database connection.
+        /// </summary>
+        /// <typeparam name="T">The type derived from the <see cref="DbProviderFactory"/> class.</typeparam>
+        /// <param name="provider">The provider factory to be used.</param>
+        /// <returns>The current instance of the <see cref="DbOptionsBuilder"/>.</returns>
+        public DbOptionsBuilder WithDbProvider<T>(T provider) where T : DbProviderFactory
+        {
+            Check.NotNull(provider, nameof(provider));
+
+            _opts.DbProviderFactory = provider;
+            return this;
+        }
+
+        /// <summary>
+        ///     Sets the basic syntax style to be used in generating SQL statements.
+        /// </summary>
+        /// <param name="style">The SQL syntax style.</param>
+        /// <returns>The current instance of the <see cref="DbOptionsBuilder"/>.</returns>
+        public DbOptionsBuilder WithSqlSyntaxStyle(SqlStyle style)
+        {
+            _opts.SqlStyle = style;
+            return this;
+        }
+
+        /// <summary>
+        ///     Sets the connection string for the target database.
+        /// </summary>
+        /// <param name="connStr">The database connection string.</param>
+        /// <returns>The current instance of the <see cref="DbOptionsBuilder"/>.</returns>
+        public DbOptionsBuilder SetConnectionString(string connStr)
+        {
+            Check.NotNullOrEmpty(connStr, nameof(connStr));
+
+            _opts.ConnectionString = connStr;
+            return this;
+        }
+
+        /// <summary>
+        ///     Sets the version that represents the target database.
+        ///     <para>
+        ///         The database version represents the starting point of migration for the compiled binary.
+        ///     </para>
+        /// </summary>
+        /// <param name="version">The database version.</param>
+        /// <returns>The current instance of the <see cref="DbOptionsBuilder"/>.</returns>
+        public DbOptionsBuilder SetDbVersion(Version version)
+        {
+            Check.NotNull(version, nameof(version));
+
+            _opts.DbVersion = version;
+            return this;
+        }
+
+        /// <summary>
+        ///     Sets the assembly reference where the migrations belong.
+        /// </summary>
+        /// <param name="assembly">The assembly reference.</param>
+        /// <returns>The current instance of the <see cref="DbOptionsBuilder"/>.</returns>
+        public DbOptionsBuilder SetMigrationAssembly(Assembly assembly)
+        {
+            Check.NotNull(assembly, nameof(assembly));
+
+            _opts.MigrationSource = assembly;
+            return this;
+        }
+    }
+}
