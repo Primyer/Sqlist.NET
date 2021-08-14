@@ -1,5 +1,6 @@
 ﻿using Sqlist.NET.Utilities;
 
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -70,7 +71,11 @@ namespace Sqlist.NET
             }
         }
 
-        public virtual void RegisterUpdate(string[] fields)
+        /// <summary>
+        ///     Registers the specified <paramref name="fields"/> in pairs similar to <c>field = @field</c>.
+        /// </summary>
+        /// <param name="fields">The field to pair up and register.</param>
+        public virtual void RegisterPairFields(string[] fields)
         {
             var builder = GetOrCreateBuilder("pairs");
             if (builder.Length != 0)
@@ -88,6 +93,389 @@ namespace Sqlist.NET
         }
 
         /// <summary>
+        ///     Registers the specified <paramref name="row"/> as values.
+        /// </summary>
+        /// <param name="row">The row to register.</param>
+        public virtual void RegisterValues(object[] row)
+        {
+            RegisterValues(new[] { row });
+        }
+
+        /// <summary>
+        ///     Registers the specified collection of <paramref name="rows"/> as values.
+        /// </summary>
+        /// <param name="rows">The collection of rows to register.</param>
+        public virtual void RegisterValues(object[][] rows)
+        {
+            var builder = GetOrCreateBuilder("values");
+            if (builder.Length != 0)
+                builder.Append($",\n{Tab}");
+
+            for (var i = 0; i < rows.Length; i++)
+            {
+                builder.Append('(');
+
+                for (var j = 0; j < rows[i].Length; j++)
+                {
+                    builder.Append(rows[i][j].ToString());
+
+                    if (j != rows[i].Length - 1)
+                        builder.Append(", ");
+                }
+
+                builder.Append(')');
+
+                if (i != rows.Length - 1)
+                    builder.Append($",\n{Tab}");
+            }
+        }
+
+        /// <summary>
+        ///     Registers an <c>INNER JOIN</c> on the specified <paramref name="table"/> with the given <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="table">The table to join.</param>
+        /// <param name="condition">The join conditions.</param>
+        public virtual void RegisterInnerJoin(string table, string condition)
+        {
+            RegisterJoin($"inner join {table} on {condition}");
+        }
+
+        /// <summary>
+        ///     Registers a <c>LEFT JOIN</c> on the specified <paramref name="table"/> with the given <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="table">The table to join.</param>
+        /// <param name="condition">The join conditions.</param>
+        public virtual void RegisterLeftJoin(string table, string condition)
+        {
+            RegisterJoin($"left join {table} on {condition}");
+        }
+
+        /// <summary>
+        ///     Registers a <c>RIGHT JOIN</c> on the specified <paramref name="table"/> with the given <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="table">The table to join.</param>
+        /// <param name="condition">The join conditions.</param>
+        public virtual void RegisterRightJoin(string table, string condition)
+        {
+            RegisterJoin($"right join {table} on {condition}");
+        }
+
+        /// <summary>
+        ///     Registers a <c>FULL JOIN</c> on the specified <paramref name="table"/> with the given <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="table">The table to join.</param>
+        /// <param name="condition">The join conditions.</param>
+        public virtual void RegisterFullJoin(string table, string condition)
+        {
+            RegisterJoin($"full join {table} on {condition}");
+        }
+
+        /// <summary>
+        ///     Register the specified partial <paramref name="stmt"/> as a join.
+        /// </summary>
+        /// <param name="stmt">The statement to register.</param>
+        public virtual void RegisterJoin(string stmt)
+        {
+            Check.NotNullOrEmpty(stmt, nameof(stmt));
+
+            _enc.Reformat(ref stmt);
+            GetOrCreateBuilder("joins").Append('\n' + stmt);
+        }
+
+        /// <summary>
+        ///     Registers the <c>WHERE</c> statement with the given <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="condition">The condition to register.</param>
+        public virtual void RegisterWhere(string condition)
+        {
+            Check.NotNullOrEmpty(condition, nameof(condition));
+
+            var builder = _builders["where"] = new StringBuilder();
+
+            builder.Append("\nwhere ");
+            _enc.Reformat(ref condition);
+            builder.Append(condition);
+        }
+
+        /// <summary>
+        ///     Appends an <c>OR</c> followed by the specified <paramref name="condition"/> to the <c>WHERE</c> statement.
+        /// </summary>
+        /// <param name="condition">The condition to append.</param>
+        public virtual void AppendOr(string condition)
+        {
+            AppendCondition("or " + condition);
+        }
+
+        /// <summary>
+        ///     Appends an <c>OR NOT</c> followed by the specified <paramref name="condition"/> to the <c>WHERE</c> statement.
+        /// </summary>
+        /// <param name="condition">The condition to append.</param>
+        public virtual void AppendOrNot(string condition)
+        {
+            AppendCondition("or not " + condition);
+        }
+
+        /// <summary>
+        ///     Appends an <c>AND</c> followed by the specified <paramref name="condition"/> to the <c>WHERE</c> statement.
+        /// </summary>
+        /// <param name="condition">The condition to append.</param>
+        public virtual void AppendAnd(string condition)
+        {
+            AppendCondition("and " + condition);
+        }
+
+        /// <summary>
+        ///     Appends an <c>AND NOT</c> followed by the specified <paramref name="condition"/> to the <c>WHERE</c> statement.
+        /// </summary>
+        /// <param name="condition">The condition to append.</param>
+        public virtual void AppendAndNot(string condition)
+        {
+            AppendCondition("and not " + condition);
+        }
+
+        /// <summary>
+        ///     Appends the given condition to the <c>WHERE</c> statement.
+        /// </summary>
+        /// <param name="condition">The condition to append.</param>
+        public virtual void AppendCondition(string condition)
+        {
+            Check.NotNullOrEmpty(condition, nameof(condition));
+
+            if (!_builders.TryGetValue("where", out var builder))
+                throw new InvalidOperationException("The 'where' condition wasn't initialized.");
+
+            _enc.Reformat(ref condition);
+            builder.Append(" " + condition);
+        }
+
+        /// <summary>
+        ///     Registers the specified <paramref name="field"/>.
+        /// </summary>
+        /// <param name="field">The field to register.</param>
+        public virtual void RegisterFields(string field)
+        {
+            Check.NotNullOrEmpty(field, nameof(field));
+
+            var builder = GetOrCreateBuilder("fields");
+            if (builder.Length != 0)
+                builder.Append(",\n" + Tab);
+
+            _enc.Reformat(ref field);
+            builder.Append(field);
+        }
+
+        /// <summary>
+        ///     Registers the specified collection of <paramref name="fields"/>.
+        /// </summary>
+        /// <param name="fields">The fields to register.</param>
+        public virtual void RegisterFields(string[] fields)
+        {
+            Check.NotEmpty(fields, nameof(fields));
+
+            var builder = GetOrCreateBuilder("fields");
+            if (builder.Length != 0)
+                builder.Append(",\n" + Tab);
+
+            for (var i = 0; i < fields.Length; i++)
+            {
+                _enc.Wrap(ref fields[i]);
+                builder.Append(fields[i]);
+
+                if (i != fields.Length - 1)
+                    builder.Append(",\n" + Tab);
+            }
+        }
+
+        /// <summary>
+        ///     Registers a <c>GROUP BY</c> statement with the specified <paramref name="field"/>.
+        /// </summary>
+        /// <param name="field">The field to group by.</param>
+        public virtual void GroupBy(string field)
+        {
+            Check.NotNullOrEmpty(field, nameof(field));
+
+            var builder = GetOrCreateBuilder("filters");
+            builder.Append("\ngroup by ");
+
+            _enc.Reformat(ref field);
+            builder.Append(field);
+        }
+
+        /// <summary>
+        ///     Registers a <c>GROUP BY</c> statement with the specified collection of <paramref name="fields"/>.
+        /// </summary>
+        /// <param name="fields">The fields to group by.</param>
+        public virtual void GroupBy(string[] fields)
+        {
+            Check.NotEmpty(fields, nameof(fields));
+
+            var result = string.Empty;
+            for (var i = 0; i < fields.Length; i++)
+            {
+                _enc.Wrap(ref fields[i]);
+                result += fields[i];
+
+                if (i != fields.Length - 1)
+                    result += ", ";
+            }
+
+            var builder = GetOrCreateBuilder("filters");
+            builder.Append("\ngroup by ");
+            builder.Append(result);
+        }
+
+        /// <summary>
+        ///     Registers an <c>ORDER BY</c> statement with the specified <paramref name="field"/>.
+        /// </summary>
+        /// <param name="field">The field to order by.</param>
+        public virtual void OrderBy(string field)
+        {
+            Check.NotNullOrEmpty(field, nameof(field));
+
+            var builder = GetOrCreateBuilder("filters");
+            builder.Append("\norder by ");
+
+            _enc.Reformat(ref field);
+            builder.Append(field);
+        }
+
+        /// <summary>
+        ///     Registers an <c>ORDER BY</c> statement with the specified collection of <paramref name="fields"/>.
+        /// </summary>
+        /// <param name="fields">The fields to order by.</param>
+        public virtual void OrderBy(string[] fields)
+        {
+            Check.NotEmpty(fields, nameof(fields));
+
+            var result = string.Empty;
+            for (var i = 0; i < fields.Length; i++)
+            {
+                _enc.Wrap(ref fields[i]);
+                result += fields[i];
+
+                if (i != fields.Length - 1)
+                    result += ", ";
+            }
+
+            var builder = GetOrCreateBuilder("filters");
+            builder.Append("\norder by ");
+            builder.Append(result);
+        }
+
+        /// <summary>
+        ///     Registers a query limit based on the specified <paramref name="value"/>.
+        /// </summary>
+        /// <param name="value">The amout to limit by.</param>
+        public virtual void Limit(string value)
+        {
+            Check.NotNullOrEmpty(value, nameof(value));
+
+            var builder = GetOrCreateBuilder("filters");
+            builder.Append("\nlimit ");
+            builder.Append(value);
+        }
+
+        /// <summary>
+        ///     Registers a query offset based on the specified <paramref name="value"/>.
+        /// </summary>
+        /// <param name="value">The value to offset from.</param>
+        public virtual void Offset(string value)
+        {
+            Check.NotNullOrEmpty(value, nameof(value));
+
+            var builder = GetOrCreateBuilder("filters");
+            builder.Append("\noffset ");
+            builder.Append(value);
+        }
+
+        /// <summary>
+        ///     Registers a <c>WITH</c> query with the specified <paramref name="name"/> and <paramref name="body"/>.
+        /// </summary>
+        /// <param name="name">The name of the CTE.</param>
+        /// <param name="body">The body as a separate <see cref="SqlBuilder"/>.</param>
+        public virtual void RegisterWith(string name, Func<SqlBuilder, string> body)
+        {
+            RegisterWith(name, Array.Empty<string>(), body);
+        }
+
+        /// <summary>
+        ///     Registers a <c>WITH</c> query with the specified <paramref name="name"/>,
+        ///     output <paramref name="fields"/>, and <paramref name="body"/>.
+        /// </summary>
+        /// <param name="name">The name of the CTE.</param>
+        /// <param name="fields">The fields to output.</param>
+        /// <param name="body">The body as a separate <see cref="SqlBuilder"/>.</param>
+        public virtual void RegisterWith(string name, string[] fields, Func<SqlBuilder, string> body)
+        {
+            var builder = new SqlBuilder(_sqlStyle);
+            var result = body.Invoke(builder);
+
+            RegisterWith(name, fields, result);
+        }
+
+        /// <summary>
+        ///     Registers a <c>RECURSIVE WITH</c> query with the specified <paramref name="name"/> and <paramref name="body"/>.
+        /// </summary>
+        /// <param name="name">The name of the CTE.</param>
+        /// <param name="body">The body as a separate <see cref="SqlBuilder"/>.</param>
+        public virtual void RegisterRecursiveWith(string name, Func<SqlBuilder, string> body)
+        {
+            RegisterRecursiveWith(name, Array.Empty<string>(), body);
+        }
+
+        /// <summary>
+        ///     Registers a <c>RECURSIVE WITH</c> query with the specified <paramref name="name"/>,
+        ///     output <paramref name="fields"/>, and <paramref name="body"/>.
+        /// </summary>
+        /// <param name="name">The name of the CTE.</param>
+        /// <param name="fields">The fields to output.</param>
+        /// <param name="body">The body as a separate <see cref="SqlBuilder"/>.</param>
+        public virtual void RegisterRecursiveWith(string name, string[] fields, Func<SqlBuilder, string> body)
+        {
+            var builder = new SqlBuilder(_sqlStyle);
+            var result = body.Invoke(builder);
+
+            RegisterWith(name, fields, result, true);
+        }
+
+        /// <summary>
+        ///     Registers a <c>WITH</c> query with the specified <paramref name="name"/>,
+        ///     output <paramref name="fields"/>, and <paramref name="body"/>.
+        /// </summary>
+        /// <param name="name">The name of the CTE.</param>
+        /// <param name="fields">The fields to output.</param>
+        /// <param name="body">The body in string format.</param>
+        /// <param name="recursive">The flag that indicates whether CTE is recursive.</param>
+        public virtual void RegisterWith(string name, string[] fields, string body, bool recursive = false)
+        {
+            Check.NotNullOrEmpty(name, nameof(name));
+            Check.NotNullOrEmpty(body, nameof(body));
+
+            var builder = GetOrCreateBuilder("with_queries");
+            if (builder.Length == 0)
+            {
+                builder.Append("with ");
+            }
+            else
+                builder.Append(",\n");
+
+            if (recursive)
+            {
+                if (builder.Length == 5 || builder[5] != 'r')
+                    builder.Insert(5, "recursive ");
+            }
+
+            _enc.Wrap(ref name);
+            builder.Append(name);
+
+            if (fields.Length != 0)
+                builder.Append($" ({_enc.Join(", ", fields)})");
+
+            builder.Append(" as (");
+            builder.Append($"{body}\n)");
+        }
+
+        /// <summary>
         ///     Gets the builder of the specified <paramref name="name"/>, if any; otherwise, creates a new one with it.
         /// </summary>
         /// <param name="name">The name of the desired builder.</param>
@@ -100,6 +488,60 @@ namespace Sqlist.NET
                 _builders[name] = builder = new StringBuilder();
 
             return builder;
+        }
+
+        /// <summary>
+        ///     Registers a <c>UNION</c> statement with the specified <paramref name="query"/>.
+        /// </summary>
+        /// <param name="query">The alt query as a separate <see cref="SqlBuilder"/>.</param>
+        /// <param name="all">The flag that indicates whether to union all.</param>
+        public virtual void RegisterUnionQuery(Func<SqlBuilder, string> query, bool all = false)
+        {
+            RegisterCombinedQuery("union", query, all);
+        }
+
+        /// <summary>
+        ///     Registers an <c>INTERSECT</c> statement with the specified <paramref name="query"/>.
+        /// </summary>
+        /// <param name="query">The alt query as a separate <see cref="SqlBuilder"/>.</param>
+        /// <param name="all">The flag that indicates whether to union all.</param>
+        public virtual void RegisterIntersectQuery(Func<SqlBuilder, string> query, bool all = false)
+        {
+            RegisterCombinedQuery("Intersect", query, all);
+        }
+
+        /// <summary>
+        ///     Registers an <c>EXCEPT</c> statement with the specified <paramref name="query"/>.
+        /// </summary>
+        /// <param name="query">The alt query as a separate <see cref="SqlBuilder"/>.</param>
+        /// <param name="all">The flag that indicates whether to union all.</param>
+        public virtual void RegisterExceptQuery(Func<SqlBuilder, string> query, bool all = false)
+        {
+            RegisterCombinedQuery("Except", query, all);
+        }
+
+        /// <summary>
+        ///     Registers a combined statement with the specified <paramref name="query"/> based on the given <paramref name="type"/>.
+        /// </summary>
+        /// <param name="type">The type of the query; <c>UNION, INTERSECT, or EXCEPT</c>.</param>
+        /// <param name="query">The alt query as a separate <see cref="SqlBuilder"/>.</param>
+        /// <param name="all">The flag that indicates whether to union all.</param>
+        protected virtual void RegisterCombinedQuery(string type, Func<SqlBuilder, string> query, bool all = false)
+        {
+            Check.NotNullOrEmpty(type, nameof(type));
+            Check.NotNull(query, nameof(query));
+
+            var result = query.Invoke(new SqlBuilder(_sqlStyle));
+            if (!string.IsNullOrEmpty(result))
+                throw new InvalidOperationException("The query result cannot be null or empty");
+
+            var builder = GetOrCreateBuilder("combine_queries");
+            builder.Append('\n' + type + ' ');
+
+            if (all)
+                builder.Append("all ");
+
+            builder.Append('\n' + result);
         }
 
         /// <summary>

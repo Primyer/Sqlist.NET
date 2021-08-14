@@ -1,4 +1,6 @@
-﻿namespace Sqlist.NET.Utilities
+﻿using System.Text;
+
+namespace Sqlist.NET.Utilities
 {
     public class Encloser
     {
@@ -44,11 +46,6 @@
         {
             Reformat(ref val);
             return val;
-        }
-
-        public void Append(ref string target, string val)
-        {
-            target += _openingDI + val + _closingDI;
         }
 
         public string Join(string delimiter, params string[] vals)
