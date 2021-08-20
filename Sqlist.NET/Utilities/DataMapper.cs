@@ -16,6 +16,7 @@
 
 using FastMember;
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
@@ -23,9 +24,9 @@ using System.Reflection;
 
 namespace Sqlist.NET.Utilities
 {
-    internal static class DataMapper<T> where T : class, new()
+    internal static class DataMapper
     {
-        public static IEnumerable<T> Parse(IDataReader reader)
+        public static IEnumerable<T> Parse<T>(IDataReader reader, Action<T> altr) where T : class, new()
         {
             var acsr = TypeAccessor.Create(typeof(T));
             var data = new List<T>();
@@ -36,8 +37,15 @@ namespace Sqlist.NET.Utilities
                 var model = new T();
 
                 for (var i = 0; i < reader.FieldCount; i++)
-                    acsr[model, names[i]] = reader.GetValue(i);
+                {
+                    var val = reader.GetValue(i);
+                    if (val is DBNull)
+                        acsr[model, names[i]] = null;
+                    else
+                        acsr[model, names[i]] = val;
+                }
 
+                altr?.Invoke(model);
                 data.Add(model);
             }
             return data;

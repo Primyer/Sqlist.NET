@@ -38,7 +38,7 @@ namespace Sqlist.NET.Extensions
             config.Invoke(builder);
 
             services.AddSingleton(builder.Options);
-            services.AddScoped<DbCoreBase>();
+            services.AddScoped<DbCore>();
         }
     }
 }

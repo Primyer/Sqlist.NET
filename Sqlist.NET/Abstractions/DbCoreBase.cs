@@ -14,18 +14,19 @@
 // limitations under the License.
 #endregion
 
+using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Utilities;
 
 using System;
 using System.Data;
 using System.Data.Common;
 
-namespace Sqlist.NET.Infrastructure
+namespace Sqlist.NET.Abstractions
 {
     /// <summary>
     ///     Provides the basic API to manage a database.
     /// </summary>
-    public abstract class DbCoreBase : IDisposable
+    public abstract class DbCoreBase : QueryStore
     {
         private bool _disposed = false;
 
@@ -44,8 +45,19 @@ namespace Sqlist.NET.Infrastructure
         }
 
         /// <summary>
+        ///     Finalizes the current instance.
+        /// </summary>
+        ~DbCoreBase()
+        {
+            Dispose(true);
+        }
+
+        /// <summary>
         ///     Gets or sets the connection reference in use.
         /// </summary>
+        /// <remarks>
+        ///     Only applicable with a <see cref="DbQuery"/>.
+        /// </remarks>
         public DbConnection Connection
         {
             get => _conn ?? CreateConnection();
@@ -56,12 +68,27 @@ namespace Sqlist.NET.Infrastructure
         }
 
         /// <summary>
+        ///     Gets or sets the pending transaction, if any.
+        /// </summary>
+        /// <remarks>
+        ///     Only applicable with a <see cref="DbQuery"/>.
+        /// </remarks>
+        public DbTransaction Transaction
+        {
+            get => _trans;
+            internal set
+            {
+                _trans = value;
+            }
+        }
+
+        /// <summary>
         ///     Gets or sets the Sqlist configuration options.
         /// </summary>
         public DbOptions Options { get; }
 
         /// <inheritdoc />
-        public void Dispose()
+        public override void Dispose()
         {
             Dispose(true);
         }
@@ -78,8 +105,16 @@ namespace Sqlist.NET.Infrastructure
 
             if (disposing)
             {
-                _trans.Dispose();
-                _conn.Dispose();
+                if (_trans != null)
+                {
+                    _trans.Rollback();
+                    _trans.Dispose();
+                }
+                if (_conn != null)
+                {
+                    _conn.Close();
+                    _conn.Dispose();
+                }
             }
 
             _disposed = true;
@@ -102,6 +137,9 @@ namespace Sqlist.NET.Infrastructure
         {
             ThrowIfDisposed();
 
+            if (_conn == null)
+                throw new InvalidOperationException("A transaction can only be applied within a DbQuery");
+
             _trans = _conn.BeginTransaction();
         }
 
@@ -116,7 +154,6 @@ namespace Sqlist.NET.Infrastructure
                 throw new DbTransactionException("No transaction to be committed.");
 
             _trans.Commit();
-            _trans = null;
         }
 
         /// <summary>
@@ -130,7 +167,35 @@ namespace Sqlist.NET.Infrastructure
                 throw new DbTransactionException("No transaction to be rolled back.");
 
             _trans.Rollback();
-            _trans = null;
+        }
+
+        /// <summary>
+        ///     Creates and returns a new instance of the configured provider's class
+        ///     that implements the <see cref="DbCommand"/> class.
+        /// </summary>
+        /// <param name="conn">The <see cref="DbConnection"/> to initialize the command from.</param>
+        /// <param name="sql">The SQL statement to run against the data source.</param>
+        /// <param name="prms">The parameters associated with the given statement.</param>
+        /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
+        /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
+        /// <returns>A new instance of <see cref="DbCommand"/>.</returns>
+        internal virtual DbCommand CreateCommand(DbConnection conn, string sql, object prms = null, int? timeout = null, CommandType? type = null)
+        {
+            ThrowIfDisposed();
+            Check.NotNullOrEmpty(sql, nameof(sql));
+
+            var cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            cmd.CommandType = type ?? CommandType.Text;
+            cmd.Transaction = _trans;
+
+            if (timeout.HasValue)
+                cmd.CommandTimeout = timeout.Value;
+
+            if (prms != null)
+                ConfigureParameters(cmd, prms);
+
+            return cmd;
         }
 
         /// <summary>
@@ -144,21 +209,7 @@ namespace Sqlist.NET.Infrastructure
         /// <returns>A new instance of <see cref="DbCommand"/>.</returns>
         public virtual DbCommand CreateCommand(string sql, object prms = null, int? timeout = null, CommandType? type = null)
         {
-            ThrowIfDisposed();
-            Check.NotNullOrEmpty(sql, nameof(sql));
-
-            var cmd = _conn.CreateCommand();
-            cmd.CommandText = sql;
-            cmd.CommandType = type ?? CommandType.Text;
-            cmd.Transaction = _trans;
-
-            if (timeout.HasValue)
-                cmd.CommandTimeout = timeout.Value;
-
-            if (prms != null)
-                ConfigureParameters(cmd, prms);
-
-            return cmd;
+            return CreateCommand(CreateConnection(), sql, prms, timeout, type);
         }
 
         /// <summary>
