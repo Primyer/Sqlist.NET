@@ -47,37 +47,31 @@ namespace Sqlist.NET.Infrastructure
         /// </summary>
         /// <typeparam name="T">The type derived from the <see cref="DbProviderFactory"/> class.</typeparam>
         /// <param name="provider">The provider factory to be used.</param>
-        /// <returns>The current instance of the <see cref="DbOptionsBuilder"/>.</returns>
-        public DbOptionsBuilder WithDbProvider<T>(T provider) where T : DbProviderFactory
+        public void SetDbProvider<T>(T provider) where T : DbProviderFactory
         {
             Check.NotNull(provider, nameof(provider));
 
             _opts.DbProviderFactory = provider;
-            return this;
         }
 
         /// <summary>
         ///     Sets the basic syntax style to be used in generating SQL statements.
         /// </summary>
         /// <param name="style">The SQL syntax style.</param>
-        /// <returns>The current instance of the <see cref="DbOptionsBuilder"/>.</returns>
-        public DbOptionsBuilder WithSqlSyntaxStyle(SqlStyle style)
+        public void SetSqlSyntaxStyle(SqlStyle style)
         {
             _opts.SqlStyle = style;
-            return this;
         }
 
         /// <summary>
         ///     Sets the connection string for the target database.
         /// </summary>
         /// <param name="connStr">The database connection string.</param>
-        /// <returns>The current instance of the <see cref="DbOptionsBuilder"/>.</returns>
-        public DbOptionsBuilder SetConnectionString(string connStr)
+        public void SetConnectionString(string connStr)
         {
             Check.NotNullOrEmpty(connStr, nameof(connStr));
 
             _opts.ConnectionString = connStr;
-            return this;
         }
 
         /// <summary>
@@ -87,26 +81,47 @@ namespace Sqlist.NET.Infrastructure
         ///     </para>
         /// </summary>
         /// <param name="version">The database version.</param>
-        /// <returns>The current instance of the <see cref="DbOptionsBuilder"/>.</returns>
-        public DbOptionsBuilder SetDbVersion(Version version)
+        public void SetDbVersion(Version version)
         {
             Check.NotNull(version, nameof(version));
 
             _opts.DbVersion = version;
-            return this;
         }
 
         /// <summary>
         ///     Sets the assembly reference where the migrations belong.
         /// </summary>
         /// <param name="assembly">The assembly reference.</param>
-        /// <returns>The current instance of the <see cref="DbOptionsBuilder"/>.</returns>
-        public DbOptionsBuilder SetMigrationAssembly(Assembly assembly)
+        public void SetMigrationAssembly(Assembly assembly)
         {
             Check.NotNull(assembly, nameof(assembly));
 
             _opts.MigrationSource = assembly;
-            return this;
+        }
+
+        /// <summary>
+        ///     Enables sensitive information logging such as command parameters.
+        /// </summary>
+        public void EnableSensitiveLogging()
+        {
+            _opts.EnableSensitiveLogging = true;
+        }
+
+        /// <summary>
+        ///     Enables analysis options.
+        /// </summary>
+        public void EnableAnalysis()
+        {
+            _opts.EnableAnalysis = true;
+        }
+
+        /// <summary>
+        ///     Sets the mapping orientation.
+        /// </summary>
+        /// <param name="orientation">The mapping orientation to set.</param>
+        public void SetMappingOrientation(MappingOrientation orientation)
+        {
+            _opts.MappingOrientation = orientation;
         }
     }
 }

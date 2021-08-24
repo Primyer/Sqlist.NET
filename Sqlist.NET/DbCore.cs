@@ -14,6 +14,8 @@
 // limitations under the License.
 #endregion
 
+using Microsoft.Extensions.Logging;
+
 using Sqlist.NET.Abstractions;
 using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Utilities;
@@ -21,38 +23,219 @@ using Sqlist.NET.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
+using System.Diagnostics;
 using System.Threading.Tasks;
+
+using ado = System.Data.Common;
+using lcl = Sqlist.NET.Common;
 
 namespace Sqlist.NET
 {
     /// <summary>
-    ///     Implements the <see cref="DbCoreBase"/> as a base of the provided querying API.
+    ///     Provides the basic API to manage a database.
     /// </summary>
-    public class DbCore : DbCoreBase
+    public abstract class DbCore : QueryStore
     {
-        private readonly List<DbQuery> _queries = new List<DbQuery>();
+        private readonly List<Guid> _queries = new List<Guid>();
+
+        private bool _disposed = false;
+
+        private lcl::DbConnection _conn;
+        private ado::DbTransaction _trans;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="DbCore"/> class.
         /// </summary>
         /// <param name="options">The Sqlist configuration options.</param>
-        public DbCore(DbOptions options) : base(options)
-        { }
+        public DbCore(DbOptions options, ILogger<DbCore> log)
+        {
+            Check.NotNull(options, nameof(options));
+            Check.NotNull(log, nameof(log));
+
+            Options = options;
+            Logger = log;
+
+            Id = Guid.NewGuid();
+            Logger.LogDebug("DB created. ID:[" + Id + "]");
+        }
+
+        /// <summary>
+        ///     The ID of this DB.
+        /// </summary>
+        public Guid Id { get; }
+
+        /// <summary>
+        ///     Gets or sets the connection reference in use.
+        /// </summary>
+        /// <remarks>
+        ///     Only applicable with a <see cref="DbQuery"/>.
+        /// </remarks>
+        public lcl::DbConnection Connection
+        {
+            get => _conn ??= lcl::DbConnection.CreateFor(this);
+            internal set
+            {
+                _conn = value;
+            }
+        }
+
+        /// <summary>
+        ///     Gets or sets the pending transaction, if any.
+        /// </summary>
+        /// <remarks>
+        ///     Only applicable with a <see cref="DbQuery"/>.
+        /// </remarks>
+        public ado::DbTransaction Transaction
+        {
+            get => _trans;
+            internal set
+            {
+                _trans = value;
+            }
+        }
+
+        /// <summary>
+        ///     Gets the logger used by this instance.
+        /// </summary>
+        internal ILogger Logger { get; }
+
+        /// <summary>
+        ///     Gets or sets the Sqlist configuration options.
+        /// </summary>
+        public DbOptions Options { get; }
+
+        /// <summary>
+        ///     Gets the currently active queries.
+        /// </summary>
+        public IEnumerable<Guid> Queries => _queries;
+
+        /// <summary>
+        ///     Throws an exception if this object was already disposed.
+        /// </summary>
+        /// <exception cref="ObjectDisposedException" />
+        protected void ThrowIfDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(GetType().Name);
+        }
+
+        /// <summary>
+        ///     Starts a database transaction.
+        /// </summary>
+        public virtual void BeginTransaction()
+        {
+            ThrowIfDisposed();
+
+            if (_conn == null)
+                throw new InvalidOperationException("A transaction can only be applied within a DbQuery");
+
+            _trans = _conn.Underlying.BeginTransaction();
+        }
+
+        /// <summary>
+        ///     Commits the database transaction.
+        /// </summary>
+        public virtual void CommitTransaction()
+        {
+            ThrowIfDisposed();
+
+            if (_trans == null)
+                throw new DbTransactionException("No transaction to be committed.");
+
+            _trans.Commit();
+        }
+
+        /// <summary>
+        ///     Rolls back a transaction from a pending state.
+        /// </summary>
+        public virtual void RollbackTransaction()
+        {
+            ThrowIfDisposed();
+
+            if (_trans == null)
+                throw new DbTransactionException("No transaction to be rolled back.");
+
+            _trans.Rollback();
+        }
+
+        /// <summary>
+        ///     Creates and returns a new instance of the configured provider's class
+        ///     that implements the <see cref="DbCommand"/> class.
+        /// </summary>
+        /// <param name="conn">The <see cref="DbConnection"/> to initialize the command from.</param>
+        /// <param name="sql">The SQL statement to run against the data source.</param>
+        /// <param name="prms">The parameters associated with the given statement.</param>
+        /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
+        /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
+        /// <returns>A new instance of <see cref="DbCommand"/>.</returns>
+        internal virtual ado::DbCommand CreateCommand(lcl::DbConnection conn, string sql, object prms = null, int? timeout = null, CommandType? type = null)
+        {
+            ThrowIfDisposed();
+
+            Check.NotNullOrEmpty(sql, nameof(sql));
+
+            var cmd = conn.Underlying.CreateCommand();
+            cmd.CommandText = sql;
+            cmd.CommandType = type ?? CommandType.Text;
+            cmd.Transaction = _trans;
+
+            if (timeout.HasValue)
+                cmd.CommandTimeout = timeout.Value;
+
+            if (prms != null)
+                ConfigureParameters(cmd, prms);
+
+            return cmd;
+        }
+
+        /// <summary>
+        ///     Creates and returns a new instance of the configured provider's class
+        ///     that implements the <see cref="DbCommand"/> class.
+        /// </summary>
+        /// <param name="sql">The SQL statement to run against the data source.</param>
+        /// <param name="prms">The parameters associated with the given statement.</param>
+        /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
+        /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
+        /// <returns>A new instance of <see cref="DbCommand"/>.</returns>
+        public virtual ado::DbCommand CreateCommand(string sql, object prms = null, int? timeout = null, CommandType? type = null)
+        {
+            return CreateCommand(Connection, sql, prms, timeout, type);
+        }
+
+        /// <summary>
+        ///     Configure the specified <paramref name="prms"/> to be added to the given <paramref name="cmd"/> later on.
+        /// </summary>
+        /// <param name="cmd">The <see cref="DbCommand"/> that owns the parameters.</param>
+        /// <param name="prms">The anonymous object representing the parameters.</param>
+        public virtual void ConfigureParameters(ado::DbCommand cmd, object prms)
+        {
+            ThrowIfDisposed();
+
+            foreach (var prop in prms.GetType().GetProperties())
+            {
+                var prm = cmd.CreateParameter();
+
+                prm.ParameterName = prop.Name;
+                prm.Direction = ParameterDirection.Input;
+                prm.DbType = TypeMapper.Instance.ToDbType(prop.PropertyType);
+                prm.Value = prop.GetValue(prms);
+
+                cmd.Parameters.Add(prm);
+            }
+        }
 
         /// <summary>
         ///     Returns a new instance of the <see cref="IQueryStore"/>.
         /// </summary>
-        /// <param name="presistent">The flag that indicates whether the instance is persistent within the <see cref="DbCore"/>'s scope.</param>
         /// <returns>A new instance of the <see cref="IQueryStore"/>.</returns>
-        public virtual IQueryStore Query(bool presistent = false)
+        public virtual IQueryStore Query(bool terminator = false)
         {
-            var qry = new DbQuery(this, presistent);
+            ThrowIfDisposed();
 
-            if (presistent)
-                _queries.Add(qry);
+            var query = new DbQuery(this);
+            _queries.Add(query.Id);
 
-            return qry;
+            return query;
         }
 
         /// <summary>
@@ -63,39 +246,109 @@ namespace Sqlist.NET
         {
             ThrowIfDisposed();
 
-            var removed = _queries.Remove(qry);
-            qry.Dispose(removed && !_queries.Any());
+            _queries.Remove(qry.Id);
+
+            if (_queries.Count == 0)
+            {
+                if (!qry.TerminateConnection)
+                    Connection.Underlying.Close();
+                else
+                {
+                    Connection.Dispose();
+                    Connection = null;
+                }
+            }
         }
 
         /// <inheritdoc />
-        public override Task<int> ExecuteAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
+        protected override async Task<T> ExecuteQuery<T>(string name, Func<Task<T>> func)
+        {
+            Logger.LogTrace("Executing independent query ({name}) over conn[{connId}]", name, Connection.Id);
+
+            try
+            {
+                var sw = Stopwatch.StartNew();
+                var result = await func.Invoke();
+                sw.Stop();
+
+                Logger.LogTrace("Query ({name}) succeeded. Elapsed time: {time}ms", name, sw.ElapsedMilliseconds);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Query ({name}) failed", name);
+                throw ex;
+            }
+        }
+
+        protected internal override async Task<int> InternalExecuteAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
         {
             ThrowIfDisposed();
 
-            return WrapQuery(async () =>
+            var conn = lcl.DbConnection.CreateFor(this);
+            try
             {
-                using var cmd = CreateCommand(sql, prms, timeout, type);
-                var result = await cmd.ExecuteNonQueryAsync();
+                using var cmd = CreateCommand(conn, sql, prms, timeout, type);
+                return await cmd.ExecuteNonQueryAsync();
+            }
+            finally
+            {
+                await conn.DisposeAsync();
+            }
+        }
 
-                await cmd.Connection.CloseAsync();
+        protected internal override async Task<IEnumerable<T>> InternalRetrieveAsync<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null)
+        {
+            ThrowIfDisposed();
+
+            var conn = lcl.DbConnection.CreateFor(this);
+            try
+            {
+                using var cmd = CreateCommand(conn, sql, prms, timeout);
+                using var rdr = await cmd.ExecuteReaderAsync();
+
+                var objType = typeof(T);
+                var result = !objType.IsClass || objType.IsArray
+                    ? DataParser.Primitive<T>(rdr)
+                    : DataParser.Object(rdr, Options.MappingOrientation, altr);
+
                 return result;
-            });
+            }
+            finally
+            {
+                await conn.DisposeAsync();
+            }
         }
 
         /// <inheritdoc />
-        public override Task<IEnumerable<T>> RetrieveAsync<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null)
+        public override void Dispose()
         {
-            ThrowIfDisposed();
+            Dispose(true);
+        }
 
-            return WrapQuery(async () =>
+        /// <summary>
+        ///     Finalizes the current instance.
+        /// </summary>
+        ~DbCore()
+        {
+            Dispose(disposing: false);
+        }
+
+        /// <summary>
+        ///     Performs application-defined tasks associated with freeing, releasing, or resetting
+        ///     unmanaged resources.
+        /// </summary>
+        /// <param name="disposing">The flag indicating whether this instance is desposing.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
             {
-                using var cmd = CreateCommand(sql, prms, timeout);
-                using var reader = await cmd.ExecuteReaderAsync();
-                var result = DataMapper.Parse(reader, altr);
+                _conn?.Dispose();
+                _disposed = true;
 
-                await cmd.Connection.CloseAsync();
-                return result;
-            });
+                Logger.LogDebug("DB released. ID:[" + Id + "]");
+            }
         }
     }
 }

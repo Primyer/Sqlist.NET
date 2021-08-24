@@ -14,126 +14,127 @@
 // limitations under the License.
 #endregion
 
+using Microsoft.Extensions.Logging;
+
 using Sqlist.NET.Abstractions;
 using Sqlist.NET.Utilities;
 
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace Sqlist.NET
 {
     /// <summary>
-    ///     Saves the connection state allowing the reusing of that particular connection
-    ///     in a chain of queries. This entity scopes a connection of its own. Any connection or transaciton
-    ///     used through an instance of this class is bound to and to be disposed with it.
-    ///     <para>
-    ///         It's possible to create multiple instance of this class through the <see cref="DbCore"/>,
-    ///         where every "persistent" instance is bound to the same scope as the source <see cref="DbCore"/>.
-    ///         This allows to use the same connection instance in different places. Thus, a non-persistent
-    ///         instance finalizes at the end of the containing block.
-    ///     </para>
-    ///     <para>
-    ///         Note that ADO.NET -being the underlying core for this API- supports connection pooling.
-    ///         So, it's recommended to reuse the same connection only when it's needed, since reusing
-    ///         the same connection on higher scopes makes it harder to manage asyncronization on the long term.
-    ///     </para>
+    ///     <see cref="DbQuery"/> allows reusing a single database connection. Nevertheless, it allows
+    ///     the same connection to be reused by any <see cref="DbQuery"/> nested in between the initialization
+    ///     and the release of the highest <see cref="DbQuery"/> instance.
     /// </summary>
-    public class DbQuery : QueryStore, IDisposable
+    /// <remarks>
+    ///     The connection in this case is never closed until the heighest query is closed. Then, the connection
+    ///     is to only be closed so it returns to the connection pool to be reused later. This conneciton keeps
+    ///     alive along the lifetime of the containing <see cref="DbCore"/> instance and to be disposed with it.
+    /// </remarks>
+    public class DbQuery : QueryStore
     {
         private readonly DbCore _db;
-        private readonly bool _persistent;
         private bool _disposed;
-
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="DbQuery"/> class.
         /// </summary>
-        /// <param name="db">The source <see cref="DbCoreBase"/>.</param>
-        internal DbQuery(DbCore db, bool persistent)
+        /// <param name="db">The source <see cref="DbCore"/>.</param>
+        internal DbQuery(DbCore db)
         {
             Check.NotNull(db, nameof(db));
 
             _db = db;
-            _persistent = persistent;
+
+            Id = Guid.NewGuid();
+#if TRACE
+            db.Logger.LogTrace("Query prepared over conn:[" + db.Connection.Id + "]. ID: [" + Id + "]");
+#endif
         }
 
         /// <summary>
-        ///     Finalizes the current instance.
+        ///     Gets the ID of this query.
         /// </summary>
-        ~DbQuery()
-        {
-            Dispose();
-        }
+        public Guid Id { get; }
+
+        /// <summary>
+        ///     Gets or sets the flag indicating whether to terminate the connection at the end
+        ///     of this query.
+        /// </summary>
+        public bool TerminateConnection { get; set; }
 
         /// <inheritdoc />
         public override void Dispose()
         {
-            Dispose(!_persistent);
-        }
-
-        /// <summary>
-        ///     Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        /// <param name="disposing">Indicates whether to dispose unmanaged resources.</param>
-        internal void Dispose(bool disposing)
-        {
-            if (_disposed)
-                return;
-
-            _db.FinalizeQuery(this);
-
-            if (disposing)
+            if (!_disposed)
             {
-                if (_db.Transaction != null)
-                {
-                    _db.Transaction.Rollback();
-                    _db.Transaction.Dispose();
-                    _db.Transaction = null;
-                }
-
-                _db.Connection.Close();
-                _db.Connection.Dispose();
-                _db.Connection = null;
+                _db.FinalizeQuery(this);
+                _disposed = true;
+#if TRACE
+                _db.Logger.LogTrace("Query released. ID: [" + Id + "]");
+#endif
             }
-
-            _disposed = true;
         }
 
         /// <summary>
         ///     Throws an exception if this object was already disposed.
         /// </summary>
         /// <exception cref="ObjectDisposedException" />
-        protected void ThrowIfDisposed()
+        private void ThrowIfDisposed()
         {
             if (_disposed)
-                throw new ObjectDisposedException(GetType().Name);
+                throw new ObjectDisposedException(nameof(DbQuery));
         }
 
         /// <inheritdoc />
-        public override Task<int> ExecuteAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
+        protected override async Task<T> ExecuteQuery<T>(string name, Func<Task<T>> func)
         {
-            ThrowIfDisposed();
+            _db.Logger.LogTrace("Executing query[{id}] ({name}) over conn[{connId}]", Id, name, _db.Connection.Id);
 
-            return WrapQuery(() =>
+            try
             {
-                using var cmd = _db.CreateCommand(_db.Connection, sql, prms, timeout, type);
-                return cmd.ExecuteNonQueryAsync();
-            });
+                var sw = Stopwatch.StartNew();
+                var result = await func.Invoke();
+                sw.Stop();
+
+                _db.Logger.LogTrace("Query[{id}] ({name}) succeeded. Elapsed time: {time}ms", Id, name, sw.ElapsedMilliseconds);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _db.Logger.LogError("Query[{id}] ({name}) failed", Id, name);
+                throw ex;
+            }
         }
 
-        /// <inheritdoc />
-        public override Task<IEnumerable<T>> RetrieveAsync<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null)
+        protected internal override async Task<int> InternalExecuteAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
         {
             ThrowIfDisposed();
 
-            return WrapQuery(async () =>
-            {
-                using var cmd = _db.CreateCommand(_db.Connection, sql, prms, timeout, type);
-                using var reader = await cmd.ExecuteReaderAsync();
-                return DataMapper.Parse(reader, altr);
-            });
+            using var cmd = _db.CreateCommand(sql, prms, timeout, type);
+            return await cmd.ExecuteNonQueryAsync();
+        }
+
+        protected internal override async Task<IEnumerable<T>> InternalRetrieveAsync<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null)
+        {
+            ThrowIfDisposed();
+
+            using var cmd = _db.CreateCommand(sql, prms, timeout);
+            using var rdr = await cmd.ExecuteReaderAsync();
+
+            var objType = typeof(T);
+            var result = !objType.IsClass || objType.IsArray
+                ? DataParser.Primitive<T>(rdr)
+                : DataParser.Object(rdr, _db.Options.MappingOrientation, altr);
+
+            return result;
         }
     }
 }

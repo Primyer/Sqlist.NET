@@ -14,28 +14,31 @@
 // limitations under the License.
 #endregion
 
+using System;
+using System.Runtime.Serialization;
+
 namespace Sqlist.NET
 {
-    public enum SqlStyle
+    public class DbException : System.Data.Common.DbException
     {
-        /// <summary>
-        ///     This option indicates that the statements will be accepted as it is, without reformatting.
-        /// </summary>
-        None = 1,
+        public DbException()
+        {
+        }
 
-        /// <summary>
-        ///     Represents the SQL syntax that's used in PostgreSQL databases.
-        /// </summary>
-        PL_pgSQL = 0,
+        public DbException(string message) : base(message)
+        {
+        }
 
-        /// <summary>
-        ///     Represents the SQL syntax that's used in Oracle databases.
-        /// </summary>
-        OracleSQL = 0,
+        public DbException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+        }
 
-        /// <summary>
-        ///     Represents the SQL syntax that's used in Firebird databases.
-        /// </summary>
-        FirebirdSQL = 0
+        public DbException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        public DbException(string message, int errorCode) : base(message, errorCode)
+        {
+        }
     }
 }

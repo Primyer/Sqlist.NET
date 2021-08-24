@@ -15,7 +15,6 @@
 #endregion
 
 using System;
-using System.Data.Common;
 using System.Runtime.Serialization;
 
 namespace Sqlist.NET

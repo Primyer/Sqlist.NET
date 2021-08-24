@@ -14,6 +14,8 @@
 // limitations under the License.
 #endregion
 
+using Sqlist.NET.Utilities;
+
 using System;
 using System.Data.Common;
 using System.Reflection;
@@ -55,5 +57,21 @@ namespace Sqlist.NET.Infrastructure
         ///     Gets or sets the style of syntax which SQL statements should be based on.
         /// </summary>
         public SqlStyle SqlStyle { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the flag indicating whether to log sensitive information such as command parameters.
+        /// </summary>
+        public bool EnableSensitiveLogging { get; set; }
+
+        // FEATURE: Add analysis.
+        /// <summary>
+        ///     Gets or sets the flag indicating whether to enable analysis.
+        /// </summary>
+        public bool EnableAnalysis { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the mapping orientation.
+        /// </summary>
+        public MappingOrientation MappingOrientation { get; set; }
     }
 }

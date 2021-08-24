@@ -18,10 +18,10 @@ namespace Sqlist.NET.Utilities
 {
     public class Encloser
     {
-        private SqlStyle _style;
+        private SqlStyle _style = default;
 
-        private char _openingDI; // Opening delimited identifier.
-        private char _closingDI; // Closing delimited identifier.
+        private bool _enclose;
+        private char _di; // Delimited identifier.
 
         public Encloser(SqlStyle style)
         {
@@ -33,25 +33,47 @@ namespace Sqlist.NET.Utilities
             get => _style;
             set
             {
-                SetDIs(value);
+                SetDI(value);
                 _style = value;
             }
         }
 
         public string Wrap(string val)
         {
-            return _openingDI + val + _closingDI;
+            if (!_enclose)
+                return val;
+
+            return _di + val + _di;
         }
 
         public void Wrap(ref string val)
         {
-            val = _openingDI + val + _closingDI;
+            if (!_enclose)
+                return;
+
+            val = _di + val + _di;
+        }
+
+        public void Replace(ref string val)
+        {
+            if (!_enclose)
+                return;
+
+            val = val.Replace('`', _di);
+        }
+
+        public string Replace(string val)
+        {
+            if (!_enclose)
+                return val;
+
+            return val.Replace('`', _di);
         }
 
         public void Reformat(ref string val)
         {
-            if (val.IndexOf("[") != -1)
-                val = val.Replace('[', _openingDI).Replace(']', _closingDI);
+            if (val.IndexOf("`") != -1)
+                Replace(ref val);
             else
                 Wrap(ref val);
         }
@@ -76,21 +98,17 @@ namespace Sqlist.NET.Utilities
             return result;
         }
 
-        private void SetDIs(SqlStyle style)
+        private void SetDI(SqlStyle style)
         {
             switch (style)
             {
-                case SqlStyle.MySQL:
-                    _openingDI = _closingDI = '`';
-                    break;
-
-                case SqlStyle.MSSQL:
-                    _openingDI = '[';
-                    _closingDI = ']';
+                case SqlStyle.None:
+                    _enclose = false;
                     break;
 
                 default:
-                    _openingDI = _closingDI = '\"';
+                    _enclose = true;
+                    _di = '\"';
                     break;
             }
         }
