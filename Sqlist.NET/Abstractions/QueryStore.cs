@@ -34,18 +34,16 @@ namespace Sqlist.NET.Abstractions
         /// <param name="name">The name of the executing method.</param>
         /// <param name="func">The function to invoke the query.</param>
         /// <returns>The <see cref="Task"/> object that represents the asynchronous operation, containing the value of the injected function.</returns>
-        protected abstract Task<T> ExecuteQuery<T>(string name, Func<Task<T>> func);
+        protected abstract Task<T> ExecuteQueryAsync<T>(string name, Func<Task<T>> func);
 
         /// <inheritdoc />
         public virtual int Execute(string sql, object prms = null, int? timeout = null, CommandType? type = null)
         {
 #if TRACE
-            return ExecuteQuery(nameof(Execute), () =>
-            {
-#endif
-                return InternalExecuteAsync(sql, prms, timeout, type);
-#if TRACE
-            }).Result;
+            return ExecuteQueryAsync(nameof(Execute), () =>
+                InternalExecuteAsync(sql, prms, timeout, type)).Result;
+#else
+            return InternalExecuteAsync(sql, prms, timeout, type).Result;
 #endif
         }
 
@@ -53,7 +51,7 @@ namespace Sqlist.NET.Abstractions
         public virtual Task<int> ExecuteAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
         {
 #if TRACE
-            return ExecuteQuery(nameof(ExecuteAsync), () =>
+            return ExecuteQueryAsync(nameof(ExecuteAsync), () =>
             {
 #endif
                 return InternalExecuteAsync(sql, prms, timeout, type);
@@ -72,7 +70,7 @@ namespace Sqlist.NET.Abstractions
         public virtual Task<IEnumerable<T>> RetrieveAsync<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null)
         {
 #if TRACE
-            return ExecuteQuery(nameof(RetrieveAsync), () =>
+            return ExecuteQueryAsync(nameof(RetrieveAsync), () =>
             {
 #endif
                 return InternalRetrieveAsync(sql, prms, altr, timeout, type);
@@ -88,10 +86,10 @@ namespace Sqlist.NET.Abstractions
         }
 
         /// <inheritdoc />
-        public virtual Task<T> FirstOrDefaultAsync<T>(string sql, object prms = null, int? timeout = null, CommandType? type = null)
+        public virtual async Task<T> FirstOrDefaultAsync<T>(string sql, object prms = null, int? timeout = null, CommandType? type = null)
         {
 #if TRACE
-            return ExecuteQuery(nameof(FirstOrDefaultAsync), async () =>
+            return await ExecuteQueryAsync(nameof(FirstOrDefaultAsync), async () =>
             {
 #endif
                 var result = await InternalRetrieveAsync<T>(sql, prms, null, timeout, type);
@@ -111,10 +109,10 @@ namespace Sqlist.NET.Abstractions
         }
 
         /// <inheritdoc />
-        public virtual Task<T> SingleOrDefaultAsync<T>(string sql, object prms = null, int? timeout = null, CommandType? type = null)
+        public virtual async Task<T> SingleOrDefaultAsync<T>(string sql, object prms = null, int? timeout = null, CommandType? type = null)
         {
 #if TRACE
-            return ExecuteQuery(nameof(SingleOrDefaultAsync), async () =>
+            return await ExecuteQueryAsync(nameof(SingleOrDefaultAsync), async () =>
             {
 #endif
                 var result = await RetrieveAsync<T>(sql, prms, null, timeout, type);

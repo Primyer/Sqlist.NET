@@ -93,7 +93,7 @@ namespace Sqlist.NET
         }
 
         /// <inheritdoc />
-        protected override async Task<T> ExecuteQuery<T>(string name, Func<Task<T>> func)
+        protected override async Task<T> ExecuteQueryAsync<T>(string name, Func<Task<T>> func)
         {
             _db.Logger.LogTrace("Executing query[{id}] ({name}) over conn[{connId}]", Id, name, _db.Connection.Id);
 
