@@ -25,7 +25,7 @@ namespace Sqlist.NET.Abstractions
     /// <summary>
     ///     Implementes the <see cref="IQueryStore"/> API.
     /// </summary>
-    public abstract class QueryStore : IQueryStore, IDisposable
+    public abstract class QueryStore : IQueryStore
     {
         /// <summary>
         ///     Wraps an <see cref="IQueryStore"/> method and returns its result.

@@ -24,7 +24,7 @@ namespace Sqlist.NET.Abstractions
     /// <summary>
     ///     Provides the API to query against a data source.
     /// </summary>
-    public interface IQueryStore
+    public interface IQueryStore : IDisposable
     {
         /// <summary>
         ///     Executes the specified <paramref name="sql"/> statement against the data source, as an asynchronous operation.
@@ -57,7 +57,7 @@ namespace Sqlist.NET.Abstractions
         /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
         /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
         /// <returns>
-        ///     The <see cref="Task"/> object that represents the asynchronous operation, containing an <see cref="IEnumerable{T}"/> as result.
+        ///     The <see cref="Task"/> object that represents the asynchronous operation, containing the <see cref="IEnumerable{T}"/> as result.
         /// </returns>
         Task<IEnumerable<T>> RetrieveAsync<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null);
 

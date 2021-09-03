@@ -34,7 +34,7 @@ namespace Sqlist.NET
     /// <summary>
     ///     Provides the basic API to manage a database.
     /// </summary>
-    public abstract class DbCore : QueryStore
+    public class DbCore : QueryStore
     {
         private readonly List<Guid> _queries = new List<Guid>();
 
@@ -159,72 +159,6 @@ namespace Sqlist.NET
         }
 
         /// <summary>
-        ///     Creates and returns a new instance of the configured provider's class
-        ///     that implements the <see cref="DbCommand"/> class.
-        /// </summary>
-        /// <param name="conn">The <see cref="DbConnection"/> to initialize the command from.</param>
-        /// <param name="sql">The SQL statement to run against the data source.</param>
-        /// <param name="prms">The parameters associated with the given statement.</param>
-        /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
-        /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
-        /// <returns>A new instance of <see cref="DbCommand"/>.</returns>
-        internal virtual ado::DbCommand CreateCommand(lcl::DbConnection conn, string sql, object prms = null, int? timeout = null, CommandType? type = null)
-        {
-            ThrowIfDisposed();
-
-            Check.NotNullOrEmpty(sql, nameof(sql));
-
-            var cmd = conn.Underlying.CreateCommand();
-            cmd.CommandText = sql;
-            cmd.CommandType = type ?? CommandType.Text;
-            cmd.Transaction = _trans;
-
-            if (timeout.HasValue)
-                cmd.CommandTimeout = timeout.Value;
-
-            if (prms != null)
-                ConfigureParameters(cmd, prms);
-
-            return cmd;
-        }
-
-        /// <summary>
-        ///     Creates and returns a new instance of the configured provider's class
-        ///     that implements the <see cref="DbCommand"/> class.
-        /// </summary>
-        /// <param name="sql">The SQL statement to run against the data source.</param>
-        /// <param name="prms">The parameters associated with the given statement.</param>
-        /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
-        /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
-        /// <returns>A new instance of <see cref="DbCommand"/>.</returns>
-        public virtual ado::DbCommand CreateCommand(string sql, object prms = null, int? timeout = null, CommandType? type = null)
-        {
-            return CreateCommand(Connection, sql, prms, timeout, type);
-        }
-
-        /// <summary>
-        ///     Configure the specified <paramref name="prms"/> to be added to the given <paramref name="cmd"/> later on.
-        /// </summary>
-        /// <param name="cmd">The <see cref="DbCommand"/> that owns the parameters.</param>
-        /// <param name="prms">The anonymous object representing the parameters.</param>
-        public virtual void ConfigureParameters(ado::DbCommand cmd, object prms)
-        {
-            ThrowIfDisposed();
-
-            foreach (var prop in prms.GetType().GetProperties())
-            {
-                var prm = cmd.CreateParameter();
-
-                prm.ParameterName = prop.Name;
-                prm.Direction = ParameterDirection.Input;
-                prm.DbType = TypeMapper.Instance.ToDbType(prop.PropertyType);
-                prm.Value = prop.GetValue(prms);
-
-                cmd.Parameters.Add(prm);
-            }
-        }
-
-        /// <summary>
         ///     Returns a new instance of the <see cref="IQueryStore"/>.
         /// </summary>
         /// <returns>A new instance of the <see cref="IQueryStore"/>.</returns>
@@ -289,12 +223,12 @@ namespace Sqlist.NET
             var conn = lcl.DbConnection.CreateFor(this);
             try
             {
-                using var cmd = CreateCommand(conn, sql, prms, timeout, type);
+                var cmd = conn.CreateCommand(sql, prms, timeout);
                 return await cmd.ExecuteNonQueryAsync();
             }
             finally
             {
-                await conn.DisposeAsync();
+                conn.Dispose();
             }
         }
 
@@ -305,19 +239,19 @@ namespace Sqlist.NET
             var conn = lcl.DbConnection.CreateFor(this);
             try
             {
-                using var cmd = CreateCommand(conn, sql, prms, timeout);
-                using var rdr = await cmd.ExecuteReaderAsync();
+                var cmd = conn.CreateCommand(sql, prms, timeout);
+                var rdr = cmd.ExecuteReaderAsync();
 
                 var objType = typeof(T);
                 var result = !objType.IsClass || objType.IsArray
                     ? DataParser.Primitive<T>(rdr)
                     : DataParser.Object(rdr, Options.MappingOrientation, altr);
 
-                return result;
+                return await result;
             }
             finally
             {
-                await conn.DisposeAsync();
+                conn.Dispose();
             }
         }
 

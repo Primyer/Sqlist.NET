@@ -561,12 +561,35 @@ namespace Sqlist.NET
         }
 
         /// <summary>
+        ///     Gets and returns the content of the builder with the specified <paramref name="name"/>.
+        /// </summary>
+        /// <param name="name">The name of the builder to return from.</param>
+        /// <returns>The content of the builder with the specified <paramref name="name"/>.</returns>
+        protected virtual string GetBuilderContent(string name)
+        {
+            return _builders.TryGetValue(name, out var builder) ? builder.ToString() : null;
+        }
+
+        /// <summary>
         ///     Generates and returns a <c>SELECT</c> statement from the specified configurations.
         /// </summary>
         /// <returns>A <c>SELECT</c> statement.</returns>
         public virtual string ToSelect()
         {
-            return GenerateTemplate(new[] { "@with_queries", "\nselect ", "@fields", "\nfrom ", TableName, "@joins", "@where", "@filters", "@combine_queries" });
+            var result = new StringBuilder();
+
+            result.AppendLine(GetBuilderContent("with_queries"));
+            result.Append("select ");
+            result.AppendLine(GetBuilderContent("fields") ?? "*");
+
+            if (!string.IsNullOrEmpty(TableName))
+                result.Append("from " + TableName);
+
+            result.Append(GetBuilderContent("joins"));
+            result.Append(GetBuilderContent("where"));
+            result.Append(GetBuilderContent("filters"));
+            result.Append(GetBuilderContent("combine_queries"));
+            return result.ToString();
         }
 
         /// <summary>

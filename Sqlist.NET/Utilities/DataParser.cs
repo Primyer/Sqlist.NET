@@ -16,11 +16,14 @@
 
 using FastMember;
 
+using Sqlist.NET.Common;
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Sqlist.NET.Utilities
 {
@@ -56,30 +59,32 @@ namespace Sqlist.NET.Utilities
 
     internal static class DataParser
     {
-        public static IEnumerable<T> Primitive<T>(IDataReader reader)
+        public static async Task<IEnumerable<T>> Primitive<T>(LazyDbDataReader lazyReader)
         {
             var type = typeof(T);
             var data = new List<T>();
 
-            while (reader.Read())
+            await lazyReader.IterateAsync(reader =>
             {
-                var val = (T)Convert.ChangeType(reader.GetValue(0), type);
-                data.Add(val);
-            }
+                var value = (T)Convert.ChangeType(reader.GetValue(0), type);
+                data.Add(value);
+            });
             return data;
         }
 
-        public static IEnumerable<T> Object<T>(IDataReader reader, MappingOrientation orientation, Action<T> altr)
+        public static async Task<IEnumerable<T>> Object<T>(LazyDbDataReader lazyReader, MappingOrientation orientation, Action<T> altr)
         {
             var acsr = TypeAccessor.Create(typeof(T));
             var data = new List<T>();
+
+            var rdr = await lazyReader.GetReaderAsync();
             var names = orientation switch
             {
-                MappingOrientation.ObjectOriented => GetObjectOrientedNames<T>(reader),
-                _ => GetQueryOrientedNames<T>(reader)
+                MappingOrientation.ObjectOriented => GetObjectOrientedNames<T>(rdr),
+                _ => GetQueryOrientedNames<T>(rdr)
             };
 
-            while (reader.Read())
+            await lazyReader.IterateAsync(reader =>
             {
                 var model = Activator.CreateInstance<T>();
 
@@ -97,7 +102,7 @@ namespace Sqlist.NET.Utilities
 
                 altr?.Invoke(model);
                 data.Add(model);
-            }
+            });
             return data;
         }
 

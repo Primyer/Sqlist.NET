@@ -34,13 +34,15 @@ namespace Sqlist.NET
     /// </summary>
     /// <remarks>
     ///     The connection in this case is never closed until the heighest query is closed. Then, the connection
-    ///     is to only be closed so it returns to the connection pool to be reused later. This conneciton keeps
+    ///     is to be closed and returned to the connection pool to be reused later. This connection keeps
     ///     alive along the lifetime of the containing <see cref="DbCore"/> instance and to be disposed with it.
     /// </remarks>
     public class DbQuery : QueryStore
     {
         private readonly DbCore _db;
+
         private bool _disposed;
+        private int _delayQueueLength = 0;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="DbQuery"/> class.
@@ -114,20 +116,34 @@ namespace Sqlist.NET
             }
         }
 
-        protected internal override async Task<int> InternalExecuteAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
+        internal Action RegisterDelayer()
         {
-            ThrowIfDisposed();
+            _delayQueueLength++;
 
-            using var cmd = _db.CreateCommand(sql, prms, timeout, type);
-            return await cmd.ExecuteNonQueryAsync();
+            return () =>
+            {
+                if (--_delayQueueLength == 0)
+                    Dispose();
+            };
         }
 
-        protected internal override async Task<IEnumerable<T>> InternalRetrieveAsync<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null)
+        protected internal override Task<int> InternalExecuteAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
         {
             ThrowIfDisposed();
 
-            using var cmd = _db.CreateCommand(sql, prms, timeout);
-            using var rdr = await cmd.ExecuteReaderAsync();
+            var cmd = _db.Connection.CreateCommand(sql, prms, timeout, type);
+            return cmd.ExecuteNonQueryAsync();
+        }
+
+        protected internal override Task<IEnumerable<T>> InternalRetrieveAsync<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null)
+        {
+            ThrowIfDisposed();
+
+            var cmd = _db.Connection.CreateCommand(sql, prms, timeout);
+            var rdr = cmd.ExecuteReaderAsync();
+
+            var action = RegisterDelayer();
+            rdr.Fetched += () => action();
 
             var objType = typeof(T);
             var result = !objType.IsClass || objType.IsArray

@@ -20,13 +20,12 @@ using Sqlist.NET.Utilities;
 
 using System;
 using System.Data;
-using System.Threading.Tasks;
 
 using ado = System.Data.Common;
 
 namespace Sqlist.NET.Common
 {
-    public class DbConnection : IDisposable, IAsyncDisposable
+    public class DbConnection : IDisposable
     {
         private readonly DbCore _db;
         private readonly ado::DbConnection _conn;
@@ -96,7 +95,28 @@ namespace Sqlist.NET.Common
 
             var wrpr = new DbConnection(db, conn);
             db.Logger.LogDebug("Connection created for DB:[" + db.Id + "]. ID:[" + wrpr.Id + "]");
+            
+            conn.Open();
             return wrpr;
+        }
+
+        /// <summary>
+        ///     Creates and returns a new instance of the <see cref="DbCommand"/> class.
+        /// </summary>
+        /// <param name="sql">The SQL statement to run against the data source.</param>
+        /// <param name="prms">The parameters associated with the given statement.</param>
+        /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
+        /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
+        /// <returns>A new instance of <see cref="DbCommand"/>.</returns>
+        public virtual DbCommand CreateCommand(string sql, object prms = null, int? timeout = null, CommandType? type = null)
+        {
+            return new DbCommand(Underlying)
+            {
+                Statement = sql,
+                Parameters = prms,
+                Timeout = timeout,
+                Type = type
+            };
         }
 
         /// <summary>
@@ -104,12 +124,12 @@ namespace Sqlist.NET.Common
         ///     unmanaged resources.
         /// </summary>
         /// <param name="disposing">The flag indicating whether this instance is desposing.</param>
-        protected virtual async Task DisposeAsync(bool disposing)
+        protected virtual void Dispose(bool disposing)
         {
             if (!_disposed)
             {
-                await _conn.CloseAsync(); // Recommended for some data sources. e.g: Oracle DB.
-                await _conn.DisposeAsync();
+                _conn.Close();
+                _conn.Dispose();
                 _disposed = true;
 
                 _db.Logger.LogDebug("Connection released. ID:[" + Id + "]");
@@ -121,20 +141,13 @@ namespace Sqlist.NET.Common
         /// </summary>
         ~DbConnection()
         {
-            DisposeAsync(disposing: false).Wait();
-        }
-
-        /// <inheritdoc />
-        public async ValueTask DisposeAsync()
-        {
-            await DisposeAsync(disposing: true);
-            GC.SuppressFinalize(this);
+            Dispose(disposing: false);
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            DisposeAsync(disposing: true).Wait();
+            Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
 
