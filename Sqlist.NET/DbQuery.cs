@@ -74,7 +74,7 @@ namespace Sqlist.NET
         /// <inheritdoc />
         public override void Dispose()
         {
-            if (!_disposed)
+            if (!_disposed && _delayQueueLength == 0)
             {
                 _db.FinalizeQuery(this);
                 _disposed = true;
