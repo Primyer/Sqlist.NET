@@ -153,6 +153,8 @@ namespace Sqlist.NET
         /// <param name="condition">The join conditions.</param>
         public virtual void RegisterInnerJoin(string table, string condition)
         {
+            _enc.Reformat(ref table);
+            _enc.Reformat(ref condition);
             RegisterJoin($"inner join {table} on {condition}");
         }
 
@@ -163,6 +165,8 @@ namespace Sqlist.NET
         /// <param name="condition">The join conditions.</param>
         public virtual void RegisterLeftJoin(string table, string condition)
         {
+            _enc.Reformat(ref table);
+            _enc.Reformat(ref condition);
             RegisterJoin($"left join {table} on {condition}");
         }
 
@@ -173,6 +177,8 @@ namespace Sqlist.NET
         /// <param name="condition">The join conditions.</param>
         public virtual void RegisterRightJoin(string table, string condition)
         {
+            _enc.Reformat(ref table);
+            _enc.Reformat(ref condition);
             RegisterJoin($"right join {table} on {condition}");
         }
 
@@ -183,6 +189,8 @@ namespace Sqlist.NET
         /// <param name="condition">The join conditions.</param>
         public virtual void RegisterFullJoin(string table, string condition)
         {
+            _enc.Reformat(ref table);
+            _enc.Reformat(ref condition);
             RegisterJoin($"full join {table} on {condition}");
         }
 
@@ -194,7 +202,6 @@ namespace Sqlist.NET
         {
             Check.NotNullOrEmpty(stmt, nameof(stmt));
 
-            _enc.Reformat(ref stmt);
             GetOrCreateBuilder("joins").Append('\n' + stmt);
         }
 
@@ -487,8 +494,7 @@ namespace Sqlist.NET
             if (fields.Length != 0)
                 builder.Append($" ({_enc.Join(", ", fields)})");
 
-            builder.Append(" as (");
-            builder.Append($"{body}\n)");
+            builder.Append($" as (\n{body}\n)");
         }
 
         /// <summary>
@@ -548,7 +554,7 @@ namespace Sqlist.NET
             Check.NotNull(query, nameof(query));
 
             var result = query.Invoke(new SqlBuilder(_sqlStyle));
-            if (!string.IsNullOrEmpty(result))
+            if (string.IsNullOrEmpty(result))
                 throw new InvalidOperationException("The query result cannot be null or empty");
 
             var builder = GetOrCreateBuilder("combine_queries");
@@ -558,6 +564,47 @@ namespace Sqlist.NET
                 builder.Append("all ");
 
             builder.Append('\n' + result);
+        }
+
+        /// <summary>
+        ///     Registers a "returning" statement.
+        /// </summary>
+        /// <param name="fields">The fields to be returned.</param>
+        public virtual void RegisterReturningFields(params string[] fields)
+        {
+            var result = "\nreturning ";
+
+            if (fields.Length == 0)
+                result += "*";
+            else
+                for (var i = 0; i < fields.Length; i++)
+                {
+                    _enc.Wrap(ref fields[i]);
+                    result += fields;
+
+                    if (i != fields.Length - 1)
+                        result += ", ";
+                }
+
+            GetOrCreateBuilder("returning").Append(result);
+        }
+
+        /// <summary>
+        ///     Registers the fields for the conflict statement.
+        /// </summary>
+        /// <param name="keys">The conflict fields.</param>
+        public virtual void RegisterConflictFields(params string[] keys)
+        {
+            var builder = _builders["conflict"] = new StringBuilder();
+
+            for (var i = 0; i < keys.Length; i++)
+            {
+                _enc.Wrap(ref keys[i]);
+                builder.Append(keys[i]);
+
+                if (i != keys.Length - 1)
+                    builder.Append(", ");
+            }
         }
 
         /// <summary>
@@ -578,7 +625,10 @@ namespace Sqlist.NET
         {
             var result = new StringBuilder();
 
-            result.AppendLine(GetBuilderContent("with_queries"));
+            var withQueries = GetBuilderContent("with_queries");
+            if (withQueries != null)
+                result.AppendLine(withQueries);
+
             result.Append("select ");
             result.AppendLine(GetBuilderContent("fields") ?? "*");
 
@@ -598,7 +648,7 @@ namespace Sqlist.NET
         /// <returns>A <c>UPDATE</c> statement.</returns>
         public virtual string ToUpdate()
         {
-            return GenerateTemplate(new[] { "update", TableName, "set", "@pairs", "@where" });
+            return GenerateTemplate(new[] { "update ", TableName, " set ", "@pairs", "@where", "@returning" });
         }
 
         /// <summary>
@@ -607,7 +657,16 @@ namespace Sqlist.NET
         /// <returns>A <c>DELETE</c> statement.</returns>
         public virtual string ToDelete()
         {
-            return GenerateTemplate(new[] { "delete from", TableName, "@where" });
+            var result = new StringBuilder();
+
+            var withQueries = GetBuilderContent("with_queries");
+            if (withQueries != null)
+                result.AppendLine(withQueries);
+
+            result.Append("delete from " + TableName);
+            result.Append(GetBuilderContent("where"));
+            result.Append(GetBuilderContent("returning"));
+            return result.ToString();
         }
 
         /// <summary>
@@ -616,7 +675,19 @@ namespace Sqlist.NET
         /// <returns>A <c>iNSERT</c> statement.</returns>
         public virtual string ToInsert()
         {
-            return GenerateTemplate(new[] { "insert into ", TableName, " (", "@fields", ")\nvalues ", "@values", "where" });
+            return GenerateTemplate(new[] { "insert into ", TableName, " (", "@fields", ")\nvalues ", "@values", "@where", "@returning" });
+        }
+
+        /// <summary>
+        ///     Generates and returns an <c>INSERT ON CONFLICT</c> statement from the specified configurations.
+        /// </summary>
+        /// <returns>A <c>INSERT ON CONFLICT</c> statement.</returns>
+        public virtual string ToInsertOrUpdate()
+        {
+            return GenerateTemplate(new[]
+            {
+                "insert into ", TableName, " (", "@fields", ")\nvalues ", "@values", "@where", "\non conflict (", "@conflict", ") do\n", "update set ", "@pairs"
+            });
         }
 
         /// <summary>
