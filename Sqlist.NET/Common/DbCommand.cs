@@ -119,6 +119,9 @@ namespace Sqlist.NET.Common
 
         private void ConfigureParameters()
         {
+            if (_prms is null)
+                return;
+
             foreach (var prop in _prms.GetType().GetProperties())
             {
                 var prm = _cmd.CreateParameter();
