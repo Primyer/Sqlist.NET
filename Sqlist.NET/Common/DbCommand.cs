@@ -1,6 +1,7 @@
 ﻿using Sqlist.NET.Utilities;
 
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
@@ -122,17 +123,37 @@ namespace Sqlist.NET.Common
             if (_prms is null)
                 return;
 
-            foreach (var prop in _prms.GetType().GetProperties())
+            IterateParamters(_prms, (name, value) =>
             {
                 var prm = _cmd.CreateParameter();
 
-                prm.ParameterName = prop.Name;
+                prm.ParameterName = name;
                 prm.Direction = ParameterDirection.Input;
-                prm.DbType = TypeMapper.Instance.ToDbType(prop.PropertyType);
-                prm.Value = prop.GetValue(_prms) ?? DBNull.Value;
+
+                if (value is null)
+                    prm.Value = DBNull.Value;
+                else
+                {
+                    prm.DbType = TypeMapper.Instance.ToDbType(value.GetType());
+                    prm.Value = value;
+                }
 
                 _cmd.Parameters.Add(prm);
+            });
+        }
+
+        private static void IterateParamters(object prms, Action<string, object> predicate)
+        {
+            if (prms is IDictionary<string, object> dict)
+            {
+                foreach (var (key, value) in dict)
+                    predicate(key, value);
+
+                return;
             }
+
+            foreach (var prop in prms.GetType().GetProperties())
+                predicate(prop.Name, prop.GetValue(prms));
         }
     }
 }
