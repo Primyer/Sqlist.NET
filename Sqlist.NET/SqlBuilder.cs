@@ -146,6 +146,20 @@ namespace Sqlist.NET
             }
         }
 
+        public virtual void RegisterBulkValues(int cols, int rows)
+        {
+            var obj = new string[rows][];
+            for (var i = 0; i < rows; i++)
+            {
+                obj[i] = new string[cols];
+                for (var j = 0; j < cols; j++)
+                {
+                    obj[i][j] = "@p" + (j + i * cols);
+                }
+            }
+            RegisterValues(obj);
+        }
+
         /// <summary>
         ///     Registers an <c>INNER JOIN</c> on the specified <paramref name="table"/> with the given <paramref name="condition"/>.
         /// </summary>
@@ -580,7 +594,7 @@ namespace Sqlist.NET
                 for (var i = 0; i < fields.Length; i++)
                 {
                     _enc.Wrap(ref fields[i]);
-                    result += fields;
+                    result += fields[i];
 
                     if (i != fields.Length - 1)
                         result += ", ";
