@@ -52,10 +52,14 @@ namespace Sqlist.NET.Common
         public object Parameters
         {
             get => _prms;
-            set
+            internal set
             {
+                if (value is object[][] prms)
+                    ConfigureBulkParameters(_cmd, prms);
+                else
+                    ConfigureParameters(_cmd, value);
+
                 _prms = value;
-                ConfigureParameters();
             }
         }
 
@@ -112,20 +116,45 @@ namespace Sqlist.NET.Common
             return new LazyDbDataReader(result);
         }
 
-        private void EnsureConnectionOpen()
+        public static void ConfigureBulkParameters(ado::DbCommand cmd, object[][] prms)
         {
-            if (_conn.State == ConnectionState.Closed)
-                _conn.Open();
-        }
-
-        private void ConfigureParameters()
-        {
-            if (_prms is null)
+            if (prms is null || prms.Length == 0)
                 return;
 
-            IterateParamters(_prms, (name, value) =>
+            var rowCount = prms.Length;
+            var colCount = prms[0].Length;
+
+            for (var i = 0; i < rowCount; i++)
             {
-                var prm = _cmd.CreateParameter();
+                for (var j = 0; j < colCount; j++)
+                {
+                    var prm = cmd.CreateParameter();
+                    var val = prms[i][j];
+
+                    prm.ParameterName = "p" + (j + i * colCount);
+                    prm.Direction = ParameterDirection.Input;
+
+                    if (val is null)
+                        prm.Value = DBNull.Value;
+                    else
+                    {
+                        prm.DbType = TypeMapper.Instance.ToDbType(val.GetType());
+                        prm.Value = val;
+                    }
+
+                    cmd.Parameters.Add(prm);
+                }
+            }
+        }
+
+        public static void ConfigureParameters(ado::DbCommand cmd, object prms)
+        {
+            if (prms is null)
+                return;
+
+            IterateParamters(prms, (name, value) =>
+            {
+                var prm = cmd.CreateParameter();
 
                 prm.ParameterName = name;
                 prm.Direction = ParameterDirection.Input;
@@ -138,7 +167,7 @@ namespace Sqlist.NET.Common
                     prm.Value = value;
                 }
 
-                _cmd.Parameters.Add(prm);
+                cmd.Parameters.Add(prm);
             });
         }
 
@@ -154,6 +183,12 @@ namespace Sqlist.NET.Common
 
             foreach (var prop in prms.GetType().GetProperties())
                 predicate(prop.Name, prop.GetValue(prms));
+        }
+
+        private void EnsureConnectionOpen()
+        {
+            if (_conn.State == ConnectionState.Closed)
+                _conn.Open();
         }
     }
 }

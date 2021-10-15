@@ -48,7 +48,7 @@ namespace Sqlist.NET.Abstractions
         int Execute(string sql, object prms = null, int? timeout = null, CommandType? type = null);
 
         /// <summary>
-        ///     executes the specified <paramref name="sql"/> statement against the data source,
+        ///     Executes the specified <paramref name="sql"/> statement against the data source,
         ///     and returns an <see cref="IEnumerable{T}"/> as the result, as an asynchronous operation.
         /// </summary>
         /// <param name="sql">The SQL statement to run against the data source.</param>
@@ -62,7 +62,7 @@ namespace Sqlist.NET.Abstractions
         Task<IEnumerable<T>> RetrieveAsync<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null);
 
         /// <summary>
-        ///     executes the specified <paramref name="sql"/> statement against the data source,
+        ///     Executes the specified <paramref name="sql"/> statement against the data source,
         ///     and returns an <see cref="IEnumerable{T}"/> as the result.
         /// </summary>
         /// <param name="sql">The SQL statement to run against the data source.</param>
@@ -73,7 +73,7 @@ namespace Sqlist.NET.Abstractions
         IEnumerable<T> Retrieve<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null);
 
         /// <summary>
-        ///     executes the specified <paramref name="sql"/> statement against the data source, and returns the first row of
+        ///     Executes the specified <paramref name="sql"/> statement against the data source, and returns the first row of
         ///     the result, if any; otherwise, <see langword="null" />.
         /// </summary>
         /// <param name="sql">The SQL statement to run against the data source.</param>
@@ -86,7 +86,7 @@ namespace Sqlist.NET.Abstractions
         Task<T> FirstOrDefaultAsync<T>(string sql, object prms = null, int? timeout = null, CommandType? type = null);
 
         /// <summary>
-        ///     executes the specified <paramref name="sql"/> statement against the data source, and returns the first row of
+        ///     Executes the specified <paramref name="sql"/> statement against the data source, and returns the first row of
         ///     the result, if any; otherwise, <see langword="null" />.
         /// </summary>
         /// <param name="sql">The SQL statement to run against the data source.</param>
@@ -97,7 +97,7 @@ namespace Sqlist.NET.Abstractions
         T FirstOrDefault<T>(string sql, object prms = null, int? timeout = null, CommandType? type = null);
 
         /// <summary>
-        ///     executes the specified <paramref name="sql"/> statement against the data source, and returns the result if it only
+        ///     Executes the specified <paramref name="sql"/> statement against the data source, and returns the result if it only
         ///     a single row; otherwise, <see langword="null" />.
         /// </summary>
         /// <param name="sql">The SQL statement to run against the data source.</param>
@@ -111,7 +111,7 @@ namespace Sqlist.NET.Abstractions
         Task<T> SingleOrDefaultAsync<T>(string sql, object prms = null, int? timeout = null, CommandType? type = null);
 
         /// <summary>
-        ///     executes the specified <paramref name="sql"/> statement against the data source, and returns the result if it only
+        ///     Executes the specified <paramref name="sql"/> statement against the data source, and returns the result if it only
         ///     a single row; otherwise, <see langword="null" />.
         /// </summary>
         /// <param name="sql">The SQL statement to run against the data source.</param>
@@ -120,5 +120,30 @@ namespace Sqlist.NET.Abstractions
         /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
         /// <returns>The result if it only a single row; otherwise, <see langword="null" />.</returns>
         T SingleOrDefault<T>(string sql, object prms = null, int? timeout = null, CommandType? type = null);
+
+        /// <summary>
+        ///     Executes the specified <paramref name="sql"/> statement againts the data soruce, and returns scalar value
+        ///     on first column of first row in the returned result set, as an asynchronous operation.
+        /// </summary>
+        /// <param name="sql">The SQL statement to run against the data source.</param>
+        /// <param name="prms">The parameters associated with the given statement.</param>
+        /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
+        /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
+        /// <returns>
+        ///     The <see cref="Task"/> object that represents the asynchronous operation, contaning the scalar value on first
+        ///     column of first row in the returned result set, if any.
+        /// </returns>
+        Task<object> ExecuteScalarAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null);
+
+        /// <summary>
+        ///     Executes the specified <paramref name="sql"/> statement againts the data soruce, and returns scalar value
+        ///     on first column of first row in the returned result set.
+        /// </summary>
+        /// <param name="sql">The SQL statement to run against the data source.</param>
+        /// <param name="prms">The parameters associated with the given statement.</param>
+        /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
+        /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
+        /// <returns> The scalar value on first column of first row in the returned result set.</returns>
+        object ExecuteScalar(string sql, object prms = null, int? timeout = null, CommandType? type = null);
     }
 }

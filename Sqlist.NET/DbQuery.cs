@@ -127,6 +127,14 @@ namespace Sqlist.NET
             };
         }
 
+        protected internal override Task<object> InternalExecuteScalarAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
+        {
+            ThrowIfDisposed();
+
+            var cmd = _db.Connection.CreateCommand(sql, prms, timeout, type);
+            return cmd.ExecuteScalarAsync();
+        }
+
         protected internal override Task<int> InternalExecuteAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
         {
             ThrowIfDisposed();

@@ -216,15 +216,15 @@ namespace Sqlist.NET
             }
         }
 
-        protected internal override async Task<int> InternalExecuteAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
+        protected internal override Task<object> InternalExecuteScalarAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
         {
             ThrowIfDisposed();
 
-            var conn = lcl.DbConnection.CreateFor(this);
+            var conn = lcl::DbConnection.CreateFor(this);
             try
             {
-                var cmd = conn.CreateCommand(sql, prms, timeout);
-                return await cmd.ExecuteNonQueryAsync();
+                var cmd = conn.CreateCommand(sql, prms, timeout, type);
+                return cmd.ExecuteScalarAsync();
             }
             finally
             {
@@ -232,22 +232,40 @@ namespace Sqlist.NET
             }
         }
 
-        protected internal override async Task<IEnumerable<T>> InternalRetrieveAsync<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null)
+        /// <inheritdoc />
+        protected internal override Task<int> InternalExecuteAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
         {
             ThrowIfDisposed();
 
-            var conn = lcl.DbConnection.CreateFor(this);
+            var conn = lcl::DbConnection.CreateFor(this);
             try
             {
-                var cmd = conn.CreateCommand(sql, prms, timeout);
+                var cmd = conn.CreateCommand(sql, prms, timeout, type);
+                return cmd.ExecuteNonQueryAsync();
+            }
+            finally
+            {
+                conn.Dispose();
+            }
+        }
+
+        /// <inheritdoc />
+        protected internal override Task<IEnumerable<T>> InternalRetrieveAsync<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null)
+        {
+            ThrowIfDisposed();
+
+            var conn = lcl::DbConnection.CreateFor(this);
+            try
+            {
+                var cmd = conn.CreateCommand(sql, prms, timeout, type);
                 var rdr = cmd.ExecuteReaderAsync();
 
                 var objType = typeof(T);
-                var result = !objType.IsClass || objType.IsArray
+                var result = objType.IsPrimitive || objType.IsValueType || objType.IsArray || objType == typeof(string)
                     ? DataParser.Primitive<T>(rdr)
                     : DataParser.Object(rdr, Options.MappingOrientation, altr);
 
-                return await result;
+                return result;
             }
             finally
             {

@@ -125,6 +125,27 @@ namespace Sqlist.NET.Abstractions
 #endif
         }
 
+        /// <inheritdoc />
+        public virtual Task<object> ExecuteScalarAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
+        {
+#if TRACE
+            return ExecuteQueryAsync(nameof(ExecuteScalarAsync), () =>
+            {
+#endif
+                return InternalExecuteScalarAsync(sql, prms, timeout, type);
+#if TRACE
+            });
+#endif
+        }
+
+        /// <inheritdoc />
+        public virtual object ExecuteScalar(string sql, object prms = null, int? timeout = null, CommandType? type = null)
+        {
+            return ExecuteScalarAsync(sql, prms, timeout, type).Result;
+        }
+
+        protected internal abstract Task<object> InternalExecuteScalarAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null);
+
         protected internal abstract Task<int> InternalExecuteAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null);
 
         protected internal abstract Task<IEnumerable<T>> InternalRetrieveAsync<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null);
