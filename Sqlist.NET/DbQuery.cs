@@ -132,7 +132,12 @@ namespace Sqlist.NET
             ThrowIfDisposed();
 
             var cmd = _db.Connection.CreateCommand(sql, prms, timeout, type);
-            return cmd.ExecuteScalarAsync();
+            var task = cmd.ExecuteScalarAsync();
+            
+            var action = RegisterDelayer();
+            task.GetAwaiter().OnCompleted(action);
+
+            return task;
         }
 
         protected internal override Task<int> InternalExecuteAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
@@ -140,7 +145,12 @@ namespace Sqlist.NET
             ThrowIfDisposed();
 
             var cmd = _db.Connection.CreateCommand(sql, prms, timeout, type);
-            return cmd.ExecuteNonQueryAsync();
+            var task = cmd.ExecuteNonQueryAsync();
+
+            var action = RegisterDelayer();
+            task.GetAwaiter().OnCompleted(action);
+
+            return task;
         }
 
         protected internal override Task<IEnumerable<T>> InternalRetrieveAsync<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null)

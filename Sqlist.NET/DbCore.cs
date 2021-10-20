@@ -220,16 +220,9 @@ namespace Sqlist.NET
         {
             ThrowIfDisposed();
 
-            var conn = lcl::DbConnection.CreateFor(this);
-            try
-            {
-                var cmd = conn.CreateCommand(sql, prms, timeout, type);
-                return cmd.ExecuteScalarAsync();
-            }
-            finally
-            {
-                conn.Dispose();
-            }
+            using var conn = lcl::DbConnection.CreateFor(this);
+            var cmd = conn.CreateCommand(sql, prms, timeout, type);
+            return cmd.ExecuteScalarAsync();
         }
 
         /// <inheritdoc />
@@ -237,16 +230,9 @@ namespace Sqlist.NET
         {
             ThrowIfDisposed();
 
-            var conn = lcl::DbConnection.CreateFor(this);
-            try
-            {
-                var cmd = conn.CreateCommand(sql, prms, timeout, type);
-                return cmd.ExecuteNonQueryAsync();
-            }
-            finally
-            {
-                conn.Dispose();
-            }
+            using var conn = lcl::DbConnection.CreateFor(this);
+            var cmd = conn.CreateCommand(sql, prms, timeout, type);
+            return cmd.ExecuteNonQueryAsync();
         }
 
         /// <inheritdoc />
@@ -254,23 +240,16 @@ namespace Sqlist.NET
         {
             ThrowIfDisposed();
 
-            var conn = lcl::DbConnection.CreateFor(this);
-            try
-            {
-                var cmd = conn.CreateCommand(sql, prms, timeout, type);
-                var rdr = cmd.ExecuteReaderAsync();
+            using var conn = lcl::DbConnection.CreateFor(this);
+            var cmd = conn.CreateCommand(sql, prms, timeout, type);
+            var rdr = cmd.ExecuteReaderAsync();
 
-                var objType = typeof(T);
-                var result = objType.IsPrimitive || objType.IsValueType || objType.IsArray || objType == typeof(string)
-                    ? DataParser.Primitive<T>(rdr)
-                    : DataParser.Object(rdr, Options.MappingOrientation, altr);
+            var objType = typeof(T);
+            var result = objType.IsPrimitive || objType.IsValueType || objType.IsArray || objType == typeof(string)
+                ? DataParser.Primitive<T>(rdr)
+                : DataParser.Object(rdr, Options.MappingOrientation, altr);
 
-                return result;
-            }
-            finally
-            {
-                conn.Dispose();
-            }
+            return result;
         }
 
         /// <inheritdoc />
