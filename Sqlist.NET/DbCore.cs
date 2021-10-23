@@ -166,6 +166,9 @@ namespace Sqlist.NET
         {
             ThrowIfDisposed();
 
+            if (_conn is null)
+                _conn = lcl::DbConnection.CreateFor(this);
+
             var query = new DbQuery(this);
             _queries.Add(query.Id);
 
