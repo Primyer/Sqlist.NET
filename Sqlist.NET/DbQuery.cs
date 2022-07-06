@@ -164,7 +164,7 @@ namespace Sqlist.NET
             rdr.Fetched += () => action();
 
             var objType = typeof(T);
-            var result = !objType.IsClass || objType.IsArray
+            var result = objType.IsPrimitive || objType.IsValueType || objType.IsArray || objType == typeof(string)
                 ? DataParser.Primitive<T>(rdr)
                 : DataParser.Object(rdr, _db.Options.MappingOrientation, altr);
 

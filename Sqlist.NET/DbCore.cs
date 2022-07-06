@@ -124,12 +124,23 @@ namespace Sqlist.NET
         /// </summary>
         public virtual void BeginTransaction()
         {
+            BeginTransactionAsync().Wait();
+        }
+
+        /// <summary>
+        ///     Starts a database transaction.
+        /// </summary>
+        public virtual async Task BeginTransactionAsync()
+        {
             ThrowIfDisposed();
 
             if (_conn == null)
                 throw new InvalidOperationException("A transaction can only be applied within a DbQuery");
 
-            _trans = _conn.Underlying.BeginTransaction();
+            if (_conn.Underlying.State != ConnectionState.Open)
+                await _conn.Underlying.OpenAsync();
+
+            _trans = await _conn.Underlying.BeginTransactionAsync();
         }
 
         /// <summary>
@@ -137,12 +148,20 @@ namespace Sqlist.NET
         /// </summary>
         public virtual void CommitTransaction()
         {
+            CommitTransactionAsync().Wait();
+        }
+
+        /// <summary>
+        ///     Commits the database transaction.
+        /// </summary>
+        public virtual Task CommitTransactionAsync()
+        {
             ThrowIfDisposed();
 
             if (_trans == null)
                 throw new DbTransactionException("No transaction to be committed.");
 
-            _trans.Commit();
+            return _trans.CommitAsync();
         }
 
         /// <summary>
@@ -150,12 +169,20 @@ namespace Sqlist.NET
         /// </summary>
         public virtual void RollbackTransaction()
         {
+            RollbackTransactionAsync().Wait();
+        }
+
+        /// <summary>
+        ///     Rolls back a transaction from a pending state.
+        /// </summary>
+        public virtual Task RollbackTransactionAsync()
+        {
             ThrowIfDisposed();
 
             if (_trans == null)
-                throw new DbTransactionException("No transaction to be rolled back.");
+                throw new DbTransactionException("No transaction to be rolled Wback.");
 
-            _trans.Rollback();
+            return _trans.RollbackAsync();
         }
 
         /// <summary>
@@ -183,7 +210,7 @@ namespace Sqlist.NET
         {
             ThrowIfDisposed();
 
-            _queries.Remove(qry.Id);
+            _queries.RemoveAll(guid => guid == qry.Id);
 
             if (_queries.Count == 0)
             {

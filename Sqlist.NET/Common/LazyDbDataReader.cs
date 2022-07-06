@@ -9,8 +9,6 @@ namespace Sqlist.NET.Common
 {
     public class LazyDbDataReader
     {
-        private Task<ado::DbDataReader> _lazyReader;
-
         public delegate void FetchEvent();
 
         public event FetchEvent Fetched;
@@ -22,7 +20,7 @@ namespace Sqlist.NET.Common
         {
             Check.NotNull(reader, nameof(reader));
 
-            _lazyReader = Task.FromResult(reader);
+            Reader = Task.FromResult(reader);
         }
 
         /// <summary>
@@ -32,25 +30,19 @@ namespace Sqlist.NET.Common
         {
             Check.NotNull(lazyReader, nameof(lazyReader));
 
-            _lazyReader = lazyReader;
+            Reader = lazyReader;
         }
+
+        public Task<ado::DbDataReader> Reader { get; }
 
         public async Task IterateAsync(Action<ado::DbDataReader> action)
         {
-            using var reader = await _lazyReader;
+            using var reader = await Reader;
 
             while (await reader.ReadAsync())
                 action.Invoke(reader);
 
             Fetched?.Invoke();
-        }
-
-        public async Task<ado::DbDataReader> GetReaderAsync()
-        {
-            var reader = await _lazyReader;
-            _lazyReader = Task.FromResult(reader);
-
-            return reader;
         }
     }
 }

@@ -109,6 +109,41 @@ namespace Sqlist.NET
         }
 
         /// <summary>
+        ///     Registers the specified <paramref name="pair"/>.
+        /// </summary>
+        /// <param name="pair">The pair to register.</param>
+        public virtual void RegisterPairFields((string, string) pair)
+        {
+            var builder = GetOrCreateBuilder("pairs");
+            if (builder.Length != 0)
+                builder.Append($",\n{Tab}");
+
+            builder.Append(_enc.Reformat(pair.Item1));
+            builder.Append(" = ");
+            builder.Append(_enc.Replace(pair.Item2));
+        }
+
+        public virtual void RegisterPairFields(Dictionary<string, string> pairs)
+        {
+            var builder = GetOrCreateBuilder("pairs");
+            if (builder.Length != 0)
+                builder.Append($",\n{Tab}");
+
+            var count = 0;
+            foreach (var (key, value) in pairs)
+            {
+                builder.Append(_enc.Reformat(key));
+                builder.Append(" = ");
+                builder.Append(_enc.Replace(value));
+
+                if (count != pairs.Count - 1)
+                    builder.Append($",\n{Tab}");
+
+                count++;
+            }
+        }
+
+        /// <summary>
         ///     Registers the specified <paramref name="row"/> as values.
         /// </summary>
         /// <param name="row">The row to register.</param>
@@ -603,13 +638,18 @@ namespace Sqlist.NET
             GetOrCreateBuilder("returning").Append(result);
         }
 
+        public virtual void RegisterConflictConstraint(string constraint)
+        {
+            _builders["conflict"] = new StringBuilder($"on constraint \"{constraint}\"");
+        }
+
         /// <summary>
         ///     Registers the fields for the conflict statement.
         /// </summary>
         /// <param name="keys">The conflict fields.</param>
         public virtual void RegisterConflictFields(params string[] keys)
         {
-            var builder = _builders["conflict"] = new StringBuilder();
+            var builder = _builders["conflict"] = new StringBuilder("(");
 
             for (var i = 0; i < keys.Length; i++)
             {
@@ -619,6 +659,7 @@ namespace Sqlist.NET
                 if (i != keys.Length - 1)
                     builder.Append(", ");
             }
+            builder.Append(")");
         }
 
         /// <summary>
@@ -668,8 +709,9 @@ namespace Sqlist.NET
         /// <summary>
         ///     Generates and returns a <c>DELETE</c> statement from the specified configurations.
         /// </summary>
+        /// <param name="cascade">The flag indicating whether to cascade depending records.</param>
         /// <returns>A <c>DELETE</c> statement.</returns>
-        public virtual string ToDelete()
+        public virtual string ToDelete(bool cascade = false)
         {
             var result = new StringBuilder();
 
@@ -678,18 +720,30 @@ namespace Sqlist.NET
                 result.AppendLine(withQueries);
 
             result.Append("delete from " + TableName);
+
+            if (cascade)
+                result.Append(" cascade");
+
             result.Append(GetBuilderContent("where"));
             result.Append(GetBuilderContent("returning"));
             return result.ToString();
         }
 
         /// <summary>
-        ///     Generates and returns an <c>iNSERT</c> statement from the specified configurations.
+        ///     Generates and returns an <c>INSERT</c> statement from the specified configurations.
         /// </summary>
         /// <returns>A <c>iNSERT</c> statement.</returns>
         public virtual string ToInsert()
         {
-            return GenerateTemplate(new[] { "insert into ", TableName, " (", "@fields", ")\nvalues ", "@values", "@where", "@returning" });
+            var result = new StringBuilder($"insert into {TableName} (");
+
+            result.Append(GetBuilderContent("fields"));
+            result.Append(")\nvalues ");
+            result.Append(GetBuilderContent("values"));
+            result.AppendLine(GetBuilderContent("where"));
+            result.Append(GetBuilderContent("returning"));
+
+            return result.ToString();
         }
 
         /// <summary>
@@ -698,10 +752,40 @@ namespace Sqlist.NET
         /// <returns>A <c>INSERT ON CONFLICT</c> statement.</returns>
         public virtual string ToInsertOrUpdate()
         {
-            return GenerateTemplate(new[]
-            {
-                "insert into ", TableName, " (", "@fields", ")\nvalues ", "@values", "@where", "\non conflict (", "@conflict", ") do\n", "update set ", "@pairs"
-            });
+            var result = new StringBuilder($"insert into {TableName} (");
+
+            result.Append(GetBuilderContent("fields"));
+            result.Append(")\nvalues ");
+            result.Append(GetBuilderContent("values"));
+            result.AppendLine(GetBuilderContent("where"));
+            result.Append("on conflict ");
+            result.Append(GetBuilderContent("conflict"));
+            result.AppendLine(" do");
+            result.Append("update set ");
+            result.Append(GetBuilderContent("pairs"));
+            result.Append(GetBuilderContent("returning"));
+
+            return result.ToString();
+        }
+
+        /// <summary>
+        ///     Generates and returns a bulk <c>UPDATE</c> statement out of the specified configurations.
+        /// </summary>
+        /// <param name="alias">The alias used to retrieve the values.</param>
+        /// <returns>A <c>UPDATE</c> statement.</returns>
+        public virtual string ToBulkUpdate(string alias)
+        {
+            if (_sqlStyle != SqlStyle.PL_pgSQL)
+                throw new NotSupportedException($"ToBulkUpdate() is not supported for '{_sqlStyle}'");
+
+            var builder = new StringBuilder("update " + TableName + " set \n");
+            builder.AppendLine(Tab + GetBuilderContent("pairs"));
+            builder.AppendLine("from (values");
+            builder.AppendLine(Tab + GetBuilderContent("values"));
+            builder.Append($") as {alias}(" + GetBuilderContent("fields") + ")");
+            builder.AppendLine(GetBuilderContent("where"));
+
+            return builder.ToString();
         }
 
         /// <summary>

@@ -1,6 +1,8 @@
 ﻿using Sqlist.NET.Abstractions;
 using Sqlist.NET.Utilities;
 
+using System.Threading.Tasks;
+
 namespace Sqlist.NET
 {
     /// <summary>
@@ -34,6 +36,15 @@ namespace Sqlist.NET
         }
 
         /// <summary>
+        ///     Starts a database transaction.
+        /// </summary>
+        public Task BeginAsync()
+        {
+            _query = _db.Query();
+            return _db.BeginTransactionAsync();
+        }
+
+        /// <summary>
         ///     Commits a database transaction.
         /// </summary>
         public void Commit()
@@ -45,11 +56,33 @@ namespace Sqlist.NET
         }
 
         /// <summary>
+        ///     Commits a database transaction.
+        /// </summary>
+        public async Task CommitAsync()
+        {
+            await _db.CommitTransactionAsync();
+
+            _query.Dispose();
+            _query = null;
+        }
+
+        /// <summary>
         ///     Rolls back a transaction from a pending state.
         /// </summary>
         public void Rollback()
         {
             _db.RollbackTransaction();
+
+            _query.Dispose();
+            _query = null;
+        }
+
+        /// <summary>
+        ///     Rolls back a transaction from a pending state.
+        /// </summary>
+        public async Task RollbackAsync()
+        {
+            await _db.RollbackTransactionAsync();
 
             _query.Dispose();
             _query = null;

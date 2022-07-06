@@ -116,10 +116,7 @@ namespace Sqlist.NET.Abstractions
             {
 #endif
                 var result = await RetrieveAsync<T>(sql, prms, null, timeout, type);
-                if (result.Count() != 1)
-                    return default;
-
-                return result.First();
+                return result.SingleOrDefault();
 #if TRACE
             });
 #endif

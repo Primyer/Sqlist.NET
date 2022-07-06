@@ -22,6 +22,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
+using System.Data.Common;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -51,8 +53,7 @@ namespace Sqlist.NET.Utilities
         ///     </para>
         /// </summary>
         /// <remarks>
-        ///     An exception is to be thrown if the object doesn't including properties that
-        ///     match the query result.
+        ///     An exception is to be thrown if the object's properties doesn't match the query result.
         /// </remarks>
         QueryOriented = 1
     }
@@ -77,7 +78,7 @@ namespace Sqlist.NET.Utilities
             var acsr = TypeAccessor.Create(typeof(T));
             var data = new List<T>();
 
-            var rdr = await lazyReader.GetReaderAsync();
+            var rdr = await lazyReader.Reader;
             var names = orientation switch
             {
                 MappingOrientation.ObjectOriented => GetObjectOrientedNames<T>(rdr),
@@ -148,6 +149,7 @@ namespace Sqlist.NET.Utilities
 
             var count = 0;
             var names = new string[reader.FieldCount];
+
             for (var i = 0; i < reader.FieldCount; i++)
             {
                 var name = reader.GetName(i);
@@ -158,10 +160,8 @@ namespace Sqlist.NET.Utilities
                     names[i] = propNames[indx];
                     count++;
                 }
+                else throw new InvalidOperationException($"The object properties don't match the result fields. '{name}' is missing.");
             }
-
-            if (count != names.Length)
-                throw new InvalidOperationException("The object properties don't match the result fields.");
 
             return names;
         }
