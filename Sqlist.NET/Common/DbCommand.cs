@@ -154,6 +154,12 @@ namespace Sqlist.NET.Common
 
             IterateParamters(prms, (name, value) =>
             {
+                if (value is object[][] bulk)
+                {
+                    ConfigureBulkParameters(cmd, bulk);
+                    return;
+                }
+
                 var prm = cmd.CreateParameter();
 
                 prm.ParameterName = name;

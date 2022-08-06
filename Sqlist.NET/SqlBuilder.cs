@@ -18,6 +18,7 @@ using Sqlist.NET.Utilities;
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace Sqlist.NET
@@ -330,10 +331,9 @@ namespace Sqlist.NET
 
             var builder = GetOrCreateBuilder("fields");
             if (builder.Length != 0)
-                builder.Append(",\n" + Tab);
+                builder.Append(", ");
 
-            _enc.Reformat(ref field);
-            builder.Append(field);
+            builder.Append(_enc.Reformat(field));
         }
 
         /// <summary>
@@ -346,15 +346,14 @@ namespace Sqlist.NET
 
             var builder = GetOrCreateBuilder("fields");
             if (builder.Length != 0)
-                builder.Append(",\n" + Tab);
+                builder.Append(", ");
 
             for (var i = 0; i < fields.Length; i++)
             {
-                _enc.Wrap(ref fields[i]);
-                builder.Append(fields[i]);
+                builder.Append(_enc.Reformat(fields[i]));
 
                 if (i != fields.Length - 1)
-                    builder.Append(",\n" + Tab);
+                    builder.Append(", ");
             }
         }
 
@@ -518,32 +517,65 @@ namespace Sqlist.NET
         /// <param name="fields">The fields to output.</param>
         /// <param name="body">The body in string format.</param>
         /// <param name="recursive">The flag that indicates whether CTE is recursive.</param>
-        public virtual void RegisterWith(string name, string[] fields, string body, bool recursive = false)
+        public virtual async void RegisterWith(string name, string[] fields, string body, bool recursive = false)
         {
             Check.NotNullOrEmpty(name, nameof(name));
             Check.NotNullOrEmpty(body, nameof(body));
 
             var builder = GetOrCreateBuilder("with_queries");
-            if (builder.Length == 0)
-            {
-                builder.Append("with ");
-            }
-            else
-                builder.Append(",\n");
+            
+            builder.Append(builder.Length == 0 ? "with " : ",\n");
 
-            if (recursive)
-            {
-                if (builder.Length == 5 || builder[5] != 'r')
-                    builder.Insert(5, "recursive ");
-            }
+            if (recursive && (builder.Length == 5 || builder[5] != 'r'))
+                builder.Insert(5, "recursive ");
 
-            _enc.Wrap(ref name);
-            builder.Append(name);
+            builder.Append(_enc.Wrap(name));
 
             if (fields.Length != 0)
                 builder.Append($" ({_enc.Join(", ", fields)})");
 
-            builder.Append($" as (\n{body}\n)");
+            builder.AppendLine(" as (");
+
+            var reader = new StringReader(body);
+            string line;
+
+            while (null != (line = await reader.ReadLineAsync()))
+                builder.AppendLine(Tab + line);
+
+            builder.Append($")");
+        }
+
+        /// <summary>
+        ///     Registers a <c>WITH</c> query with the specified <paramref name="name"/>,
+        ///     output <paramref name="fields"/> that represents the data for the given number of <paramref name="rows"/>.
+        /// </summary>
+        /// <param name="name">The name of the CTE.</param>
+        /// <param name="fields">The fields to output.</param>
+        /// <param name="rows">The number of rows to generate parameters for.</param>
+        public virtual void RegisterWithData(string name, string[] fields, int rows)
+        {
+            var len = fields.Length;
+            var body = new StringBuilder("values\n");
+
+            for (var i = 0; i < rows; i++)
+            {
+                body.Append(Tab + "(");
+
+                for (var j = 0; j < len; j++)
+                {
+                    body.Append("@p" + (j + i * len));
+
+                    if (j < len - 1)
+                        body.Append(", ");
+                }
+
+                body.Append(")");
+
+                if (i < rows - 1)
+                    body.AppendLine(",\n");
+            }
+
+            RegisterWith(name, fields, body.ToString());
         }
 
         /// <summary>
@@ -628,8 +660,7 @@ namespace Sqlist.NET
             else
                 for (var i = 0; i < fields.Length; i++)
                 {
-                    _enc.Wrap(ref fields[i]);
-                    result += fields[i];
+                    result += _enc.Reformat(fields[i]);
 
                     if (i != fields.Length - 1)
                         result += ", ";
@@ -732,15 +763,34 @@ namespace Sqlist.NET
         /// <summary>
         ///     Generates and returns an <c>INSERT</c> statement from the specified configurations.
         /// </summary>
+        /// <param name="select">The action to specify the select body of the insertion.</param>
         /// <returns>A <c>iNSERT</c> statement.</returns>
-        public virtual string ToInsert()
+        public virtual string ToInsert(Action<SqlBuilder> select = null)
         {
-            var result = new StringBuilder($"insert into {TableName} (");
+            var result = new StringBuilder();
+            
+            var withQueries = GetBuilderContent("with_queries");
+            if (withQueries != null)
+                result.AppendLine(withQueries);
 
+            result.Append($"insert into {TableName} (");
             result.Append(GetBuilderContent("fields"));
-            result.Append(")\nvalues ");
-            result.Append(GetBuilderContent("values"));
-            result.AppendLine(GetBuilderContent("where"));
+            result.AppendLine(")");
+
+            if (select is null)
+            {
+                result.Append("values ");
+                result.Append(GetBuilderContent("values"));
+                result.AppendLine(GetBuilderContent("where"));
+            }
+            else
+            {
+                var sql = new SqlBuilder();
+
+                select.Invoke(sql);
+                result.Append(sql.ToSelect());
+            }
+
             result.Append(GetBuilderContent("returning"));
 
             return result.ToString();

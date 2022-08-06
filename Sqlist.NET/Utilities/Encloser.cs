@@ -89,8 +89,7 @@ namespace Sqlist.NET.Utilities
             var result = string.Empty;
             for (int i = 0; i < vals.Length; i++)
             {
-                Wrap(ref vals[i]);
-                result += vals[i];
+                result += Wrap(vals[i]);
 
                 if (i != vals.Length - 1)
                     result += delimiter;
