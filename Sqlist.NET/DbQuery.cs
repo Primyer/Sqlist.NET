@@ -14,16 +14,11 @@
 // limitations under the License.
 #endregion
 
-using Microsoft.Extensions.Logging;
-
 using Sqlist.NET.Abstractions;
+using Sqlist.NET.Common;
 using Sqlist.NET.Utilities;
 
 using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Diagnostics;
-using System.Threading.Tasks;
 
 namespace Sqlist.NET
 {
@@ -48,22 +43,17 @@ namespace Sqlist.NET
         ///     Initializes a new instance of the <see cref="DbQuery"/> class.
         /// </summary>
         /// <param name="db">The source <see cref="DbCore"/>.</param>
-        internal DbQuery(DbCore db)
+        internal DbQuery(DbCore db) : base(db.Options, db.Logger)
         {
             Check.NotNull(db, nameof(db));
 
             _db = db;
-
-            Id = Guid.NewGuid();
-#if TRACE
-            db.Logger.LogTrace("Query prepared over conn:[" + db.Connection.Id + "]. ID: [" + Id + "]");
-#endif
         }
 
         /// <summary>
         ///     Gets the ID of this query.
         /// </summary>
-        public Guid Id { get; }
+        public Guid Id { get; } = Guid.NewGuid();
 
         /// <summary>
         ///     Gets or sets the flag indicating whether to terminate the connection at the end
@@ -78,45 +68,10 @@ namespace Sqlist.NET
             {
                 _db.FinalizeQuery(this);
                 _disposed = true;
-#if TRACE
-                _db.Logger.LogTrace("Query released. ID: [" + Id + "]");
-#endif
             }
         }
 
-        /// <summary>
-        ///     Throws an exception if this object was already disposed.
-        /// </summary>
-        /// <exception cref="ObjectDisposedException" />
-        private void ThrowIfDisposed()
-        {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(DbQuery));
-        }
-
-        /// <inheritdoc />
-        protected override async Task<T> ExecuteQueryAsync<T>(string name, Func<Task<T>> func)
-        {
-            _db.Logger.LogTrace("Executing query[{id}] ({name}) over conn[{connId}]", Id, name, _db.Connection.Id);
-
-            try
-            {
-                var sw = Stopwatch.StartNew();
-                var result = await func.Invoke();
-                sw.Stop();
-
-                _db.Logger.LogTrace("Query[{id}] ({name}) succeeded. Elapsed time: {time}ms", Id, name, sw.ElapsedMilliseconds);
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _db.Logger.LogError("Query[{id}] ({name}) failed", Id, name);
-                throw ex;
-            }
-        }
-
-        internal Action RegisterDelayer()
+        protected override Action OnCommandCompleted()
         {
             _delayQueueLength++;
 
@@ -127,48 +82,12 @@ namespace Sqlist.NET
             };
         }
 
-        protected internal override Task<object> InternalExecuteScalarAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
+        protected override DbConnection GetConnection()
         {
-            ThrowIfDisposed();
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(DbQuery));
 
-            var cmd = _db.Connection.CreateCommand(sql, prms, timeout, type);
-            var task = cmd.ExecuteScalarAsync();
-            
-            var action = RegisterDelayer();
-            task.GetAwaiter().OnCompleted(action);
-
-            return task;
-        }
-
-        protected internal override Task<int> InternalExecuteAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
-        {
-            ThrowIfDisposed();
-
-            var cmd = _db.Connection.CreateCommand(sql, prms, timeout, type);
-            var task = cmd.ExecuteNonQueryAsync();
-
-            var action = RegisterDelayer();
-            task.GetAwaiter().OnCompleted(action);
-
-            return task;
-        }
-
-        protected internal override Task<IEnumerable<T>> InternalRetrieveAsync<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null)
-        {
-            ThrowIfDisposed();
-
-            var cmd = _db.Connection.CreateCommand(sql, prms, timeout);
-            var rdr = cmd.ExecuteReaderAsync();
-
-            var action = RegisterDelayer();
-            rdr.Fetched += () => action();
-
-            var objType = typeof(T);
-            var result = objType.IsPrimitive || objType.IsValueType || objType.IsArray || objType == typeof(string)
-                ? DataParser.Primitive<T>(rdr)
-                : DataParser.Object(rdr, _db.Options.MappingOrientation, altr);
-
-            return result;
+            return _db.Connection;
         }
     }
 }

@@ -73,6 +73,55 @@ namespace Sqlist.NET.Abstractions
         IEnumerable<T> Retrieve<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null);
 
         /// <summary>
+        ///     Executes the specified <paramref name="sql"/> statement against the data source,
+        ///     and returns an <see cref="IEnumerable{T}"/> serialization of the result, as an asynchronous operation.
+        /// </summary>
+        /// <param name="sql">The SQL statement to run against the data source.</param>
+        /// <param name="prms">The parameters associated with the given statement.</param>
+        /// <param name="altr">The action to modify the generated models within the mapping process.</param>
+        /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
+        /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
+        /// <returns>
+        ///     The <see cref="Task"/> object that represents the asynchronous operation, containing the <see cref="IEnumerable{T}"/> as result.
+        /// </returns>
+        Task<IEnumerable<T>> RetrieveJsonAsync<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null);
+
+        /// <summary>
+        ///     Executes the specified <paramref name="sql"/> statement against the data source,
+        ///     and returns an <see cref="IEnumerable{T}"/> serialization of the result.
+        /// </summary>
+        /// <param name="sql">The SQL statement to run against the data source.</param>
+        /// <param name="prms">The parameters associated with the given statement.</param>
+        /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
+        /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
+        /// <returns>An <see cref="IEnumerable{T}"/> as result.</returns>
+        IEnumerable<T> RetrieveJson<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null);
+
+        /// <summary>
+        ///     Executes the specified <paramref name="sql"/> statement against the data source, and returns the serialization the first row of
+        ///     the result, if any; otherwise, <see langword="null" />.
+        /// </summary>
+        /// <param name="sql">The SQL statement to run against the data source.</param>
+        /// <param name="prms">The parameters associated with the given statement.</param>
+        /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
+        /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
+        /// <returns>
+        ///     The <see cref="Task"/> object that represents the asynchronous operation, containing the serialization of the first row of the result, if any.
+        /// </returns>
+        Task<T> JsonAsync<T>(string sql, object prms = null, int? timeout = null, CommandType? type = null);
+
+        /// <summary>
+        ///     Executes the specified <paramref name="sql"/> statement against the data source, and returns the serialization the first row of
+        ///     the result, if any; otherwise, <see langword="null" />.
+        /// </summary>
+        /// <param name="sql">The SQL statement to run against the data source.</param>
+        /// <param name="prms">The parameters associated with the given statement.</param>
+        /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
+        /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
+        /// <returns>The serialization of the first row of the result, if any.</returns>
+        T Json<T>(string sql, object prms = null, int? timeout = null, CommandType? type = null);
+
+        /// <summary>
         ///     Executes the specified <paramref name="sql"/> statement against the data source, and returns the first row of
         ///     the result, if any; otherwise, <see langword="null" />.
         /// </summary>
@@ -81,7 +130,7 @@ namespace Sqlist.NET.Abstractions
         /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
         /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
         /// <returns>
-        ///     The <see cref="Task"/> object that represents the asynchronous operation, containing an first result of the result, if any.
+        ///     The <see cref="Task"/> object that represents the asynchronous operation, containing the first row of the result, if any.
         /// </returns>
         Task<T> FirstOrDefaultAsync<T>(string sql, object prms = null, int? timeout = null, CommandType? type = null);
 

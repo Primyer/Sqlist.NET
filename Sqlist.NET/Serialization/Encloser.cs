@@ -14,7 +14,8 @@
 // limitations under the License.
 #endregion
 
-namespace Sqlist.NET.Utilities
+
+namespace Sqlist.NET.Serialization
 {
     public class Encloser
     {

@@ -16,50 +16,35 @@
 
 using FastMember;
 
+using Sqlist.NET.Annotations;
 using Sqlist.NET.Common;
+using Sqlist.NET.Metadata;
 
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
-using System.Data.Common;
-using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace Sqlist.NET.Utilities
+namespace Sqlist.NET.Serialization
 {
-    /// <summary>
-    ///     Represents the orientation of data mapping.
-    /// </summary>
-    public enum MappingOrientation
-    {
-        /// <summary>
-        ///     Object oriented mapping. Means that the mapping will be proceeded according
-        ///     to the properties in a given object as base. So, the queries will be forced
-        ///     to return the a result that matches all the properties within the object.
-        /// </summary>
-        /// <remarks>
-        ///     An exception is to be thrown if the query doesn't match the object.
-        /// </remarks>
-        ObjectOriented = 0,
 
-        /// <summary>
-        ///     Query oriented mapping. Means that the mapping will be proceeded according
-        ///     to the fields return by a query. So, only the fields returned by the query
-        ///     are to be mapped even if a given object has more propeties.
-        ///     <para>
-        ///         Note that this approach is more expensive.
-        ///     </para>
-        /// </summary>
-        /// <remarks>
-        ///     An exception is to be thrown if the object's properties doesn't match the query result.
-        /// </remarks>
-        QueryOriented = 1
-    }
-
-    internal static class DataParser
+    internal static class DataSerializer
     {
+        public static async Task<IEnumerable<T>> Json<T>(LazyDbDataReader lazyReader)
+        {
+            var data = new List<T>();
+
+            await lazyReader.IterateAsync(reader =>
+            {
+                var value = JsonSerializer.Deserialize<T>(reader.GetString(0));
+                data.Add(value);
+            });
+            return data;
+        }
+
         public static async Task<IEnumerable<T>> Primitive<T>(LazyDbDataReader lazyReader)
         {
             var type = typeof(T);
@@ -91,14 +76,14 @@ namespace Sqlist.NET.Utilities
 
                 for (var i = 0; i < reader.FieldCount; i++)
                 {
-                    var name = names[i];
-                    if (name is null) continue;
+                    var field = names[i];
+                    if (field is null) continue;
 
                     var val = reader.GetValue(i);
                     if (val is DBNull)
-                        acsr[model, name] = null;
+                        acsr[model, field.Name] = null;
                     else
-                        acsr[model, name] = val;
+                        acsr[model, field.Name] = field.Parse(val);
                 }
 
                 altr?.Invoke(model);
@@ -107,63 +92,78 @@ namespace Sqlist.NET.Utilities
             return data;
         }
 
-        private static string[] GetObjectOrientedNames<T>(IDataReader reader)
+        private static SerializationField[] GetObjectOrientedNames<T>(IDataReader reader)
         {
-            var props = typeof(T).GetProperties();
-            var names = new string[reader.FieldCount];
+            var fields = new SerializationField[reader.FieldCount];
 
             var count = 0;
-            foreach (var prop in props)
+            foreach (var prop in typeof(T).GetProperties())
             {
                 if (prop.GetCustomAttribute<NotMappedAttribute>() != null)
                     continue;
 
-                var attr = prop.GetCustomAttribute<ColumnAttribute>();
-                names[reader.GetOrdinal(attr?.Name ?? prop.Name)] = prop.Name;
+                var jsonAttr = prop.GetCustomAttribute<JsonAttribute>();
+                var clmnAttr = prop.GetCustomAttribute<ColumnAttribute>();
+
+                var field = jsonAttr is null
+                    ? new SerializationField()
+                    : new JsonField(prop.PropertyType);
+
+                field.Name = prop.Name;
+                fields[reader.GetOrdinal(clmnAttr?.Name ?? prop.Name)] = field;
 
                 count++;
             }
 
-            if (count != names.Length)
+            if (count != fields.Length)
                 throw new InvalidOperationException("The result fields don't match the object properties.");
 
-            return names;
+            return fields;
         }
 
-        private static string[] GetQueryOrientedNames<T>(IDataReader reader)
+        private static SerializationField[] GetQueryOrientedNames<T>(IDataReader reader)
         {
             var props = typeof(T).GetProperties();
-            var fields = new string[props.Length];
-            var propNames = new string[props.Length];
 
-            for (var i = 0; i < fields.Length; i++)
+            var serFields = new SerializationField[props.Length];
+            var dbColumns = new string[props.Length];
+
+            for (var i = 0; i < dbColumns.Length; i++)
             {
                 var prop = props[i];
                 if (prop.GetCustomAttribute<NotMappedAttribute>() != null)
                     continue;
 
-                var attr = prop.GetCustomAttribute<ColumnAttribute>();
-                fields[i] = attr?.Name ?? prop.Name;
-                propNames[i] = prop.Name;
+                var jsonAttr = prop.GetCustomAttribute<JsonAttribute>();
+                var clmnAttr = prop.GetCustomAttribute<ColumnAttribute>();
+
+                var field = jsonAttr is null
+                    ? new SerializationField()
+                    : new JsonField(prop.PropertyType);
+
+                field.Name = prop.Name;
+
+                dbColumns[i] = clmnAttr?.Name ?? prop.Name;
+                serFields[i] = field;
             }
 
             var count = 0;
-            var names = new string[reader.FieldCount];
+            var fields = new SerializationField[reader.FieldCount];
 
             for (var i = 0; i < reader.FieldCount; i++)
             {
                 var name = reader.GetName(i);
-                var indx = Array.IndexOf(fields, name);
+                var indx = Array.IndexOf(dbColumns, name);
 
                 if (indx != -1)
                 {
-                    names[i] = propNames[indx];
+                    fields[i] = serFields[indx];
                     count++;
                 }
-                else throw new InvalidOperationException($"The object properties don't match the result fields. '{name}' is missing.");
+                else throw new InvalidOperationException($"The object properties don't match the result fields. '{name}' is missing in '{typeof(T).FullName}'.");
             }
 
-            return names;
+            return fields;
         }
     }
 }

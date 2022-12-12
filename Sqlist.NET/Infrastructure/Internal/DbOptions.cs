@@ -14,8 +14,7 @@
 // limitations under the License.
 #endregion
 
-using Sqlist.NET.Utilities;
-
+using Sqlist.NET.Metadata;
 using System;
 using System.Data.Common;
 using System.Reflection;

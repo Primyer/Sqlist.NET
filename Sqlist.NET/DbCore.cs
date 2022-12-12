@@ -17,17 +17,16 @@
 using Microsoft.Extensions.Logging;
 
 using Sqlist.NET.Abstractions;
+using Sqlist.NET.Common;
 using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Utilities;
 
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
 using System.Threading.Tasks;
 
 using ado = System.Data.Common;
-using lcl = Sqlist.NET.Common;
 
 namespace Sqlist.NET
 {
@@ -40,20 +39,20 @@ namespace Sqlist.NET
 
         private bool _disposed = false;
 
-        private lcl::DbConnection _conn;
+        private DbConnection _conn;
         private ado::DbTransaction _trans;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="DbCore"/> class.
         /// </summary>
         /// <param name="options">The Sqlist configuration options.</param>
-        public DbCore(DbOptions options, ILogger<DbCore> log)
+        public DbCore(DbOptions options, ILogger<DbCore> logger) : base(options, logger)
         {
             Check.NotNull(options, nameof(options));
-            Check.NotNull(log, nameof(log));
+            Check.NotNull(logger, nameof(logger));
 
             Options = options;
-            Logger = log;
+            Logger = logger;
 
             Id = Guid.NewGuid();
             Logger.LogDebug("DB created. ID:[" + Id + "]");
@@ -70,9 +69,9 @@ namespace Sqlist.NET
         /// <remarks>
         ///     Only applicable with a <see cref="DbQuery"/>.
         /// </remarks>
-        public lcl::DbConnection Connection
+        public DbConnection Connection
         {
-            get => _conn ??= lcl::DbConnection.CreateFor(this);
+            get => _conn ??= DbConnection.CreateFor(this);
             internal set
             {
                 _conn = value;
@@ -117,6 +116,11 @@ namespace Sqlist.NET
         {
             if (_disposed)
                 throw new ObjectDisposedException(GetType().Name);
+        }
+
+        protected override DbConnection GetConnection()
+        {
+            return DbConnection.CreateFor(this);
         }
 
         /// <summary>
@@ -193,8 +197,7 @@ namespace Sqlist.NET
         {
             ThrowIfDisposed();
 
-            if (_conn is null)
-                _conn = lcl::DbConnection.CreateFor(this);
+            _conn ??= DbConnection.CreateFor(this);
 
             var query = new DbQuery(this);
             _queries.Add(query.Id);
@@ -222,64 +225,6 @@ namespace Sqlist.NET
                     Connection = null;
                 }
             }
-        }
-
-        /// <inheritdoc />
-        protected override async Task<T> ExecuteQueryAsync<T>(string name, Func<Task<T>> func)
-        {
-            Logger.LogTrace("Executing independent query ({name}) over conn[{connId}]", name, Connection.Id);
-
-            try
-            {
-                var sw = Stopwatch.StartNew();
-                var result = await func.Invoke();
-                sw.Stop();
-
-                Logger.LogTrace("Query ({name}) succeeded. Elapsed time: {time}ms", name, sw.ElapsedMilliseconds);
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError("Query ({name}) failed", name);
-                throw ex;
-            }
-        }
-
-        protected internal override Task<object> InternalExecuteScalarAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
-        {
-            ThrowIfDisposed();
-
-            using var conn = lcl::DbConnection.CreateFor(this);
-            var cmd = conn.CreateCommand(sql, prms, timeout, type);
-            return cmd.ExecuteScalarAsync();
-        }
-
-        /// <inheritdoc />
-        protected internal override Task<int> InternalExecuteAsync(string sql, object prms = null, int? timeout = null, CommandType? type = null)
-        {
-            ThrowIfDisposed();
-
-            using var conn = lcl::DbConnection.CreateFor(this);
-            var cmd = conn.CreateCommand(sql, prms, timeout, type);
-            return cmd.ExecuteNonQueryAsync();
-        }
-
-        /// <inheritdoc />
-        protected internal override Task<IEnumerable<T>> InternalRetrieveAsync<T>(string sql, object prms = null, Action<T> altr = null, int? timeout = null, CommandType? type = null)
-        {
-            ThrowIfDisposed();
-
-            using var conn = lcl::DbConnection.CreateFor(this);
-            var cmd = conn.CreateCommand(sql, prms, timeout, type);
-            var rdr = cmd.ExecuteReaderAsync();
-
-            var objType = typeof(T);
-            var result = objType.IsPrimitive || objType.IsValueType || objType.IsArray || objType == typeof(string)
-                ? DataParser.Primitive<T>(rdr)
-                : DataParser.Object(rdr, Options.MappingOrientation, altr);
-
-            return result;
         }
 
         /// <inheritdoc />
