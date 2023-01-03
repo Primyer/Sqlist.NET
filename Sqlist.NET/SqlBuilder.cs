@@ -20,7 +20,6 @@ using Sqlist.NET.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -127,6 +126,10 @@ namespace Sqlist.NET
             builder.Append(_enc.Replace(pair.Item2));
         }
 
+        /// <summary>
+        ///     Registers the specified <paramref name="pairs"/>.
+        /// </summary>
+        /// <param name="pairs">The of collection of pairs to register.</param>
         public virtual void RegisterPairFields(Dictionary<string, string> pairs)
         {
             var builder = GetOrCreateBuilder("pairs");
@@ -145,6 +148,18 @@ namespace Sqlist.NET
 
                 count++;
             }
+        }
+
+        /// <summary>
+        ///     Registers the specified <paramref name="entity"/> as a <c>FROM</c> clause for the update statement.
+        /// </summary>
+        /// <param name="entity">The entity to register.</param>
+        public virtual void From(string entity)
+        {
+            var builder = GetOrCreateBuilder("from");
+            builder.AppendLine();
+            builder.Append("from ");
+            builder.Append(_enc.Reformat(entity));
         }
 
         /// <summary>
@@ -777,7 +792,24 @@ namespace Sqlist.NET
         /// <returns>A <c>UPDATE</c> statement.</returns>
         public virtual string ToUpdate()
         {
-            return GenerateTemplate(new[] { "update ", TableName, " set ", "@pairs", "@where", "@returning" });
+            var result = new StringBuilder();
+
+            var withQueries = GetBuilderContent("with_queries");
+            if (withQueries != null)
+                result.AppendLine(withQueries);
+
+            result.Append("update " + TableName);
+            result.Append(" set ");
+            result.Append(GetBuilderContent("pairs"));
+
+            var from = GetBuilderContent("from");
+            if (from != null)
+                result.Append(from);
+
+            result.Append(GetBuilderContent("where"));
+            result.Append(GetBuilderContent("returning"));
+
+            return result.ToString();
         }
 
         /// <summary>
@@ -888,41 +920,6 @@ namespace Sqlist.NET
             builder.AppendLine(GetBuilderContent("where"));
 
             return builder.ToString();
-        }
-
-        /// <summary>
-        ///     Generates a statement that's based on the specified <paramref name="template"/> considering the previously configured options.
-        /// </summary>
-        /// <param name="template">The rules to follow regarding the process of generating the SQL statement.</param>
-        /// <returns>The generated statement.</returns>
-        public virtual string GenerateTemplate(string[] template)
-        {
-            var result = new StringBuilder();
-            foreach (var val in template)
-            {
-                if (val[0] != '@')
-                    result.Append(val);
-
-                else if (_builders.TryGetValue(val[1..], out var builder))
-                    result.Append(builder.ToString());
-            }
-            return result.ToString();
-        }
-
-        /// <summary>
-        ///     Generates a statement that's based on the specified <paramref name="template"/> considering the previously configured options.
-        /// </summary>
-        /// <param name="template">The rules to follow regarding the process of generating the SQL statement.</param>
-        /// <param name="parts">The parts to be inserted into the statement according to the template.</param>
-        /// <returns>The generated statement.</returns>
-        public virtual string GenerateTemplate(string template, params string[] parts)
-        {
-            for (var i = 0; i < parts.Length; i++)
-            {
-                var value = _builders.TryGetValue(parts[i], out var builder) ? builder.ToString() : null;
-                template = template.Replace("{" + i + "}", value);
-            }
-            return template;
         }
 
         /// <summary>
