@@ -200,18 +200,56 @@ namespace Sqlist.NET
             }
         }
 
-        public virtual void RegisterBulkValues(int cols, int rows)
+        /// <summary>
+        ///     Registers (@p[n]) formatted paramters according to the spacified <paramref name="cols"/> and <paramref name="rows"/>.
+        /// </summary>
+        /// <param name="cols">The number of columns in each row.</param>
+        /// <param name="rows">The number of rows.</param>
+        /// <param name="configure">Optional lambda for customizing the rows.</param>
+        public virtual void RegisterBulkValues(int cols, int rows, int gapSize = 0, Action<int, string[]> configure = null)
         {
             var obj = new string[rows][];
+
             for (var i = 0; i < rows; i++)
             {
-                obj[i] = new string[cols];
+                obj[i] = new string[cols + gapSize];
+
                 for (var j = 0; j < cols; j++)
-                {
                     obj[i][j] = "@p" + (j + i * cols);
-                }
+
+                for (var j = gapSize + cols - 1; j >= cols; j--)
+                    obj[i][j] = "";
+
+                configure?.Invoke(i, obj[i]);
             }
+
             RegisterValues(obj);
+        }
+
+        /// <summary>
+        ///     Registers an <c>CROSS JOIN</c> on the specified <paramref name="table"/>.
+        /// </summary>
+        /// <param name="table">The table to join.</param>
+        public virtual void CrossJoin(string table)
+        {
+            table = table.IndexOf(' ') != -1 ? _enc.Replace(table) : _enc.Wrap(table);
+
+            Join($"cross join " + table);
+        }
+
+        /// <summary>
+        ///     Registers an <c>CROSS JOIN</c> of the specified on the result of the <paramref name="configureSql"/>.
+        /// </summary>
+        /// <param name="alias">The alias of the subquery.</param>
+        /// <param name="configureSql">The action to build the partial statement of the join.</param>
+        public virtual async void CrossJoin(string alias, Action<SqlBuilder> configureSql)
+        {
+            var sql = new SqlBuilder();
+            configureSql.Invoke(sql);
+
+            var stmt = await IndentAsync(sql.ToSelect());
+
+            CrossJoin($"(\n{stmt}) as {alias}");
         }
 
         /// <summary>
@@ -225,6 +263,18 @@ namespace Sqlist.NET
         }
 
         /// <summary>
+        ///     Registers an <c>INNER JOIN</c> of the specified on the result of the <paramref name="configureSql"/>
+        ///     with respect to the given <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="alias">The alias of the subquery.</param>
+        /// <param name="configureSql">The action to build the partial statement of the join.</param>
+        /// <param name="condition">The condition of join operation.</param>
+        public virtual void InnerJoin(string alias, Action<SqlBuilder> configureSql, string condition = null)
+        {
+            Join("inner", alias, configureSql, condition);
+        }
+
+        /// <summary>
         ///     Registers a <c>LEFT JOIN</c> on the specified <paramref name="table"/> with the given <paramref name="condition"/>.
         /// </summary>
         /// <param name="table">The table to join.</param>
@@ -232,6 +282,18 @@ namespace Sqlist.NET
         public virtual void LeftJoin(string table, string condition = null)
         {
             Join("left", table, condition);
+        }
+
+        /// <summary>
+        ///     Registers an <c>LEFT JOIN</c> of the specified on the result of the <paramref name="configureSql"/>
+        ///     with respect to the given <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="alias">The alias of the subquery.</param>
+        /// <param name="configureSql">The action to build the partial statement of the join.</param>
+        /// <param name="condition">The condition of join operation.</param>
+        public virtual void LeftJoin(string alias, Action<SqlBuilder> configureSql, string condition = null)
+        {
+            Join("left", alias, configureSql, condition);
         }
 
         /// <summary>
@@ -245,6 +307,18 @@ namespace Sqlist.NET
         }
 
         /// <summary>
+        ///     Registers an <c>RIGHT JOIN</c> of the specified on the result of the <paramref name="configureSql"/>
+        ///     with respect to the given <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="alias">The alias of the subquery.</param>
+        /// <param name="configureSql">The action to build the partial statement of the join.</param>
+        /// <param name="condition">The condition of join operation.</param>
+        public virtual void RightJoin(string alias, Action<SqlBuilder> configureSql, string condition = null)
+        {
+            Join("right", alias, configureSql, condition);
+        }
+
+        /// <summary>
         ///     Registers a <c>FULL JOIN</c> on the specified <paramref name="table"/> with the given <paramref name="condition"/>.
         /// </summary>
         /// <param name="table">The table to join.</param>
@@ -255,12 +329,44 @@ namespace Sqlist.NET
         }
 
         /// <summary>
-        ///     Register the specified partial <paramref name="stmt"/> as a join.
+        ///     Registers an <c>FULL JOIN</c> of the specified on the result of the <paramref name="configureSql"/>
+        ///     with respect to the given <paramref name="condition"/>.
         /// </summary>
-        /// <param name="stmt">The statement to register.</param>
-        public virtual void Join(string type, string table, string condition = null)
+        /// <param name="alias">The alias of the subquery.</param>
+        /// <param name="configureSql">The action to build the partial statement of the join.</param>
+        /// <param name="condition">The condition of join operation.</param>
+        public virtual void FullJoin(string alias, Action<SqlBuilder> configureSql, string condition = null)
         {
-            Join($"{type} join {_enc.Reformat(table)} on " + (condition is null ? "true" : _enc.Reformat(condition)));
+            Join("full", alias, configureSql, condition);
+        }
+
+        /// <summary>
+        ///     Registers a join of the specified <paramref name="type"/> on the result of
+        ///     the <paramref name="configureSql"/> with respect to the given <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="type">The type of join being registered.</param>
+        /// <param name="alias">The alias of the subquery.</param>
+        /// <param name="configureSql">The action to build the partial statement of the join.</param>
+        /// <param name="condition">The condition of join operation.</param>
+        public virtual async void Join(string type, string alias, Action<SqlBuilder> configureSql, string condition = null)
+        {
+            var sql = new SqlBuilder();
+            configureSql.Invoke(sql);
+
+            var stmt = await IndentAsync(sql.ToSelect());
+
+            Join(type, $"(\n{stmt}) as {alias}", condition);
+        }
+
+        /// <summary>
+        ///     Registers a join of the specified <paramref name="type"/> with the given <paramref name="entity"/> and <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="type">The type of join being registered.</param>
+        /// <param name="entity">The entity which to join with.</param>
+        /// <param name="condition">The condition of join operation.</param>
+        public virtual void Join(string type, string entity, string condition = null)
+        {
+            Join($"{type} join {_enc.Reformat(entity)} on " + (condition is null ? "true" : _enc.Reformat(condition)));
         }
 
         /// <summary>

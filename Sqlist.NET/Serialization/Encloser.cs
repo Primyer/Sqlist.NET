@@ -76,6 +76,7 @@ namespace Sqlist.NET.Serialization
             if (val.IndexOf("`") != -1)
                 Replace(ref val);
             else
+            if (val.IndexOf(' ') == -1)
                 Wrap(ref val);
         }
 
