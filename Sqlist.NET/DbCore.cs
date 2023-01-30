@@ -211,10 +211,9 @@ namespace Sqlist.NET
         /// <param name="qry">The <see cref="DbQuery"/> to finalize.</param>
         internal virtual void FinalizeQuery(DbQuery qry)
         {
-            ThrowIfDisposed();
+            if (_disposed) return;
 
-            _queries.RemoveAll(guid => guid == qry.Id);
-
+                _queries.RemoveAll(guid => guid == qry.Id);
             if (_queries.Count == 0)
             {
                 if (!qry.TerminateConnection)
