@@ -708,7 +708,7 @@ namespace Sqlist.NET
             
             builder.Append(builder.Length == 0 ? "WITH " : ",\n");
 
-            if (recursive && (builder.Length == 5 || builder[5] != 'r'))
+            if (recursive && (builder.Length == 5 || builder[5] != 'R'))
                 builder.Insert(5, "RECURSIVE ");
 
             builder.Append(_enc.Wrap(name));
