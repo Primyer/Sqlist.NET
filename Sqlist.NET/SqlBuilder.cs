@@ -14,6 +14,7 @@
 // limitations under the License.
 #endregion
 
+using Sqlist.NET.Clauses;
 using Sqlist.NET.Serialization;
 using Sqlist.NET.Utilities;
 
@@ -94,7 +95,7 @@ namespace Sqlist.NET
         ///     Registers the specified <paramref name="fields"/> in pairs similar to <c>field = @field</c>.
         /// </summary>
         /// <param name="fields">The field to pair up and register.</param>
-        public virtual void RegisterPairFields(string[] fields)
+        public void RegisterPairFields(string[] fields)
         {
             var builder = GetOrCreateBuilder("pairs");
             if (builder.Length != 0)
@@ -115,7 +116,7 @@ namespace Sqlist.NET
         ///     Registers the specified <paramref name="pair"/>.
         /// </summary>
         /// <param name="pair">The pair to register.</param>
-        public virtual void RegisterPairFields((string, string) pair)
+        public void RegisterPairFields((string, string) pair)
         {
             var builder = GetOrCreateBuilder("pairs");
             if (builder.Length != 0)
@@ -130,7 +131,7 @@ namespace Sqlist.NET
         ///     Registers the specified <paramref name="pairs"/>.
         /// </summary>
         /// <param name="pairs">The of collection of pairs to register.</param>
-        public virtual void RegisterPairFields(Dictionary<string, string> pairs)
+        public void RegisterPairFields(Dictionary<string, string> pairs)
         {
             var builder = GetOrCreateBuilder("pairs");
             if (builder.Length != 0)
@@ -154,11 +155,11 @@ namespace Sqlist.NET
         ///     Registers the specified <paramref name="entity"/> as a <c>FROM</c> clause for the update statement.
         /// </summary>
         /// <param name="entity">The entity to register.</param>
-        public virtual void From(string entity)
+        public void From(string entity)
         {
             var builder = GetOrCreateBuilder("from");
             builder.AppendLine();
-            builder.Append("from ");
+            builder.Append("FROM ");
             builder.Append(_enc.Reformat(entity));
         }
 
@@ -166,7 +167,7 @@ namespace Sqlist.NET
         ///     Registers the specified <paramref name="row"/> as values.
         /// </summary>
         /// <param name="row">The row to register.</param>
-        public virtual void RegisterValues(object[] row)
+        public void RegisterValues(object[] row)
         {
             RegisterValues(new[] { row });
         }
@@ -175,7 +176,7 @@ namespace Sqlist.NET
         ///     Registers the specified collection of <paramref name="rows"/> as values.
         /// </summary>
         /// <param name="rows">The collection of rows to register.</param>
-        public virtual void RegisterValues(object[][] rows)
+        public void RegisterValues(object[][] rows)
         {
             var builder = GetOrCreateBuilder("values");
             if (builder.Length != 0)
@@ -206,7 +207,7 @@ namespace Sqlist.NET
         /// <param name="cols">The number of columns in each row.</param>
         /// <param name="rows">The number of rows.</param>
         /// <param name="configure">Optional lambda for customizing the rows.</param>
-        public virtual void RegisterBulkValues(int cols, int rows, int gapSize = 0, Action<int, string[]> configure = null)
+        public void RegisterBulkValues(int cols, int rows, int gapSize = 0, Action<int, string[]> configure = null)
         {
             var obj = new string[rows][];
 
@@ -230,11 +231,11 @@ namespace Sqlist.NET
         ///     Registers an <c>CROSS JOIN</c> on the specified <paramref name="table"/>.
         /// </summary>
         /// <param name="table">The table to join.</param>
-        public virtual void CrossJoin(string table)
+        public void CrossJoin(string table)
         {
             table = table.IndexOf(' ') != -1 ? _enc.Replace(table) : _enc.Wrap(table);
 
-            Join($"cross join " + table);
+            Join($"CROSS JOIN " + table);
         }
 
         /// <summary>
@@ -242,14 +243,14 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="alias">The alias of the subquery.</param>
         /// <param name="configureSql">The action to build the partial statement of the join.</param>
-        public virtual async void CrossJoin(string alias, Action<SqlBuilder> configureSql)
+        public async void CrossJoin(string alias, Action<SqlBuilder> configureSql)
         {
             var sql = new SqlBuilder();
             configureSql.Invoke(sql);
 
             var stmt = await IndentAsync(sql.ToSelect());
 
-            CrossJoin($"(\n{stmt}) as {alias}");
+            CrossJoin($"(\n{stmt}) AS {alias}");
         }
 
         /// <summary>
@@ -257,9 +258,19 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="table">The table to join.</param>
         /// <param name="condition">The join conditions.</param>
-        public virtual void InnerJoin(string table, string condition = null)
+        public void InnerJoin(string table, string condition = null)
         {
-            Join("inner", table, condition);
+            Join("INNER", table, condition);
+        }
+
+        /// <summary>
+        ///     Registers an <c>INNER JOIN</c> on the specified <paramref name="table"/> with the given <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="table">The table to join.</param>
+        /// <param name="condition">The join conditions.</param>
+        public void InnerJoin(string table, Action<ConditionalClause> condition)
+        {
+            Join("INNER", table, condition.ToString());
         }
 
         /// <summary>
@@ -269,9 +280,9 @@ namespace Sqlist.NET
         /// <param name="alias">The alias of the subquery.</param>
         /// <param name="configureSql">The action to build the partial statement of the join.</param>
         /// <param name="condition">The condition of join operation.</param>
-        public virtual void InnerJoin(string alias, Action<SqlBuilder> configureSql, string condition = null)
+        public void InnerJoin(string alias, Action<SqlBuilder> configureSql, string condition = null)
         {
-            Join("inner", alias, configureSql, condition);
+            Join("INNER", alias, configureSql, condition);
         }
 
         /// <summary>
@@ -279,9 +290,19 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="table">The table to join.</param>
         /// <param name="condition">The join conditions.</param>
-        public virtual void LeftJoin(string table, string condition = null)
+        public void LeftJoin(string table, string condition = null)
         {
-            Join("left", table, condition);
+            Join("LEFT", table, condition);
+        }
+
+        /// <summary>
+        ///     Registers a <c>LEFT JOIN</c> on the specified <paramref name="table"/> with the given <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="table">The table to join.</param>
+        /// <param name="condition">The join conditions.</param>
+        public void LeftJoin(string table, Action<ConditionalClause> condition)
+        {
+            Join("LEFT", table, condition.ToString());
         }
 
         /// <summary>
@@ -291,9 +312,9 @@ namespace Sqlist.NET
         /// <param name="alias">The alias of the subquery.</param>
         /// <param name="configureSql">The action to build the partial statement of the join.</param>
         /// <param name="condition">The condition of join operation.</param>
-        public virtual void LeftJoin(string alias, Action<SqlBuilder> configureSql, string condition = null)
+        public void LeftJoin(string alias, Action<SqlBuilder> configureSql, string condition = null)
         {
-            Join("left", alias, configureSql, condition);
+            Join("LEFT", alias, configureSql, condition);
         }
 
         /// <summary>
@@ -301,9 +322,19 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="table">The table to join.</param>
         /// <param name="condition">The join conditions.</param>
-        public virtual void RightJoin(string table, string condition)
+        public void RightJoin(string table, string condition = null)
         {
-            Join("right", table, condition);
+            Join("RIGHT", table, condition);
+        }
+
+        /// <summary>
+        ///     Registers a <c>RIGHT JOIN</c> on the specified <paramref name="table"/> with the given <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="table">The table to join.</param>
+        /// <param name="condition">The join conditions.</param>
+        public void RightJoin(string table, Action<ConditionalClause> condition)
+        {
+            Join("RIGHT", table, condition.ToString());
         }
 
         /// <summary>
@@ -313,9 +344,9 @@ namespace Sqlist.NET
         /// <param name="alias">The alias of the subquery.</param>
         /// <param name="configureSql">The action to build the partial statement of the join.</param>
         /// <param name="condition">The condition of join operation.</param>
-        public virtual void RightJoin(string alias, Action<SqlBuilder> configureSql, string condition = null)
+        public void RightJoin(string alias, Action<SqlBuilder> configureSql, string condition = null)
         {
-            Join("right", alias, configureSql, condition);
+            Join("RIGHT", alias, configureSql, condition);
         }
 
         /// <summary>
@@ -323,9 +354,9 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="table">The table to join.</param>
         /// <param name="condition">The join conditions.</param>
-        public virtual void FullJoin(string table, string condition = null)
+        public void FullJoin(string table, string condition = null)
         {
-            Join("full", table, condition);
+            Join("FULL", table, condition);
         }
 
         /// <summary>
@@ -335,9 +366,9 @@ namespace Sqlist.NET
         /// <param name="alias">The alias of the subquery.</param>
         /// <param name="configureSql">The action to build the partial statement of the join.</param>
         /// <param name="condition">The condition of join operation.</param>
-        public virtual void FullJoin(string alias, Action<SqlBuilder> configureSql, string condition = null)
+        public void FullJoin(string alias, Action<SqlBuilder> configureSql, string condition = null)
         {
-            Join("full", alias, configureSql, condition);
+            Join("FULL", alias, configureSql, condition);
         }
 
         /// <summary>
@@ -348,14 +379,14 @@ namespace Sqlist.NET
         /// <param name="alias">The alias of the subquery.</param>
         /// <param name="configureSql">The action to build the partial statement of the join.</param>
         /// <param name="condition">The condition of join operation.</param>
-        public virtual async void Join(string type, string alias, Action<SqlBuilder> configureSql, string condition = null)
+        public async void Join(string type, string alias, Action<SqlBuilder> configureSql, string condition = null)
         {
             var sql = new SqlBuilder();
             configureSql.Invoke(sql);
 
             var stmt = await IndentAsync(sql.ToSelect());
 
-            Join(type, $"(\n{stmt}) as {alias}", condition);
+            Join(type, $"(\n{stmt}) AS {alias}", condition);
         }
 
         /// <summary>
@@ -364,16 +395,16 @@ namespace Sqlist.NET
         /// <param name="type">The type of join being registered.</param>
         /// <param name="entity">The entity which to join with.</param>
         /// <param name="condition">The condition of join operation.</param>
-        public virtual void Join(string type, string entity, string condition = null)
+        public void Join(string type, string entity, string condition = null)
         {
-            Join($"{type} join {_enc.Reformat(entity)} on " + (condition is null ? "true" : _enc.Reformat(condition)));
+            Join($"{type} JOIN {_enc.Reformat(entity)} ON " + (condition is null ? "true" : _enc.Reformat(condition)));
         }
 
         /// <summary>
         ///     Register the specified partial <paramref name="stmt"/> as a join.
         /// </summary>
         /// <param name="stmt">The statement to register.</param>
-        public virtual void Join(string stmt)
+        public void Join(string stmt)
         {
             Check.NotNullOrEmpty(stmt, nameof(stmt));
 
@@ -384,58 +415,67 @@ namespace Sqlist.NET
         ///     Registers the <c>WHERE</c> statement with the given <paramref name="condition"/>.
         /// </summary>
         /// <param name="condition">The condition to register.</param>
-        public virtual void Where(string condition)
+        public void Where(string condition)
         {
             Check.NotNullOrEmpty(condition, nameof(condition));
 
             var builder = _builders["where"] = new StringBuilder();
 
-            builder.Append("\nwhere ");
+            builder.Append("\nWHERE ");
             _enc.Replace(ref condition);
             builder.Append(condition);
+        }
+
+        /// <summary>
+        ///     Registers the <c>WHERE</c> statement with the given <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="condition">The condition to register.</param>
+        public void Where(Action<ConditionalClause> condition)
+        {
+            Where(condition.ToString());
         }
 
         /// <summary>
         ///     Appends an <c>OR</c> followed by the specified <paramref name="condition"/> to the <c>WHERE</c> statement.
         /// </summary>
         /// <param name="condition">The condition to append.</param>
-        public virtual void AppendOr(string condition)
+        public void AppendOr(string condition)
         {
-            AppendCondition("or " + condition);
+            AppendCondition("OR " + condition);
         }
 
         /// <summary>
         ///     Appends an <c>OR NOT</c> followed by the specified <paramref name="condition"/> to the <c>WHERE</c> statement.
         /// </summary>
         /// <param name="condition">The condition to append.</param>
-        public virtual void AppendOrNot(string condition)
+        public void AppendOrNot(string condition)
         {
-            AppendCondition("or not " + condition);
+            AppendCondition("OR NOT " + condition);
         }
 
         /// <summary>
         ///     Appends an <c>AND</c> followed by the specified <paramref name="condition"/> to the <c>WHERE</c> statement.
         /// </summary>
         /// <param name="condition">The condition to append.</param>
-        public virtual void AppendAnd(string condition)
+        public void AppendAnd(string condition)
         {
-            AppendCondition("and " + condition);
+            AppendCondition("AND " + condition);
         }
 
         /// <summary>
         ///     Appends an <c>AND NOT</c> followed by the specified <paramref name="condition"/> to the <c>WHERE</c> statement.
         /// </summary>
         /// <param name="condition">The condition to append.</param>
-        public virtual void AppendAndNot(string condition)
+        public void AppendAndNot(string condition)
         {
-            AppendCondition("and not " + condition);
+            AppendCondition("AND NOT " + condition);
         }
 
         /// <summary>
         ///     Appends the given condition to the <c>WHERE</c> statement.
         /// </summary>
         /// <param name="condition">The condition to append.</param>
-        public virtual void AppendCondition(string condition)
+        public void AppendCondition(string condition)
         {
             Check.NotNullOrEmpty(condition, nameof(condition));
 
@@ -451,7 +491,7 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="field">The field to register.</param>
         /// <param name="reformat">Indicates whether to re-format.</param>
-        public virtual void RegisterFields(string field, bool reformat = true)
+        public void RegisterFields(string field, bool reformat = true)
         {
             Check.NotNullOrEmpty(field, nameof(field));
 
@@ -466,7 +506,7 @@ namespace Sqlist.NET
         ///     Registers the specified collection of <paramref name="fields"/>.
         /// </summary>
         /// <param name="fields">The fields to register.</param>
-        public virtual void RegisterFields(string[] fields)
+        public void RegisterFields(string[] fields)
         {
             Check.NotEmpty(fields, nameof(fields));
 
@@ -487,12 +527,12 @@ namespace Sqlist.NET
         ///     Registers a <c>GROUP BY</c> statement with the specified <paramref name="field"/>.
         /// </summary>
         /// <param name="field">The field to group by.</param>
-        public virtual void GroupBy(string field)
+        public void GroupBy(string field)
         {
             Check.NotNullOrEmpty(field, nameof(field));
 
             var builder = GetOrCreateBuilder("filters");
-            builder.Append("\ngroup by ");
+            builder.Append("\nGROUP BY ");
 
             _enc.Reformat(ref field);
             builder.Append(field);
@@ -503,7 +543,7 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="alias">The alias of the statement.</param>
         /// <param name="content">The conetnt of the statement.</param>
-        public virtual void Window(string alias, string content)
+        public void Window(string alias, string content)
         {
             Check.NotNullOrEmpty(alias, nameof(alias));
             Check.NotNullOrEmpty(content, nameof(content));
@@ -511,14 +551,14 @@ namespace Sqlist.NET
             var builder = GetOrCreateBuilder("filters");
             
             builder.AppendLine();
-            builder.Append($"window {_enc.Replace(alias)} as ({_enc.Replace(content)})");
+            builder.Append($"WINDOW {_enc.Replace(alias)} AS ({_enc.Replace(content)})");
         }
 
         /// <summary>
         ///     Registers a <c>GROUP BY</c> statement with the specified collection of <paramref name="fields"/>.
         /// </summary>
         /// <param name="fields">The fields to group by.</param>
-        public virtual void GroupBy(string[] fields)
+        public void GroupBy(string[] fields)
         {
             Check.NotEmpty(fields, nameof(fields));
 
@@ -533,7 +573,7 @@ namespace Sqlist.NET
             }
 
             var builder = GetOrCreateBuilder("filters");
-            builder.Append("\ngroup by ");
+            builder.Append("\nGROUP BY ");
             builder.Append(result);
         }
 
@@ -541,12 +581,12 @@ namespace Sqlist.NET
         ///     Registers an <c>ORDER BY</c> statement with the specified <paramref name="field"/>.
         /// </summary>
         /// <param name="field">The field to order by.</param>
-        public virtual void OrderBy(string field)
+        public void OrderBy(string field)
         {
             Check.NotNullOrEmpty(field, nameof(field));
 
             var builder = GetOrCreateBuilder("filters");
-            builder.Append("\norder by ");
+            builder.Append("\nORDER BY ");
 
             _enc.Reformat(ref field);
             builder.Append(field);
@@ -556,7 +596,7 @@ namespace Sqlist.NET
         ///     Registers an <c>ORDER BY</c> statement with the specified collection of <paramref name="fields"/>.
         /// </summary>
         /// <param name="fields">The fields to order by.</param>
-        public virtual void OrderBy(string[] fields)
+        public void OrderBy(string[] fields)
         {
             Check.NotEmpty(fields, nameof(fields));
 
@@ -571,7 +611,7 @@ namespace Sqlist.NET
             }
 
             var builder = GetOrCreateBuilder("filters");
-            builder.Append("\norder by ");
+            builder.Append("\nORDER BY ");
             builder.Append(result);
         }
 
@@ -579,12 +619,12 @@ namespace Sqlist.NET
         ///     Registers a query limit based on the specified <paramref name="value"/>.
         /// </summary>
         /// <param name="value">The amout to limit by.</param>
-        public virtual void Limit(string value)
+        public void Limit(string value)
         {
             Check.NotNullOrEmpty(value, nameof(value));
 
             var builder = GetOrCreateBuilder("filters");
-            builder.Append("\nlimit ");
+            builder.Append("\nLIMIT ");
             builder.Append(value);
         }
 
@@ -592,12 +632,12 @@ namespace Sqlist.NET
         ///     Registers a query offset based on the specified <paramref name="value"/>.
         /// </summary>
         /// <param name="value">The value to offset from.</param>
-        public virtual void Offset(string value)
+        public void Offset(string value)
         {
             Check.NotNullOrEmpty(value, nameof(value));
 
             var builder = GetOrCreateBuilder("filters");
-            builder.Append("\noffset ");
+            builder.Append("\nOFFSET ");
             builder.Append(value);
         }
 
@@ -606,7 +646,7 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="name">The name of the CTE.</param>
         /// <param name="body">The body as a separate <see cref="SqlBuilder"/>.</param>
-        public virtual void With(string name, Func<SqlBuilder, string> body)
+        public void With(string name, Func<SqlBuilder, string> body)
         {
             With(name, Array.Empty<string>(), body);
         }
@@ -618,7 +658,7 @@ namespace Sqlist.NET
         /// <param name="name">The name of the CTE.</param>
         /// <param name="fields">The fields to output.</param>
         /// <param name="body">The body as a separate <see cref="SqlBuilder"/>.</param>
-        public virtual void With(string name, string[] fields, Func<SqlBuilder, string> body)
+        public void With(string name, string[] fields, Func<SqlBuilder, string> body)
         {
             var builder = new SqlBuilder(_sqlStyle);
             var result = body.Invoke(builder);
@@ -631,7 +671,7 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="name">The name of the CTE.</param>
         /// <param name="body">The body as a separate <see cref="SqlBuilder"/>.</param>
-        public virtual void RecursiveWith(string name, Func<SqlBuilder, string> body)
+        public void RecursiveWith(string name, Func<SqlBuilder, string> body)
         {
             RecursiveWith(name, Array.Empty<string>(), body);
         }
@@ -643,7 +683,7 @@ namespace Sqlist.NET
         /// <param name="name">The name of the CTE.</param>
         /// <param name="fields">The fields to output.</param>
         /// <param name="body">The body as a separate <see cref="SqlBuilder"/>.</param>
-        public virtual void RecursiveWith(string name, string[] fields, Func<SqlBuilder, string> body)
+        public void RecursiveWith(string name, string[] fields, Func<SqlBuilder, string> body)
         {
             var builder = new SqlBuilder(_sqlStyle);
             var result = body.Invoke(builder);
@@ -659,24 +699,24 @@ namespace Sqlist.NET
         /// <param name="fields">The fields to output.</param>
         /// <param name="body">The body in string format.</param>
         /// <param name="recursive">The flag that indicates whether CTE is recursive.</param>
-        public virtual async void RegisterWith(string name, string[] fields, string body, bool recursive = false)
+        public async void RegisterWith(string name, string[] fields, string body, bool recursive = false)
         {
             Check.NotNullOrEmpty(name, nameof(name));
             Check.NotNullOrEmpty(body, nameof(body));
 
             var builder = GetOrCreateBuilder("with_queries");
             
-            builder.Append(builder.Length == 0 ? "with " : ",\n");
+            builder.Append(builder.Length == 0 ? "WITH " : ",\n");
 
             if (recursive && (builder.Length == 5 || builder[5] != 'r'))
-                builder.Insert(5, "recursive ");
+                builder.Insert(5, "RECURSIVE ");
 
             builder.Append(_enc.Wrap(name));
 
             if (fields.Length != 0)
                 builder.Append($" ({_enc.Join(", ", fields)})");
 
-            builder.AppendLine(" as (");
+            builder.AppendLine(" AS (");
             await IndentAsync(body, builder);
 
             builder.Append($")");
@@ -689,10 +729,10 @@ namespace Sqlist.NET
         /// <param name="name">The name of the CTE.</param>
         /// <param name="fields">The fields to output.</param>
         /// <param name="rows">The number of rows to generate parameters for.</param>
-        public virtual void WithData(string name, string[] fields, int rows)
+        public void WithData(string name, string[] fields, int rows)
         {
             var len = fields.Length;
-            var body = new StringBuilder("values\n");
+            var body = new StringBuilder("VALUES\n");
 
             for (var i = 0; i < rows; i++)
             {
@@ -720,7 +760,7 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="name">The name of the desired builder.</param>
         /// <returns>The builder of the specified <paramref name="name"/>.</returns>
-        public virtual StringBuilder GetOrCreateBuilder(string name)
+        public StringBuilder GetOrCreateBuilder(string name)
         {
             if (_builders.TryGetValue(name, out var builder))
                 return builder;
@@ -735,9 +775,9 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="query">The alt query as a separate <see cref="SqlBuilder"/>.</param>
         /// <param name="all">The flag that indicates whether to union all.</param>
-        public virtual void RegisterUnionQuery(Func<SqlBuilder, string> query, bool all = false)
+        public void RegisterUnionQuery(Func<SqlBuilder, string> query, bool all = false)
         {
-            RegisterCombinedQuery("union", query, all);
+            RegisterCombinedQuery("UNION", query, all);
         }
 
         /// <summary>
@@ -745,9 +785,9 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="query">The alt query as a separate <see cref="SqlBuilder"/>.</param>
         /// <param name="all">The flag that indicates whether to union all.</param>
-        public virtual void RegisterIntersectQuery(Func<SqlBuilder, string> query, bool all = false)
+        public void RegisterIntersectQuery(Func<SqlBuilder, string> query, bool all = false)
         {
-            RegisterCombinedQuery("Intersect", query, all);
+            RegisterCombinedQuery("INTERSECT", query, all);
         }
 
         /// <summary>
@@ -755,9 +795,9 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="query">The alt query as a separate <see cref="SqlBuilder"/>.</param>
         /// <param name="all">The flag that indicates whether to union all.</param>
-        public virtual void RegisterExceptQuery(Func<SqlBuilder, string> query, bool all = false)
+        public void RegisterExceptQuery(Func<SqlBuilder, string> query, bool all = false)
         {
-            RegisterCombinedQuery("Except", query, all);
+            RegisterCombinedQuery("EXCEPT", query, all);
         }
 
         /// <summary>
@@ -766,7 +806,7 @@ namespace Sqlist.NET
         /// <param name="type">The type of the query; <c>UNION, INTERSECT, or EXCEPT</c>.</param>
         /// <param name="query">The alt query as a separate <see cref="SqlBuilder"/>.</param>
         /// <param name="all">The flag that indicates whether to union all.</param>
-        protected virtual void RegisterCombinedQuery(string type, Func<SqlBuilder, string> query, bool all = false)
+        protected void RegisterCombinedQuery(string type, Func<SqlBuilder, string> query, bool all = false)
         {
             Check.NotNullOrEmpty(type, nameof(type));
             Check.NotNull(query, nameof(query));
@@ -779,7 +819,7 @@ namespace Sqlist.NET
             builder.Append('\n' + type + ' ');
 
             if (all)
-                builder.Append("all ");
+                builder.Append("ALL ");
 
             builder.Append('\n' + result);
         }
@@ -788,9 +828,9 @@ namespace Sqlist.NET
         ///     Registers a "returning" statement.
         /// </summary>
         /// <param name="fields">The fields to be returned.</param>
-        public virtual void RegisterReturningFields(params string[] fields)
+        public void RegisterReturningFields(params string[] fields)
         {
-            var result = "\nreturning ";
+            var result = "\nRETURNING ";
 
             if (fields.Length == 0)
                 result += "*";
@@ -806,16 +846,16 @@ namespace Sqlist.NET
             GetOrCreateBuilder("returning").Append(result);
         }
 
-        public virtual void RegisterConflictConstraint(string constraint)
+        public void RegisterConflictConstraint(string constraint)
         {
-            _builders["conflict"] = new StringBuilder($"on constraint \"{constraint}\"");
+            _builders["conflict"] = new StringBuilder($"ON CONSTRAINT \"{constraint}\"");
         }
 
         /// <summary>
         ///     Registers the fields for the conflict statement.
         /// </summary>
         /// <param name="keys">The conflict fields.</param>
-        public virtual void RegisterConflictFields(params string[] keys)
+        public void RegisterConflictFields(params string[] keys)
         {
             var builder = _builders["conflict"] = new StringBuilder("(");
 
@@ -834,10 +874,10 @@ namespace Sqlist.NET
         ///     Registers a <c>NOT EXISTS</c> condition.
         /// </summary>
         /// <param name="stmt">the inner statement of the condition.</param>
-        public virtual async void WhereNotExists(string stmt)
+        public async void WhereNotExists(string stmt)
         {
             var value = (await IndentAsync(stmt)).ToString();
-            var result = $"not exists (\n{value}\n)";
+            var result = $"NOT EXISTS (\n{value}\n)";
 
             if (!_builders.ContainsKey("where"))
                 Where(result);
@@ -849,7 +889,7 @@ namespace Sqlist.NET
         ///     Registers a <c>NOT EXISTS</c> condition.
         /// </summary>
         /// <param name="sql">the inner SQL content of the condition.</param>
-        public virtual void WhereNotExists(Action<SqlBuilder> sql)
+        public void WhereNotExists(Action<SqlBuilder> sql)
         {
             var builder = new SqlBuilder();
             sql.Invoke(builder);
@@ -862,7 +902,7 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="name">The name of the builder to return from.</param>
         /// <returns>The content of the builder with the specified <paramref name="name"/>.</returns>
-        protected virtual string GetBuilderContent(string name)
+        protected string GetBuilderContent(string name)
         {
             return _builders.TryGetValue(name, out var builder) ? builder.ToString() : null;
         }
@@ -871,7 +911,7 @@ namespace Sqlist.NET
         ///     Generates and returns a <c>SELECT</c> statement from the specified configurations.
         /// </summary>
         /// <returns>A <c>SELECT</c> statement.</returns>
-        public virtual string ToSelect()
+        public string ToSelect()
         {
             var result = new StringBuilder();
 
@@ -879,11 +919,11 @@ namespace Sqlist.NET
             if (withQueries != null)
                 result.AppendLine(withQueries);
 
-            result.Append("select ");
+            result.Append("SELECT ");
             result.Append(GetBuilderContent("fields") ?? "*");
 
             if (!string.IsNullOrEmpty(TableName))
-                result.Append("\nfrom " + TableName);
+                result.Append("\nFROM " + TableName);
 
             result.Append(GetBuilderContent("joins"));
             result.Append(GetBuilderContent("where"));
@@ -896,7 +936,7 @@ namespace Sqlist.NET
         ///     Generates and returns an <c>UPDATE</c> statement from the specified configurations.
         /// </summary>
         /// <returns>A <c>UPDATE</c> statement.</returns>
-        public virtual string ToUpdate()
+        public string ToUpdate()
         {
             var result = new StringBuilder();
 
@@ -904,8 +944,8 @@ namespace Sqlist.NET
             if (withQueries != null)
                 result.AppendLine(withQueries);
 
-            result.Append("update " + TableName);
-            result.Append(" set ");
+            result.Append("UPDATE " + TableName);
+            result.Append(" SET ");
             result.Append(GetBuilderContent("pairs"));
 
             var from = GetBuilderContent("from");
@@ -923,7 +963,7 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="cascade">The flag indicating whether to cascade depending records.</param>
         /// <returns>A <c>DELETE</c> statement.</returns>
-        public virtual string ToDelete(bool cascade = false)
+        public string ToDelete(bool cascade = false)
         {
             var result = new StringBuilder();
 
@@ -931,10 +971,10 @@ namespace Sqlist.NET
             if (withQueries != null)
                 result.AppendLine(withQueries);
 
-            result.Append("delete from " + TableName);
+            result.Append("DELETE FROM " + TableName);
 
             if (cascade)
-                result.Append(" cascade");
+                result.Append(" CASCADE");
 
             result.Append(GetBuilderContent("where"));
             result.Append(GetBuilderContent("returning"));
@@ -946,7 +986,7 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="select">The action to specify the select body of the insertion.</param>
         /// <returns>A <c>iNSERT</c> statement.</returns>
-        public virtual string ToInsert(Action<SqlBuilder> select = null)
+        public string ToInsert(Action<SqlBuilder> select = null)
         {
             var result = new StringBuilder();
             
@@ -954,13 +994,13 @@ namespace Sqlist.NET
             if (withQueries != null)
                 result.AppendLine(withQueries);
 
-            result.Append($"insert into {TableName} (");
+            result.Append($"INSERT INTO {TableName} (");
             result.Append(GetBuilderContent("fields"));
             result.AppendLine(")");
 
             if (select is null)
             {
-                result.Append("values ");
+                result.Append("VALUES ");
                 result.Append(GetBuilderContent("values"));
                 result.AppendLine(GetBuilderContent("where"));
             }
@@ -981,26 +1021,26 @@ namespace Sqlist.NET
         ///     Generates and returns an <c>INSERT ON CONFLICT</c> statement from the specified configurations.
         /// </summary>
         /// <returns>A <c>INSERT ON CONFLICT</c> statement.</returns>
-        public virtual string ToInsertOrUpdate()
+        public string ToInsertOrUpdate()
         {
-            var result = new StringBuilder($"insert into {TableName} (");
+            var result = new StringBuilder($"INSERT INTO {TableName} (");
 
             result.Append(GetBuilderContent("fields"));
-            result.Append(")\nvalues ");
+            result.Append(")\nVALUES ");
             result.Append(GetBuilderContent("values"));
             result.AppendLine(GetBuilderContent("where"));
-            result.Append("on conflict ");
+            result.Append("ON CONFLICT ");
             result.Append(GetBuilderContent("conflict"));
 
             var pairs = GetBuilderContent("pairs");
             if (pairs != null)
             {
-                result.Append("do update set ");
+                result.Append("DO UPDATE SET ");
                 result.Append(pairs);
             }
             else
             {
-                result.Append("do nothing");
+                result.Append("DO NOTHING");
             }
 
             result.Append(GetBuilderContent("returning"));
@@ -1013,16 +1053,16 @@ namespace Sqlist.NET
         /// </summary>
         /// <param name="alias">The alias used to retrieve the values.</param>
         /// <returns>A <c>UPDATE</c> statement.</returns>
-        public virtual string ToBulkUpdate(string alias)
+        public string ToBulkUpdate(string alias)
         {
             if (_sqlStyle != SqlStyle.PL_pgSQL)
                 throw new NotSupportedException($"ToBulkUpdate() is not supported for '{_sqlStyle}'");
 
-            var builder = new StringBuilder("update " + TableName + " set \n");
+            var builder = new StringBuilder("update " + TableName + " SET \n");
             builder.AppendLine(Tab + GetBuilderContent("pairs"));
-            builder.AppendLine("from (values");
+            builder.AppendLine("FROM (VALUES");
             builder.AppendLine(Tab + GetBuilderContent("values"));
-            builder.Append($") as {alias}(" + GetBuilderContent("fields") + ")");
+            builder.Append($") AS {alias}(" + GetBuilderContent("fields") + ")");
             builder.AppendLine(GetBuilderContent("where"));
 
             return builder.ToString();
@@ -1031,7 +1071,7 @@ namespace Sqlist.NET
         /// <summary>
         ///     Clears the temporary configurations to start a fresh build.
         /// </summary>
-        public virtual void Clear()
+        public void Clear()
         {
             _builders.Clear();
         }
