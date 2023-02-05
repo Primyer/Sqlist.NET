@@ -7,20 +7,31 @@ namespace Sqlist.NET.Clauses
     {
         private readonly StringBuilder _builder = new StringBuilder();
 
-        public void Init(string content)
+        public ConditionalClause Init(string content)
         {
             _builder.Append(content);
+            return this;
         }
 
-        public void Init(Action<ConditionalClause> inner) => Inner(inner);
+        public ConditionalClause Init(Action<ConditionalClause> inner)
+        {
+            Inner(inner);
+            return this;
+        }
 
-        public void Not(string content)
+        public ConditionalClause Not(string content)
         {
             _builder.Append("NOT ");
             _builder.Append(content);
+
+            return this;
         }
 
-        public void Not(Action<ConditionalClause> inner) => Inner("NOT ", inner);
+        public ConditionalClause Not(Action<ConditionalClause> inner)
+        {
+            Inner("NOT ", inner);
+            return this;
+        }
 
         #region AND
         public ConditionalClause And(string content) => Content("AND", content);

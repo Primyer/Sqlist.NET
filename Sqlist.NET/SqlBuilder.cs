@@ -270,7 +270,7 @@ namespace Sqlist.NET
         /// <param name="condition">The join conditions.</param>
         public void InnerJoin(string table, Action<ConditionalClause> condition)
         {
-            Join("INNER", table, condition.ToString());
+            Join("INNER", table, condition);
         }
 
         /// <summary>
@@ -302,7 +302,7 @@ namespace Sqlist.NET
         /// <param name="condition">The join conditions.</param>
         public void LeftJoin(string table, Action<ConditionalClause> condition)
         {
-            Join("LEFT", table, condition.ToString());
+            Join("LEFT", table, condition);
         }
 
         /// <summary>
@@ -334,7 +334,7 @@ namespace Sqlist.NET
         /// <param name="condition">The join conditions.</param>
         public void RightJoin(string table, Action<ConditionalClause> condition)
         {
-            Join("RIGHT", table, condition.ToString());
+            Join("RIGHT", table, condition);
         }
 
         /// <summary>
@@ -401,6 +401,20 @@ namespace Sqlist.NET
         }
 
         /// <summary>
+        ///     Registers a join of the specified <paramref name="type"/> with the given <paramref name="entity"/> and <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="type">The type of join being registered.</param>
+        /// <param name="entity">The entity which to join with.</param>
+        /// <param name="condition">The condition of join operation.</param>
+        public void Join(string type, string entity, Action<ConditionalClause> condition)
+        {
+            var clause = new ConditionalClause();
+            condition.Invoke(clause);
+
+            Join($"{type} JOIN {_enc.Reformat(entity)} ON " + _enc.Reformat(clause.ToString()));
+        }
+
+        /// <summary>
         ///     Register the specified partial <paramref name="stmt"/> as a join.
         /// </summary>
         /// <param name="stmt">The statement to register.</param>
@@ -432,7 +446,10 @@ namespace Sqlist.NET
         /// <param name="condition">The condition to register.</param>
         public void Where(Action<ConditionalClause> condition)
         {
-            Where(condition.ToString());
+            var clause = new ConditionalClause();
+            condition.Invoke(clause);
+
+            Where(clause.ToString());
         }
 
         /// <summary>
