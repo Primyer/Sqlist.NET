@@ -85,10 +85,7 @@ namespace Sqlist.NET
         public string TableName
         {
             get => _tableName;
-            set
-            {
-                _tableName = _enc.Reformat(value);
-            }
+            set => _tableName = _enc.Reformat(value);
         }
 
         /// <summary>
@@ -280,9 +277,9 @@ namespace Sqlist.NET
         /// <param name="alias">The alias of the subquery.</param>
         /// <param name="configureSql">The action to build the partial statement of the join.</param>
         /// <param name="condition">The condition of join operation.</param>
-        public void InnerJoin(string alias, Action<SqlBuilder> configureSql, string condition = null)
+        public void InnerJoin(string alias, string condition, Action<SqlBuilder> configureSql)
         {
-            Join("INNER", alias, configureSql, condition);
+            Join("INNER", alias, condition, configureSql);
         }
 
         /// <summary>
@@ -312,9 +309,9 @@ namespace Sqlist.NET
         /// <param name="alias">The alias of the subquery.</param>
         /// <param name="configureSql">The action to build the partial statement of the join.</param>
         /// <param name="condition">The condition of join operation.</param>
-        public void LeftJoin(string alias, Action<SqlBuilder> configureSql, string condition = null)
+        public void LeftJoin(string alias, string condition, Action<SqlBuilder> configureSql)
         {
-            Join("LEFT", alias, configureSql, condition);
+            Join("LEFT", alias, condition, configureSql);
         }
 
         /// <summary>
@@ -344,9 +341,9 @@ namespace Sqlist.NET
         /// <param name="alias">The alias of the subquery.</param>
         /// <param name="configureSql">The action to build the partial statement of the join.</param>
         /// <param name="condition">The condition of join operation.</param>
-        public void RightJoin(string alias, Action<SqlBuilder> configureSql, string condition = null)
+        public void RightJoin(string alias, string condition, Action<SqlBuilder> configureSql)
         {
-            Join("RIGHT", alias, configureSql, condition);
+            Join("RIGHT", alias, condition, configureSql);
         }
 
         /// <summary>
@@ -366,9 +363,9 @@ namespace Sqlist.NET
         /// <param name="alias">The alias of the subquery.</param>
         /// <param name="configureSql">The action to build the partial statement of the join.</param>
         /// <param name="condition">The condition of join operation.</param>
-        public void FullJoin(string alias, Action<SqlBuilder> configureSql, string condition = null)
+        public void FullJoin(string alias, string condition, Action<SqlBuilder> configureSql)
         {
-            Join("FULL", alias, configureSql, condition);
+            Join("FULL", alias, condition, configureSql);
         }
 
         /// <summary>
@@ -379,7 +376,7 @@ namespace Sqlist.NET
         /// <param name="alias">The alias of the subquery.</param>
         /// <param name="configureSql">The action to build the partial statement of the join.</param>
         /// <param name="condition">The condition of join operation.</param>
-        public async void Join(string type, string alias, Action<SqlBuilder> configureSql, string condition = null)
+        public async void Join(string type, string alias, string condition, Action<SqlBuilder> configureSql)
         {
             var sql = new SqlBuilder();
             configureSql.Invoke(sql);
