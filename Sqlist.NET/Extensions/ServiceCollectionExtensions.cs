@@ -1,22 +1,7 @@
-﻿#region License
-// Copyright (c) 2021, Saleh Kawaf Kulla
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-#endregion
-
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
 using Sqlist.NET.Infrastructure;
+using Sqlist.NET.Infrastructure.Internal;
 
 using System;
 
@@ -31,15 +16,17 @@ namespace Sqlist.NET.Extensions
         ///     Adds the Sqlist services to the context.
         /// </summary>
         /// <param name="services">The service collection to add to.</param>
-        /// <param name="config">The configuration action to set up the Sqlist options.</param>
-        public static void AddSqlist(this IServiceCollection services, Action<DbOptionsBuilder> config)
+        /// <param name="configureOptions">The configuration action to set up the Sqlist options.</param>
+        /// <returns>The <see cref="SqlistBuilder"/>.</returns>
+        public static SqlistBuilder AddSqlist(this IServiceCollection services, Action<DbOptionsBuilder> configureOptions)
         {
             var builder = new DbOptionsBuilder();
-            config.Invoke(builder);
+            configureOptions.Invoke(builder);
 
-            services.AddSingleton(builder.Options);
-            services.AddScoped<DbCore>();
+            services.ConfigureOptions(builder.GetOptions());
             services.AddScoped<TransactionManager>();
+
+            return new SqlistBuilder(services, builder);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Sqlist.NET.Abstractions;
+﻿using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Utilities;
 
 using System.Threading.Tasks;
@@ -10,20 +10,16 @@ namespace Sqlist.NET
     /// </summary>
     public sealed class TransactionManager
     {
-        private readonly DbCore _db;
-
-        private IQueryStore _query;
+        private readonly DbContextBase _db;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransactionManager"/> class.
         /// </summary>
-        /// <param name="db">The <see cref="DbCore"/> for the transaction API.</param>
-        public TransactionManager(DbCore db)
+        /// <param name="db">The <see cref="DbContextBase"/> for the transaction API.</param>
+        public TransactionManager(DbContextBase db)
         {
             Check.NotNull(db, nameof(db));
-
             _db = db;
-            _query = db.Query();
         }
 
         /// <summary>
@@ -31,8 +27,7 @@ namespace Sqlist.NET
         /// </summary>
         public void Begin()
         {
-            _query = _db.Query();
-            _db.BeginTransaction();
+            BeginAsync().Wait();
         }
 
         /// <summary>
@@ -40,7 +35,6 @@ namespace Sqlist.NET
         /// </summary>
         public Task BeginAsync()
         {
-            _query = _db.Query();
             return _db.BeginTransactionAsync();
         }
 
@@ -49,10 +43,7 @@ namespace Sqlist.NET
         /// </summary>
         public void Commit()
         {
-            _db.CommitTransaction();
-
-            _query.Dispose();
-            _query = null;
+            CommitAsync().Wait();
         }
 
         /// <summary>
@@ -61,9 +52,6 @@ namespace Sqlist.NET
         public async Task CommitAsync()
         {
             await _db.CommitTransactionAsync();
-
-            _query.Dispose();
-            _query = null;
         }
 
         /// <summary>
@@ -71,10 +59,7 @@ namespace Sqlist.NET
         /// </summary>
         public void Rollback()
         {
-            _db.RollbackTransaction();
-
-            _query.Dispose();
-            _query = null;
+            RollbackAsync().Wait();
         }
 
         /// <summary>
@@ -83,9 +68,6 @@ namespace Sqlist.NET
         public async Task RollbackAsync()
         {
             await _db.RollbackTransactionAsync();
-
-            _query.Dispose();
-            _query = null;
         }
     }
 }

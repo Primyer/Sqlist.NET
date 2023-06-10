@@ -1,0 +1,11 @@
+
+# This file defines members as an array rather than a dictionary, which is invalid.
+
+- version: ""
+- title: Invalid Version
+- description: Migration phase with an invalid version format.
+
+- guidelines:
+    create: {}
+    update: {}
+    delete: {}

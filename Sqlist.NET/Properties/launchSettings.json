@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Sqlist.NET": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:49953;http://localhost:49954"
+    }
+  }
+}

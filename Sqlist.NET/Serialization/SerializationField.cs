@@ -1,11 +1,9 @@
-﻿using System;
-
-namespace Sqlist.NET.Serialization
+﻿namespace Sqlist.NET.Serialization
 {
     internal class SerializationField
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
-        public virtual object Parse(object obj) => obj;
+        public virtual object? Parse(object obj) => obj;
     }
 }

@@ -12,7 +12,7 @@ namespace Sqlist.NET.Serialization
 
         public Type Type { get; set; }
 
-        public override object Parse(object obj)
+        public override object? Parse(object obj)
         {
             if (obj is string str)
                 return JsonSerializer.Deserialize(str, Type);

@@ -1,0 +1,17 @@
+version: "1.0.0"
+title: Initial Data Definition
+description: Defines the initial structure of data.
+
+guidelines:
+    create:
+        Users:
+            - Id: int
+            - Name: name
+            - Email: varchar (125)
+            - Phone: varchar (30)
+        Roles:
+            - Id: int
+            - Name: name
+        UserRoles:
+            - UserId: int
+            - RoleId: int

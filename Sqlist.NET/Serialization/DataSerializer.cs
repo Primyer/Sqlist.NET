@@ -1,31 +1,13 @@
-﻿#region License
-// Copyright (c) 2021, Saleh Kawaf Kulla
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-#endregion
-
-using FastMember;
-
-using Sqlist.NET.Annotations;
-using Sqlist.NET.Common;
+﻿using FastMember;
 using Sqlist.NET.Metadata;
-
+using Sqlist.NET.Utilities;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Sqlist.NET.Serialization
@@ -40,7 +22,7 @@ namespace Sqlist.NET.Serialization
             await lazyReader.IterateAsync(reader =>
             {
                 var value = JsonSerializer.Deserialize<T>(reader.GetString(0));
-                data.Add(value);
+                data.Add(value!);
             });
             return data;
         }
@@ -58,7 +40,7 @@ namespace Sqlist.NET.Serialization
             return data;
         }
 
-        public static async Task<IEnumerable<T>> Object<T>(LazyDbDataReader lazyReader, MappingOrientation orientation, Action<T> altr)
+        public static async Task<IEnumerable<T>> Object<T>(LazyDbDataReader lazyReader, MappingOrientation orientation, Action<T>? altr)
         {
             var acsr = TypeAccessor.Create(typeof(T));
             var data = new List<T>();
@@ -102,7 +84,7 @@ namespace Sqlist.NET.Serialization
                 if (prop.GetCustomAttribute<NotMappedAttribute>() != null)
                     continue;
 
-                var jsonAttr = prop.GetCustomAttribute<JsonAttribute>();
+                var jsonAttr = prop.GetCustomAttribute<JsonIncludeAttribute>();
                 var clmnAttr = prop.GetCustomAttribute<ColumnAttribute>();
 
                 var field = jsonAttr is null
@@ -134,7 +116,7 @@ namespace Sqlist.NET.Serialization
                 if (prop.GetCustomAttribute<NotMappedAttribute>() != null)
                     continue;
 
-                var jsonAttr = prop.GetCustomAttribute<JsonAttribute>();
+                var jsonAttr = prop.GetCustomAttribute<JsonIncludeAttribute>();
                 var clmnAttr = prop.GetCustomAttribute<ColumnAttribute>();
 
                 var field = jsonAttr is null

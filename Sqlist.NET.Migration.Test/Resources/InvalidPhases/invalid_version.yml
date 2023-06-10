@@ -1,0 +1,8 @@
+version: some_invalid_version
+title: Invalid Version
+description: Migration phase with an invalid version format.
+
+guidelines:
+    create: {}
+    update: {}
+    delete: {}

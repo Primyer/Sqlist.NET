@@ -1,0 +1,12 @@
+version: "2.0.0"
+title: Modify Users Table
+
+guidelines:
+    create:
+        Users:
+            - EmailIsConfirmed: boolean,
+            - SecurityStamp: uuid
+
+    update:
+        Users:
+            Phone: { column_name: PhoneNumber }
