@@ -2,25 +2,22 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Sqlist.NET.Data;
 using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Migration.Data;
 using Sqlist.NET.Migration.Deserialization;
 using Sqlist.NET.Migration.Exceptions;
 using Sqlist.NET.Migration.Extensions;
+using Sqlist.NET.Migration.Properties;
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Sqlist.NET.Migration.Infrastructure
 {
     public class MigrationService
     {
-        private const string Tab = "   ";
-
         private readonly DbContextBase _db;
         private readonly MigrationOptions _options;
         private readonly DbManager _dbTools;
@@ -70,40 +67,66 @@ namespace Sqlist.NET.Migration.Infrastructure
                 _info.CurrentVersion = new Version(phase.Version);
             }
             
-            var dataMap = new DataTransactionMap();
             var roadMap = GetMigrationRoadMap()
                 .Where(phase => version is null || phase.Version <= version)
                 .OrderBy(phase => phase.Version);
 
-            foreach (var phase in roadMap)
-            {
-                dataMap.Merge(phase, _info.CurrentVersion);
-            }
-            
-            _dataMap = dataMap;
+            _dataMap = new DataTransactionMap(roadMap, _info.CurrentVersion);
+            MergeSchemaDefinition();
+
+            var lastPhase = roadMap.Last();
+
+            _info.SchemaChanges = _dataMap.GenerateSummary();
+            _info.LatestVersion = lastPhase.Version;
+            _info.TargetVersion = version != null && roadMap.LastOrDefault()?.Version == version ? version : _info.LatestVersion;
+            _info.Title = lastPhase.Title;
+            _info.Description = lastPhase.Description;
+
             _initialized = true;
 
-            _info.SchemaChanges = GenerateSummary(_dataMap);
-            _info.LatestVersion = roadMap.Last().Version;
-            _info.TargetVersion = version != null && roadMap.LastOrDefault()?.Version == version ? version : _info.LatestVersion;
-
-            TraceLogInformation(_info);
+            TraceLogInformation();
             return _info;
         }
 
-        private void TraceLogInformation(MigrationOperationInformation info)
+        private void MergeSchemaDefinition()
+        {
+            var strType = _db.TypeMapper.TypeName<string>();
+            var definition = new ColumnDefinition(strType);
+
+            var phase = new MigrationPhase()
+            {
+                Guidelines =
+                {
+                    Create =
+                    {
+                        [_options.SchemaTable!] = new DefinitionCollection()
+                        {
+                            KeyValuePair.Create(Consts.Version, definition),
+                            KeyValuePair.Create(Consts.Title, definition),
+                            KeyValuePair.Create(Consts.Description, definition),
+                            KeyValuePair.Create(Consts.Summary, definition),
+                            KeyValuePair.Create(Consts.Applied, new ColumnDefinition(_db.TypeMapper.TypeName<DateTime>())),
+                        }
+                    }
+                }
+            };
+
+            _dataMap?.Merge(phase, _info!.CurrentVersion);
+        }
+
+        private void TraceLogInformation()
         {
             if (_logger is null)
                 return;
 
-            _logger.LogTrace("Current version: {version}", info.CurrentVersion);
-            _logger.LogTrace("Migration to version: {version}", info.LatestVersion);
-            _logger.LogTrace("Title: {title}", info.Title);
-            _logger.LogTrace("Description: {description}", info.Description);
-            _logger.LogTrace("Schema changes: {schema}", info.SchemaChanges);
+            _logger.LogTrace("Current version: {version}", _info!.CurrentVersion);
+            _logger.LogTrace("Migration to version: {version}", _info.LatestVersion);
+            _logger.LogTrace("Title: {title}", _info.Title);
+            _logger.LogTrace("Description: {description}", _info.Description);
+            _logger.LogTrace("Schema changes: {schema}", _info.SchemaChanges);
         }
 
-        private IEnumerable<MigrationPhase> GetMigrationRoadMap()
+        public IEnumerable<MigrationPhase> GetMigrationRoadMap()
         {
             var deserializer = new MigrationDeserializer();
             var phasesList = new List<MigrationPhase>();
@@ -115,34 +138,6 @@ namespace Sqlist.NET.Migration.Infrastructure
             });
 
             return phasesList;
-        }
-
-        private static string GenerateSummary(DataTransactionMap dataMap)
-        {
-            var sb = new StringBuilder();
-
-            foreach (var (table, columns) in dataMap)
-            {
-                sb.AppendLine(table);
-
-                foreach (var (name, rule) in columns)
-                {
-                    sb.Append(Tab + name + ": " + rule.Type);
-                    
-                    if (rule is DataTransactionRule)
-                    {
-                        if (!string.IsNullOrEmpty(rule.ColumnName))
-                            sb.Append(" => " + rule.ColumnName);
-
-                        if (!string.IsNullOrEmpty(rule.Cast))
-                            sb.Append($", casted as ({rule.Cast})");
-                    }
-
-                    sb.AppendLine();
-                }
-            }
-
-            return sb.ToString();
         }
 
         /// <summary>
@@ -174,58 +169,11 @@ namespace Sqlist.NET.Migration.Infrastructure
                 await _dbTools.CreateDatabaseAsync(dbname);
                 created = true;
 
-                _logger?.LogInformation("Create new database.");
+                _logger?.LogInformation("Created new database.");
 
-                await _db.Connection.ChangeDatabaseAsync(dbname);
-                await _db.BeginTransactionAsync();
-
-                try
-                {
-                    _logger?.LogInformation("Executing database scripts...");
-
-                    await _options.ScriptsAssembly!.ReadEmbeddedResources(_options.ScriptsPath, async (resource, script) =>
-                    {
-                        try
-                        {
-                            await _db.Query().ExecuteAsync(script!);
-                        }
-                        catch (Exception ex)
-                        {
-                            throw new MigrationException($"Failed to execute scripts in resource '{resource}'.", ex);
-                        }
-                    });
-
-                    await _dbTools.CreateSchemaTableAsync();
-                    await _db.CommitTransactionAsync();
-
-                    _logger?.LogInformation("Database scripts are successfully executed.");
-
-                    await _db.BeginTransactionAsync();
-
-                    if (_info!.CurrentVersion is null)
-                        _logger?.LogInformation("No previous version of the database was found; no data migration required.");
-                    else
-                    {
-                        _logger?.LogInformation("Performing data migration...");
-                        await _dbTools.MigrateDataFromAsync(old_db, _dataMap!);
-                    }
-
-                    await _dbTools.InsertSchemaPhaseAsync(new SchemaPhase
-                    {
-                        Version = _info.LatestVersion?.ToString(),
-                        Title = _info.Title,
-                        Description = _info.Description,
-                        Summary = _info.SchemaChanges
-                    });
-
-                    await _db.CommitTransactionAsync();
-                    _logger?.LogInformation("Data migration is successfully completed");
-                }
-                catch (Exception)
-                {
-                    await _db.RollbackTransactionAsync();
-                    throw;
-                }
+                await _db.Connection!.ChangeDatabaseAsync(dbname);
+                await ExecuteScriptsAsync();
+                await ExecuteMigrationAsync(old_db);
             }
             catch (Exception)
             {
@@ -247,6 +195,59 @@ namespace Sqlist.NET.Migration.Infrastructure
 
                 throw;
             }
+        }
+
+        private async Task ExecuteScriptsAsync()
+        {
+            await _db.BeginTransactionAsync();
+
+            try
+            {
+                _logger?.LogInformation("Executing database scripts...");
+
+                await _options.ScriptsAssembly!.ReadEmbeddedResources(_options.ScriptsPath, async (resource, script) =>
+                {
+                    try
+                    {
+                        await _db.Query().ExecuteAsync(script!);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new MigrationException($"Failed to execute scripts in resource '{resource}'.", ex);
+                    }
+                });
+
+                await _dbTools.CreateSchemaTableAsync();
+                await _db.CommitTransactionAsync();
+
+                _logger?.LogInformation("Database scripts are successfully executed.");
+            }
+            catch (Exception)
+            {
+                await _db.RollbackTransactionAsync();
+                throw;
+            }
+        }
+
+        private async Task ExecuteMigrationAsync(string dbname)
+        {
+            if (_info!.CurrentVersion is null)
+                _logger?.LogInformation("No previous version of the database was found; no data migration required.");
+            else
+            {
+                _logger?.LogInformation("Performing data migration...");
+                await _dbTools.MigrateDataFromAsync(dbname, _dataMap!);
+            }
+
+            await _dbTools.InsertSchemaPhaseAsync(new SchemaPhase
+            {
+                Version = _info.LatestVersion?.ToString(),
+                Title = _info.Title,
+                Description = _info.Description,
+                Summary = _info.SchemaChanges
+            });
+
+            _logger?.LogInformation("Data migration is successfully completed.");
         }
     }
 }

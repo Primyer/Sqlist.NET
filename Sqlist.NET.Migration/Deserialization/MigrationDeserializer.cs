@@ -18,7 +18,7 @@ namespace Sqlist.NET.Migration.Deserialization
         {
             _deserializer = new DeserializerBuilder()
                 .WithNodeDeserializer(new VersionNodeDeserializer())
-                .WithNodeDeserializer(new KeyValuePairNodeDeserializer())
+                .WithNodeDeserializer(new DefinitionCollectionNodeDeserializer())
                 .WithNamingConvention(UnderscoredNamingConvention.Instance)
                 .Build();
         }

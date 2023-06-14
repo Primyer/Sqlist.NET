@@ -75,7 +75,7 @@ namespace Sqlist.NET.Migration.Data
                 }
             };
 
-            var sql = _db.Sql().CreateTable(table);
+            var sql = _db.UncasedSql().CreateTable(table);
             var qry = _db.Query();
 
             return qry.ExecuteAsync(sql);

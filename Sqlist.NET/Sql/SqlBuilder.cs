@@ -1028,6 +1028,16 @@ namespace Sqlist.NET.Sql
             return builder.ToString();
         }
 
+        /// <summary>
+        ///     Generates and returns a <c>CREATE TABLE</c> statement out of the given <paramref name="table"/>.
+        /// </summary>
+        /// <param name="table">The table information.</param>
+        /// <returns>A <c>CREATE TABLE</c> statement.</returns>
+        public virtual string DeleteTable(string table)
+        {
+            return $"DROP TABLE {Encloser.Wrap(table)};";
+        }
+
         private void ConfigureTablePrimaryKey(SqlTable table)
         {
             var pkColumns = table.Columns.Where(col => col.PrimaryKey);

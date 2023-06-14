@@ -184,7 +184,7 @@ namespace Sqlist.NET.Sql
 
             if (options != null)
             {
-                result.Append("WITH (");
+                result.AppendLine("WITH (");
                 Indent(options.ToString(), result);
                 result.Append(")");
             }

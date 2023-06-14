@@ -5,5 +5,6 @@ create table if not exists "Users"
 	"Email" varchar (125),
 	"PhoneNumber" varchar (30),
 	"EmailIsConfirmed" boolean,
+	"CreateDate" timestamp without time zone,
 	"SecurityStamp" uuid
 );

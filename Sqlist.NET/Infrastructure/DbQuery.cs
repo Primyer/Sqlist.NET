@@ -2,6 +2,7 @@
 using Sqlist.NET.Utilities;
 
 using System;
+using System.Data;
 using System.Data.Common;
 using System.Threading.Tasks;
 
@@ -55,6 +56,18 @@ namespace Sqlist.NET.Infrastructure
                 await _db.BeginTransactionAsync();
 
             return _db.Connection!;
+        }
+
+        /// <inheritdoc />
+        public override Command CreateCommand()
+        {
+            return _db.CreateCommand();
+        }
+
+        /// <inheritdoc />
+        public override Command CreateCommand(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+        {
+            return _db.CreateCommand(sql, prms, timeout, type);
         }
     }
 }

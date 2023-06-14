@@ -18,6 +18,6 @@ namespace Sqlist.NET.Migration.Data
         public string? Summary { get; set; }
 
         [Column("applied")]
-        public DateTime Applied { get; set; } = DateTime.Now;
+        public DateTime Applied { get; set; } = DateTime.UtcNow;
     }
 }

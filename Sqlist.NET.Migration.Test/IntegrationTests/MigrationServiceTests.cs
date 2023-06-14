@@ -1,6 +1,4 @@
-﻿using NuGet.Frameworks;
-
-using System.Collections;
+﻿using System.Collections;
 
 using Xunit.Abstractions;
 
@@ -24,7 +22,7 @@ public class MigrationServiceTests : IClassFixture<AppMigrationService>
     [Fact]
     public async Task InitializeAsync_ShouldReturnInformation()
     {
-        var info = await _service.InitializeAsync();
+        var info = await _service.InitializeAsync(null);
 
         _output.WriteLine("Current version      = " + info.CurrentVersion);
         _output.WriteLine("Migration to version = " + info.LatestVersion);
@@ -50,8 +48,8 @@ public class MigrationServiceTests : IClassFixture<AppMigrationService>
     {
         private readonly List<object?[]> _data = new()
         {
-            //new object?[] { null, new Version(1, 0, 0) },
-            //new object[] { new Version(1, 0, 0), new Version(2, 0, 0) },
+            new object?[] { null, new Version(1, 0, 0) },
+            new object[] { new Version(1, 0, 0), new Version(2, 0, 0) },
             new object[] { new Version(2, 0, 0), new Version(3, 0, 0) }
         };
 

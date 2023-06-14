@@ -1,59 +1,126 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 
 namespace Sqlist.NET
 {
-    public sealed class TypeMapper
+    public abstract class TypeMapper
     {
-        private static readonly Dictionary<string, DbType> NativeTypes = new Dictionary<string, DbType>
+        private static readonly Dictionary<DbType, Type> ClrTypes = new Dictionary<DbType, Type>
         {
-            [typeof(byte).Name] = DbType.Byte,
-            [typeof(bool).Name] = DbType.Boolean,
-            [typeof(byte[]).Name] = DbType.Binary,
-            [typeof(DateTime).Name] = DbType.DateTime,
-            [typeof(DateTimeOffset).Name] = DbType.DateTimeOffset,
-            [typeof(decimal).Name] = DbType.Decimal,
-            [typeof(double).Name] = DbType.Double,
-            [typeof(float).Name] = DbType.Single,
-            [typeof(Guid).Name] = DbType.Guid,
-            [typeof(short).Name] = DbType.Int16,
-            [typeof(int).Name] = DbType.Int32,
-            [typeof(long).Name] = DbType.Int64,
-            [typeof(object).Name] = DbType.Object,
-            [typeof(string).Name] = DbType.String,
-            [typeof(TimeSpan).Name] = DbType.Time,
-            [typeof(ushort).Name] = DbType.UInt16,
-            [typeof(uint).Name] = DbType.UInt32,
-            [typeof(ulong).Name] = DbType.UInt64
+            [DbType.AnsiString] = typeof(string),
+            [DbType.Binary] = typeof(byte[]),
+            [DbType.Byte] = typeof(byte),
+            [DbType.Boolean] = typeof(bool),
+            [DbType.Currency] = typeof(decimal),
+            [DbType.Date] = typeof(DateTime),
+            [DbType.DateTime] = typeof(DateTime),
+            [DbType.Decimal] = typeof(decimal),
+            [DbType.Double] = typeof(double),
+            [DbType.Guid] = typeof(Guid),
+            [DbType.Int16] = typeof(short),
+            [DbType.Int32] = typeof(int),
+            [DbType.Int64] = typeof(long),
+            [DbType.Object] = typeof(object),
+            [DbType.SByte] = typeof(sbyte),
+            [DbType.Single] = typeof(float),
+            [DbType.String] = typeof(string),
+            [DbType.Time] = typeof(TimeSpan),
+            [DbType.UInt16] = typeof(ushort),
+            [DbType.UInt32] = typeof(uint),
+            [DbType.UInt64] = typeof(ulong),
+            [DbType.VarNumeric] = typeof(decimal),
+            [DbType.AnsiStringFixedLength] = typeof(string),
+            [DbType.StringFixedLength] = typeof(string),
+            [DbType.Xml] = typeof(string),
+            [DbType.DateTime2] = typeof(DateTime),
+            [DbType.DateTimeOffset] = typeof(DateTimeOffset)
         };
 
-        public static TypeMapper Instance => new TypeMapper();
+        private static readonly Dictionary<Type, DbType> DbTypes = new Dictionary<Type, DbType>
+        {
+            [typeof(byte[])] = DbType.Binary,
+            [typeof(byte)] = DbType.Byte,
+            [typeof(bool)] = DbType.Boolean,
+            [typeof(DateTime)] = DbType.DateTime,
+            [typeof(decimal)] = DbType.Decimal,
+            [typeof(double)] = DbType.Double,
+            [typeof(Guid)] = DbType.Guid,
+            [typeof(short)] = DbType.Int16,
+            [typeof(int)] = DbType.Int32,
+            [typeof(long)] = DbType.Int64,
+            [typeof(object)] = DbType.Object,
+            [typeof(sbyte)] = DbType.SByte,
+            [typeof(float)] = DbType.Single,
+            [typeof(string)] = DbType.String,
+            [typeof(TimeSpan)] = DbType.Time,
+            [typeof(ushort)] = DbType.UInt16,
+            [typeof(uint)] = DbType.UInt32,
+            [typeof(ulong)] = DbType.UInt64,
+            [typeof(DateTimeOffset)] = DbType.DateTimeOffset
+        };
 
-        private TypeMapper()
-        { }
+        /// <summary>
+        ///     Returns the name of the corresponding type of the DB provider.
+        /// </summary>
+        /// <typeparam name="T">The CLR type to match up.</typeparam>
+        /// <returns>The name of the corresponding type of the DB provider.</returns>
+        /// <exception cref="NotSupportedException" />
+        public string TypeName<T>()
+        {
+            var dbType = ToDbType(typeof(T));
+            return TypeName(dbType);
+        }
 
+        /// <summary>
+        ///     Returns the name of the corresponding type of the DB provider.
+        /// </summary>
+        /// <param name="dbType">The ADO.NET <see cref="DbType"/> to match up.</param>
+        /// <returns>The name of the corresponding type of the DB provider.</returns>
+        /// <exception cref="NotSupportedException" />
+        public abstract string TypeName(DbType dbType);
+
+        /// <summary>
+        ///     Returns the name of the corresponding type of the DB provider.
+        /// </summary>
+        /// <param name="name">The name of the DB provider type.</param>
+        /// <returns>The name of the corresponding type of the DB provider.</returns>
+        /// <exception cref="NotSupportedException" />
+        public DbType GetDbType(string name)
+        {
+            var type = GetType(name);
+            return DbTypes[type];
+        }
+
+        /// <summary>
+        ///     Returns the corresponding CLR type.
+        /// </summary>
+        /// <param name="name">The name of the DB provider type.</param>
+        /// <returns>The corresponding CLR type.</returns>
+        /// <exception cref="NotSupportedException" />
+        public abstract Type GetType(string name);
+
+        /// <summary>
+        ///     Returns the corresponding type of the DB provider.
+        /// </summary>
+        /// <param name="type">The CLR type to match up.</param>
+        /// <returns>The corresponding type of the DB provider</returns>
         public DbType ToDbType(Type type)
         {
-            return NativeTypes.ContainsKey(type.Name)
-                ? NativeTypes[type.Name]
+            return DbTypes.ContainsKey(type)
+                ? DbTypes[type]
                 : DbType.Object;
         }
 
-        public DbType ToDbType(int typeInt)
+        /// <summary>
+        ///     Returns the corresponding CLR type.
+        /// </summary>
+        /// <param name="type">The <see cref="DbType"/> to match up.</param>
+        /// <returns>The corresponding CLR type.</returns>
+        public Type FromDbType(DbType type)
         {
-            return Enum.TryParse(typeof(DbType), typeInt.ToString(), out var result)
-                ? (DbType)result
-                : DbType.Object;
-        }
-
-
-        public T ToCustomDbType<T>(DbType type) where T : Enum
-        {
-            if (Enum.TryParse(typeof(DbType), ((int)type).ToString(), out var result))
-                return (T)result;
-
-            else throw new NotSupportedException($"The parameter type DbType.{type} isn't supported by {typeof(T).Name}");
+            return ClrTypes[type];
         }
     }
 }

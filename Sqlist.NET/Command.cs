@@ -1,4 +1,5 @@
-﻿using Sqlist.NET.Utilities;
+﻿using Sqlist.NET.Infrastructure;
+using Sqlist.NET.Utilities;
 
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ namespace Sqlist.NET
 {
     public class Command : IDisposable, IAsyncDisposable
     {
-        private readonly DbConnection _conn;
+        private readonly DbContextBase _db;
         private readonly DbCommand _cmd;
 
         private object? _prms;
@@ -19,24 +20,24 @@ namespace Sqlist.NET
         /// <summary>
         ///     Initializes a new instance of the <see cref="Command"/> class.
         /// </summary>
-        /// <param name="conn">The ADO.NET connection.</param>
-        internal Command(DbConnection conn)
+        /// <param name="db">The <see cref="DbContextBase"/> implementation.</param>
+        internal Command(DbContextBase db)
         {
-            Check.NotNull(conn, nameof(conn));
+            Check.NotNull(db, nameof(db));
 
-            _conn = conn;
-            _cmd = conn.CreateCommand();
+            _db = db;
+            _cmd = _db.Connection!.CreateCommand();
         }
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="Command"/> class.
         /// </summary>
-        /// <param name="conn">The ADO.NET connection.</param>
+        /// <param name="db">The <see cref="DbContextBase"/> implementation.</param>
         /// <param name="sql">The SQL statement to run against the data source.</param>
         /// <param name="prms">The parameters associated with the given statement.</param>
         /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
         /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
-        internal Command(DbConnection conn, string sql, object? prms = null, int? timeout = null, CommandType? type = null) : this(conn)
+        internal Command(DbContextBase db, string sql, object? prms = null, int? timeout = null, CommandType? type = null) : this(db)
         {
             Statement = sql;
             Parameters = prms;
@@ -141,7 +142,7 @@ namespace Sqlist.NET
             return _cmd.ExecuteReaderAsync(commandBehavior, cancellationToken);
         }
 
-        public static void ConfigureBulkParameters(DbCommand cmd, object[][] prms)
+        public void ConfigureBulkParameters(DbCommand cmd, object[][] prms)
         {
             if (prms is null || prms.Length == 0)
                 return;
@@ -163,7 +164,7 @@ namespace Sqlist.NET
                         prm.Value = DBNull.Value;
                     else
                     {
-                        prm.DbType = TypeMapper.Instance.ToDbType(val.GetType());
+                        prm.DbType = _db.TypeMapper.ToDbType(val.GetType());
                         prm.Value = val;
                     }
 
@@ -172,7 +173,7 @@ namespace Sqlist.NET
             }
         }
 
-        public static void ConfigureParameters(DbCommand cmd, object? prms)
+        public void ConfigureParameters(DbCommand cmd, object? prms)
         {
             if (prms is null)
                 return;
@@ -194,7 +195,7 @@ namespace Sqlist.NET
                     prm.Value = DBNull.Value;
                 else
                 {
-                    prm.DbType = TypeMapper.Instance.ToDbType(value.GetType());
+                    prm.DbType = _db.TypeMapper.ToDbType(value.GetType());
                     prm.Value = value;
                 }
 
@@ -218,8 +219,8 @@ namespace Sqlist.NET
 
         private void EnsureConnectionOpen()
         {
-            if (_conn.State == ConnectionState.Closed)
-                _conn.Open();
+            if (_db.Connection!.State == ConnectionState.Closed)
+                _db.Connection.Open();
         }
 
         public ValueTask DisposeAsync()

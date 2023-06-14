@@ -1,27 +1,47 @@
 ﻿using Sqlist.NET.Data;
 using Sqlist.NET.Migration.Deserialization;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Sqlist.NET.Migration
 {
     public class DataTransactionMap : Dictionary<string, TransactionRuleDictionary>
     {
-        private const string CastVariable = "{Column}";
+        private const string Tab = "   ";
+        public const string CastVariable = "{column}";
 
         static readonly KeyValuePair<string, DataTransactionRule> DefaultRecord = default;
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="DataTransactionMap"/> class.
+        /// </summary>
+        public DataTransactionMap()
+        { }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="DataTransactionMap"/> class.
+        /// </summary>
+        /// <param name="phases">The <see cref="MigrationPhase"/> collection to be merged.</param>
+        /// <param name="currentVersion">The version of the current DB schema.</param>
+        public DataTransactionMap(IEnumerable<MigrationPhase> phases, Version? currentVersion = null)
+        {
+            foreach (var phase in phases)
+                Merge(phase, currentVersion);
+        }
+
         public void Merge(MigrationPhase phase, Version? currentVersion = null)
         {
-            var isNew = currentVersion is null || currentVersion < phase.Version;
+            var performed = currentVersion != null && currentVersion >= phase.Version;
 
-            MergeCreate(phase.Guidelines.Create, isNew);
-            MergeUpdate(phase.Guidelines.Update);
+            MergeCreate(phase.Guidelines.Create, performed);
+            MergeUpdate(phase.Guidelines.Update, performed);
             MergeDelete(phase.Guidelines.Delete);
         }
 
-        public void MergeCreate(Dictionary<string, DefinitionCollection> create, bool isNew)
+        public void MergeCreate(Dictionary<string, DefinitionCollection> create, bool alreadyPerformed)
         {
             if (!(create?.Any() ?? false))
                 return;
@@ -31,21 +51,25 @@ namespace Sqlist.NET.Migration
                 if (!ContainsKey(table))
                     this[table] = new TransactionRuleDictionary();
 
-                foreach (var (name, type) in columns)
+                foreach (var (name, definition) in columns)
                 {
-                    if (string.IsNullOrEmpty(type))
+                    if (string.IsNullOrEmpty(definition.Type))
                         throw new InvalidOperationException($"Column ({name}) of table ({table}) has no corresponding type specified.");
+
+                    var type = NormalizeType(definition.Type);
 
                     this[table].Add(name, new DataTransactionRule
                     {
                         Type = type,
-                        IsNew = isNew
+                        CurrentType = type,
+                        Value = !alreadyPerformed ? definition.Value : null,
+                        IsNew = !alreadyPerformed
                     });
                 }
             }
         }
 
-        public void MergeUpdate(DataTransactionMap update)
+        public void MergeUpdate(DataTransactionMap update, bool alreadyPerformed)
         {
             if (!(update?.Any() ?? false))
                 return;
@@ -57,17 +81,36 @@ namespace Sqlist.NET.Migration
                 foreach (var (name, rule) in columns)
                 {
                     var record = GetRecord("update", table, name);
+
+                    var type = !string.IsNullOrEmpty(rule.Type)
+                        ? NormalizeType(rule.Type)
+                        : record.Value.Type;
+
                     var column = new DataTransactionRule
                     {
+                        Type = type,
                         ColumnName = rule.ColumnName,
-                        Type = record.Value.Type
+                        CurrentType = !alreadyPerformed
+                            ? record.Value.CurrentType
+                            : type
                     };
 
-                    column.Cast = !string.IsNullOrEmpty(column.Cast)
-                        ? rule.Cast?.Replace(CastVariable, column.Cast)
-                        : rule.Cast;
+                    if (!alreadyPerformed)
+                    {
+                        if (!string.IsNullOrEmpty(rule.Value))
+                        {
+                            column.Value = rule.Value.Contains(CastVariable) && !string.IsNullOrEmpty(column.Value)
+                                ? rule.Value.Replace(CastVariable, column.Value)
+                                : rule.Value;
+                        }
 
-                    this[table][record.Key] = column;
+                        this[table][record.Key] = column;
+                    }
+                    else
+                    {
+                        this[table].Remove(record.Key);
+                        this[table][column.ColumnName ?? record.Key] = column;
+                    }
                 }
             }
         }
@@ -93,6 +136,34 @@ namespace Sqlist.NET.Migration
             }
         }
 
+        public string GenerateSummary()
+        {
+            var sb = new StringBuilder();
+
+            foreach (var (table, columns) in this)
+            {
+                sb.AppendLine(table);
+
+                foreach (var (name, rule) in columns)
+                {
+                    sb.Append(Tab + name + ": " + rule.Type);
+
+                    if (rule is DataTransactionRule)
+                    {
+                        if (!string.IsNullOrEmpty(rule.ColumnName))
+                            sb.Append(" => " + rule.ColumnName);
+
+                        if (!string.IsNullOrEmpty(rule.Value))
+                            sb.Append($", casted as ({rule.Value})");
+                    }
+
+                    sb.AppendLine();
+                }
+            }
+
+            return sb.ToString();
+        }
+
         private void EnsureTableExists(string operation, string table)
         {
             if (!ContainsKey(table))
@@ -106,6 +177,15 @@ namespace Sqlist.NET.Migration
                 throw new InvalidOperationException($"Cannot {operation} undefined column ({column}) of table ({table}).");
 
             return record;
+        }
+
+        private static string NormalizeType(string type)
+        {
+            var index = type.IndexOf('(');
+            if (index != -1)
+                return type[..index].Trim();
+
+            return type.Trim();
         }
     }
 }

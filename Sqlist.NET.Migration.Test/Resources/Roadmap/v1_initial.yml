@@ -9,6 +9,7 @@ guidelines:
             - Name: name
             - Email: varchar (125)
             - Phone: varchar (30)
+            - CreateDate: timestamp without time zone
         Roles:
             - Id: int
             - Name: name

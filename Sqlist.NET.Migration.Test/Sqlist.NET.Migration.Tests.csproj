@@ -18,6 +18,7 @@
         <None Remove="Resources\Scripts\v1\01_CreateTable_Users.sql" />
         <None Remove="Resources\Scripts\v1\02_CreateTable_Roles.sql" />
         <None Remove="Resources\Scripts\v1\03_CreateTable_UserRoles.sql" />
+        <None Remove="Resources\Scripts\v1\04_PopulateData.sql" />
         <None Remove="Resources\Scripts\v2\01_CreateTable_Users.sql" />
         <None Remove="Resources\Scripts\v2\02_CreateTable_Roles.sql" />
         <None Remove="Resources\Scripts\v2\03_CreateTable_UserRoles.sql" />
@@ -39,6 +40,7 @@
         <EmbeddedResource Include="Resources\Scripts\v1\01_CreateTable_Users.sql" />
         <EmbeddedResource Include="Resources\Scripts\v1\02_CreateTable_Roles.sql" />
         <EmbeddedResource Include="Resources\Scripts\v1\03_CreateTable_UserRoles.sql" />
+        <EmbeddedResource Include="Resources\Scripts\v1\04_PopulateData.sql" />
         <EmbeddedResource Include="Resources\Scripts\v2\01_CreateTable_Users.sql" />
         <EmbeddedResource Include="Resources\Scripts\v2\02_CreateTable_Roles.sql" />
         <EmbeddedResource Include="Resources\Scripts\v2\03_CreateTable_UserRoles.sql" />

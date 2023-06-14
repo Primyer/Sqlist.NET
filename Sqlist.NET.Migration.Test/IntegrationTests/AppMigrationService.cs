@@ -1,12 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
-
-using Sqlist.NET.Infrastructure;
+﻿using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Migration.Infrastructure;
 
 namespace Sqlist.NET.Migration.Tests.IntegrationTests;
 
 public class AppMigrationService : MigrationService
 {
+    private const string TestDatabaseName = "sqlist_net_test";
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="AppMigrationService"/> class.
     /// </summary>
@@ -31,7 +31,7 @@ public class AppMigrationService : MigrationService
             cs.Host = "localhost";
             cs.Port = 5432;
             cs.Username = "postgres";
-            cs.Database = "sqlist_net_test";
+            cs.Database = TestDatabaseName;
             cs.Password = "1974563";
             cs.IncludeErrorDetail = true;
         });

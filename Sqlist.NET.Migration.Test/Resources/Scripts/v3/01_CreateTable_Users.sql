@@ -4,5 +4,6 @@ create table if not exists "Users"
 	"Name" name,
 	"Email" varchar (125),
 	"PhoneNumber" varchar (30),
-	"EmailIsConfirmed" boolean
+	"EmailIsConfirmed" boolean,
+	"CreateDate" timestamp without time zone
 );

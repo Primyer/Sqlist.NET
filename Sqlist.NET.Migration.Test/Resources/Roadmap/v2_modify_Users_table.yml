@@ -1,12 +1,16 @@
 version: "2.0.0"
 title: Modify Users Table
+description: Adds two more columns to the users table, updates the name of one, and provide a default value for another.
 
 guidelines:
     create:
         Users:
-            - EmailIsConfirmed: boolean,
-            - SecurityStamp: uuid
+            - EmailIsConfirmed: boolean
+            - SecurityStamp:
+                type: uuid
+                value: gen_random_uuid()
 
     update:
         Users:
-            Phone: { column_name: PhoneNumber }
+            Phone:      { column_name: PhoneNumber }
+            CreateDate: { value: current_timestamp }

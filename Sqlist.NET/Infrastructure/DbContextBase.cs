@@ -74,6 +74,11 @@ namespace Sqlist.NET.Infrastructure
         public abstract string? DefaultDatabase { get; }
 
         /// <summary>
+        ///     Gets the <see cref="TypeMapper"/> implementation of the DB provider.
+        /// </summary>
+        public abstract TypeMapper TypeMapper { get; }
+
+        /// <summary>
         ///     Throws an exception if this object was already disposed.
         /// </summary>
         /// <exception cref="ObjectDisposedException" />
@@ -87,6 +92,7 @@ namespace Sqlist.NET.Infrastructure
         public void Dispose()
         {
             DisposeAsync().AsTask().Wait();
+            GC.SuppressFinalize(this);
         }
 
         /// <inheritdoc />
@@ -101,6 +107,7 @@ namespace Sqlist.NET.Infrastructure
             if (_conn != null)
                 await _conn.DisposeAsync();
 
+            GC.SuppressFinalize(this);
             _disposed = true;
         }
 
@@ -130,7 +137,7 @@ namespace Sqlist.NET.Infrastructure
             DbConnection? conn = null;
             try
             {
-                conn = _factory.CreateConnection();
+                conn = _factory.CreateConnection() ?? throw new DbException("Failed to invoke DB connection.");
                 conn.ConnectionString = connectionString ?? ConnectionString;
             }
             catch (Exception ex)
@@ -240,6 +247,18 @@ namespace Sqlist.NET.Infrastructure
             _trans = null;
         }
 
+        /// <inheritdoc />
+        public override Command CreateCommand()
+        {
+            return new Command(this);
+        }
+
+        /// <inheritdoc />
+        public override Command CreateCommand(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+        {
+            return new Command(this, sql, prms, timeout, type);
+        }
+
         /// <summary>
         ///     Returns a new instance of the <see cref="IQueryStore"/>.
         /// </summary>
@@ -321,7 +340,7 @@ namespace Sqlist.NET.Infrastructure
             return CopyAsync(_conn, destination, table, rules, cancellationToken);
         }
 
-        public abstract Task CopyAsync(DbConnection source, DbConnection destination, string table, TransactionRuleDictionary rules, CancellationToken cancellationToken = default);
+        public abstract Task CopyAsync(DbConnection exporter, DbConnection importer, string table, TransactionRuleDictionary rules, CancellationToken cancellationToken = default);
 
         public abstract void TerminateDatabaseConnections(string database);
     }
@@ -332,6 +351,11 @@ namespace Sqlist.NET.Infrastructure
     /// </summary>
     public abstract class DbContextBase<TConnectionStringBuilder> : DbContextBase where TConnectionStringBuilder : DbConnectionStringBuilder, new()
     {
+        static DbContextBase()
+        {
+
+        }
+
         /// <param name="connectionString">The connection string configuration action.</param>
         /// <inheritdoc />
         public DbContextBase(DbProviderFactory factory, DbOptions options, Action<TConnectionStringBuilder> connectionString) : base(factory, options)

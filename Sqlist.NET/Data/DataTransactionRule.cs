@@ -3,8 +3,9 @@
     public class DataTransactionRule
     {
         public string? ColumnName { get; set; }
+        public string? CurrentType { get; set; }
         public string? Type { get; set; }
-        public string? Cast { get; set; }
+        public string? Value { get; set; }
         public bool IsNew { get; set; }
     }
 }
