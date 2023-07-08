@@ -3,5 +3,8 @@ title: Delete Users SecurityStamp
 description: Deletes the 'SecurityStamp' from the 'Users' table.
 
 guidelines:
+    create:
+        Users: { condition: "" }
+
     delete:
         Users: [ SecurityStamp ]

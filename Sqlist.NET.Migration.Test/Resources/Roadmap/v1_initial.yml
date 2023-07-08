@@ -5,14 +5,19 @@ description: Defines the initial structure of data.
 guidelines:
     create:
         Users:
-            - Id: int
-            - Name: name
-            - Email: varchar (125)
-            - Phone: varchar (30)
-            - CreateDate: timestamp without time zone
+            condition: "`Status` <> 'Passive'"
+            columns:
+                - Id: int
+                - Name: name
+                - Email: varchar (125)
+                - Phone: varchar (30)
+                - CreateDate: timestamp without time zone
+                - Status: { type: user_status, is_enum: true }
+  
         Roles:
             - Id: int
             - Name: name
+  
         UserRoles:
             - UserId: int
             - RoleId: int

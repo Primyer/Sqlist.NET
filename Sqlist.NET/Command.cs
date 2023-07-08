@@ -112,7 +112,7 @@ namespace Sqlist.NET
         }
 
         /// <inheritdoc cref="DbCommand.ExecuteScalarAsync(CancellationToken)"/>
-        public virtual Task<object> ExecuteScalarAsync(CancellationToken cancellationToken = default)
+        public virtual Task<object?> ExecuteScalarAsync(CancellationToken cancellationToken = default)
         {
             EnsureConnectionOpen();
             return _cmd.ExecuteScalarAsync(cancellationToken);
@@ -203,7 +203,7 @@ namespace Sqlist.NET
             });
         }
 
-        private static void IterateParamters(object prms, Action<string, object> predicate)
+        private static void IterateParamters(object prms, Action<string, object?> predicate)
         {
             if (prms is IDictionary<string, object> dict)
             {
@@ -223,14 +223,16 @@ namespace Sqlist.NET
                 _db.Connection.Open();
         }
 
-        public ValueTask DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
-            return _cmd.DisposeAsync();
+            await _cmd.DisposeAsync();
+            GC.SuppressFinalize(this);
         }
 
         public void Dispose()
         {
             _cmd.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

@@ -30,7 +30,7 @@ namespace Sqlist.NET.Migration.Extensions
             foreach (var name in resNames)
             {
                 using var stream = assembly.GetManifestResourceStream(name);
-                using var reader = new StreamReader(stream);
+                using var reader = new StreamReader(stream!);
 
                 await asyncAction(name, await reader.ReadToEndAsync());
             }

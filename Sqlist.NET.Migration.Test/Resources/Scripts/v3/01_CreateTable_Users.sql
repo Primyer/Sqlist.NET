@@ -1,3 +1,6 @@
+create type user_status
+as enum ('Active', 'Passive');
+
 create table if not exists "Users"
 (
 	"Id" serial not null primary key,
@@ -5,5 +8,6 @@ create table if not exists "Users"
 	"Email" varchar (125),
 	"PhoneNumber" varchar (30),
 	"EmailIsConfirmed" boolean,
-	"CreateDate" timestamp without time zone
+	"CreateDate" timestamp without time zone,
+	"Status" user_status default 'Active'
 );

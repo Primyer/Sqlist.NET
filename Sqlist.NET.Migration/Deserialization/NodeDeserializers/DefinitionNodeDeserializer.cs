@@ -7,7 +7,7 @@ using YamlDotNet.Serialization;
 
 namespace Sqlist.NET.Migration.Deserialization
 {
-    internal class DefinitionCollectionNodeDeserializer : INodeDeserializer
+    internal class DefinitionNodeDeserializer : INodeDeserializer
     {
         public bool Deserialize(IParser parser, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value)
         {

@@ -48,7 +48,7 @@ namespace Sqlist.NET.Infrastructure
         public bool TerminateConnection { get; set; }
 
         /// <inheritdoc />
-        protected override async Task<DbConnection> GetConnectionAsync()
+        protected override async ValueTask<DbConnection> GetConnectionAsync()
         {
             await _db.InvokeConnectionAsync();
 

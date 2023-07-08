@@ -41,17 +41,25 @@ namespace Sqlist.NET.Migration
             MergeDelete(phase.Guidelines.Delete);
         }
 
-        public void MergeCreate(Dictionary<string, DefinitionCollection> create, bool alreadyPerformed)
+        public void MergeCreate(Dictionary<string, ColumnsDefinition> create, bool alreadyPerformed)
         {
             if (!(create?.Any() ?? false))
                 return;
 
-            foreach (var (table, columns) in create)
+            foreach (var (table, collection) in create)
             {
                 if (!ContainsKey(table))
-                    this[table] = new TransactionRuleDictionary();
+                    this[table] = new TransactionRuleDictionary { Condition = collection.Condition };
+                else
+                {
+                    if (collection.Condition?.Trim() == "")
+                        this[table].Condition = null;
+                    
+                    else if (!string.IsNullOrWhiteSpace(collection.Condition))
+                        this[table].Condition = collection.Condition;
+                }
 
-                foreach (var (name, definition) in columns)
+                foreach (var (name, definition) in collection.Columns)
                 {
                     if (string.IsNullOrEmpty(definition.Type))
                         throw new InvalidOperationException($"Column ({name}) of table ({table}) has no corresponding type specified.");
@@ -63,7 +71,8 @@ namespace Sqlist.NET.Migration
                         Type = type,
                         CurrentType = type,
                         Value = !alreadyPerformed ? definition.Value : null,
-                        IsNew = !alreadyPerformed
+                        IsNew = !alreadyPerformed,
+                        IsEnum = definition.IsEnum
                     });
                 }
             }
@@ -89,7 +98,9 @@ namespace Sqlist.NET.Migration
                     var column = new DataTransactionRule
                     {
                         Type = type,
+                        IsEnum = rule.IsEnum ?? record.Value.IsEnum,
                         ColumnName = rule.ColumnName,
+                        
                         CurrentType = !alreadyPerformed
                             ? record.Value.CurrentType
                             : type
@@ -148,7 +159,7 @@ namespace Sqlist.NET.Migration
                 {
                     sb.Append(Tab + name + ": " + rule.Type);
 
-                    if (rule is DataTransactionRule)
+                    if (rule is not null)
                     {
                         if (!string.IsNullOrEmpty(rule.ColumnName))
                             sb.Append(" => " + rule.ColumnName);
@@ -181,11 +192,7 @@ namespace Sqlist.NET.Migration
 
         private static string NormalizeType(string type)
         {
-            var index = type.IndexOf('(');
-            if (index != -1)
-                return type[..index].Trim();
-
-            return type.Trim();
+            return type.Trim().ToLower();
         }
     }
 }

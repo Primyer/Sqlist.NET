@@ -18,9 +18,9 @@ namespace Sqlist.NET.Infrastructure
         /// <summary>
         ///     Initializes a new instance of the <see cref="DbOptionsBuilder"/> class.
         /// </summary>
-        public DbOptionsBuilder()
+        public DbOptionsBuilder(DbOptions options)
         {
-            _options = new DbOptions();
+            _options = options;
         }
 
         public bool CaseSensitiveNaming { get; private set; }
@@ -28,8 +28,8 @@ namespace Sqlist.NET.Infrastructure
         /// <summary>
         ///     Sets the connection string for the target database.
         /// </summary>
-        /// <param name="connectionString">The configuration representing the database connection string.</param>
-        public void SetConnectionString(IConfiguration connectionString)
+        /// <param name="connectionString">The database connection string.</param>
+        public void SetConnectionString(string connectionString)
         {
             Check.NotNull(connectionString, nameof(connectionString));
             _options.ConnectionString = connectionString;

@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 
 namespace Sqlist.NET
 {
-    public abstract class TypeMapper
+    public abstract class TypeMapper : ITypeMapper
     {
-        private static readonly Dictionary<DbType, Type> ClrTypes = new Dictionary<DbType, Type>
+        private static readonly Dictionary<DbType, Type> ClrTypes = new()
         {
             [DbType.AnsiString] = typeof(string),
             [DbType.Binary] = typeof(byte[]),
@@ -38,7 +37,7 @@ namespace Sqlist.NET
             [DbType.DateTimeOffset] = typeof(DateTimeOffset)
         };
 
-        private static readonly Dictionary<Type, DbType> DbTypes = new Dictionary<Type, DbType>
+        private static readonly Dictionary<Type, DbType> DbTypes = new()
         {
             [typeof(byte[])] = DbType.Binary,
             [typeof(byte)] = DbType.Byte,
@@ -61,66 +60,36 @@ namespace Sqlist.NET
             [typeof(DateTimeOffset)] = DbType.DateTimeOffset
         };
 
-        /// <summary>
-        ///     Returns the name of the corresponding type of the DB provider.
-        /// </summary>
-        /// <typeparam name="T">The CLR type to match up.</typeparam>
-        /// <returns>The name of the corresponding type of the DB provider.</returns>
-        /// <exception cref="NotSupportedException" />
+        /// <inheritdoc />
         public string TypeName<T>()
         {
             var dbType = ToDbType(typeof(T));
             return TypeName(dbType);
         }
 
-        /// <summary>
-        ///     Returns the name of the corresponding type of the DB provider.
-        /// </summary>
-        /// <param name="dbType">The ADO.NET <see cref="DbType"/> to match up.</param>
-        /// <returns>The name of the corresponding type of the DB provider.</returns>
-        /// <exception cref="NotSupportedException" />
-        public abstract string TypeName(DbType dbType);
-
-        /// <summary>
-        ///     Returns the name of the corresponding type of the DB provider.
-        /// </summary>
-        /// <param name="name">The name of the DB provider type.</param>
-        /// <returns>The name of the corresponding type of the DB provider.</returns>
-        /// <exception cref="NotSupportedException" />
+        /// <inheritdoc />
         public DbType GetDbType(string name)
         {
             var type = GetType(name);
             return DbTypes[type];
         }
 
-        /// <summary>
-        ///     Returns the corresponding CLR type.
-        /// </summary>
-        /// <param name="name">The name of the DB provider type.</param>
-        /// <returns>The corresponding CLR type.</returns>
-        /// <exception cref="NotSupportedException" />
-        public abstract Type GetType(string name);
-
-        /// <summary>
-        ///     Returns the corresponding type of the DB provider.
-        /// </summary>
-        /// <param name="type">The CLR type to match up.</param>
-        /// <returns>The corresponding type of the DB provider</returns>
+        /// <inheritdoc />
         public DbType ToDbType(Type type)
         {
-            return DbTypes.ContainsKey(type)
-                ? DbTypes[type]
-                : DbType.Object;
+            return DbTypes.TryGetValue(type, out DbType value) ? value : DbType.Object;
         }
 
-        /// <summary>
-        ///     Returns the corresponding CLR type.
-        /// </summary>
-        /// <param name="type">The <see cref="DbType"/> to match up.</param>
-        /// <returns>The corresponding CLR type.</returns>
+        /// <inheritdoc />
         public Type FromDbType(DbType type)
         {
             return ClrTypes[type];
         }
+
+        /// <inheritdoc />
+        public abstract Type GetType(string name);
+
+        /// <inheritdoc />
+        public abstract string TypeName(DbType dbType);
     }
 }

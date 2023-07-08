@@ -692,7 +692,7 @@ namespace Sqlist.NET.Sql
             builder.AppendLine(" AS (");
             Indent(body, builder);
 
-            builder.Append($")");
+            builder.Append(')');
         }
 
         /// <summary>
@@ -719,7 +719,7 @@ namespace Sqlist.NET.Sql
                         body.Append(", ");
                 }
 
-                body.Append(")");
+                body.Append(')');
 
                 if (i < rows - 1)
                     body.AppendLine(",\n");
@@ -863,6 +863,17 @@ namespace Sqlist.NET.Sql
         protected string? GetBuilderContent(string name)
         {
             return Builders.TryGetValue(name, out var builder) ? builder.ToString() : null;
+        }
+
+        /// <summary>
+        ///     Returns a <c>CAST</c> statement of the specified <paramref name="field"/> to the given <paramref name="type"/>.
+        /// </summary>
+        /// <param name="field">The column/value to be casted.</param>
+        /// <param name="type">The type which to cast the field to.</param>
+        /// <returns>A <c>CAST</c> statement of the specified <paramref name="field"/> to the given <paramref name="type"/>.</returns>
+        public virtual string Cast(string field, string type)
+        {
+            return $"CAST ({Encloser.Reformat(field)} AS {Encloser.Replace(type)})";
         }
 
         /// <summary>
@@ -1113,7 +1124,7 @@ namespace Sqlist.NET.Sql
             if (builder.Length != 0)
             {
                 tableBuilder.AppendLine(",");
-                tableBuilder.Append(builder.ToString());
+                tableBuilder.Append(builder);
             }
         }
 
@@ -1154,7 +1165,7 @@ namespace Sqlist.NET.Sql
 
             builder.Append("PRIMARY KEY (");
             builder.Append(Encloser.Join(", ", constraint.Columns));
-            builder.Append(")");
+            builder.Append(')');
         }
 
         protected virtual void AppendForeignKey(StringBuilder builder, ForeignKeyConstraint constraint)
@@ -1210,7 +1221,7 @@ namespace Sqlist.NET.Sql
 
             builder.Append("UNIQUE (");
             builder.Append(Encloser.Join(", ", constraint.Columns));
-            builder.Append(")");
+            builder.Append(')');
         }
 
         protected virtual void AppendCheck(StringBuilder builder, CheckConstraint constraint)
@@ -1226,7 +1237,7 @@ namespace Sqlist.NET.Sql
 
             builder.Append("CHECK (");
             builder.Append(Encloser.Reformat(constraint.Condition?.ToString()));
-            builder.Append(")");
+            builder.Append(')');
         }
 
         /// <summary>
@@ -1276,14 +1287,14 @@ namespace Sqlist.NET.Sql
             throw new NotImplementedException();
         }
 
-        protected StringBuilder Indent(string content, StringBuilder? builder = null)
+        protected static StringBuilder Indent(string content, StringBuilder? builder = null)
         {
             builder ??= new StringBuilder();
 
             var reader = new StringReader(content);
-            string line;
+            string? line;
 
-            while (null != (line = reader.ReadLine()))
+            while ((line = reader.ReadLine()) is not null)
                 builder.AppendLine(Tab + line);
 
             return builder;

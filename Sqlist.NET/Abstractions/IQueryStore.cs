@@ -92,7 +92,7 @@ namespace Sqlist.NET.Abstractions
         /// <returns>
         ///     The <see cref="Task"/> object that represents the asynchronous operation, containing the serialization of the first row of the result, if any.
         /// </returns>
-        Task<T> JsonAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
+        Task<T?> JsonAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
 
         /// <summary>
         ///     Executes the specified <paramref name="sql"/> statement against the data source, and returns the serialization the first row of
@@ -103,7 +103,7 @@ namespace Sqlist.NET.Abstractions
         /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
         /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
         /// <returns>The serialization of the first row of the result, if any.</returns>
-        T Json<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
+        T? Json<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
 
         /// <summary>
         ///     Executes the specified <paramref name="sql"/> statement against the data source, and returns the first row of
@@ -141,7 +141,7 @@ namespace Sqlist.NET.Abstractions
         ///     The <see cref="Task"/> object that represents the asynchronous operation, containing an returns the result if it only
         ///     a single row; otherwise, <see langword="null" />
         /// </returns>
-        Task<T> SingleOrDefaultAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
+        Task<T?> SingleOrDefaultAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
 
         /// <summary>
         ///     Executes the specified <paramref name="sql"/> statement against the data source, and returns the result if it only
@@ -152,7 +152,7 @@ namespace Sqlist.NET.Abstractions
         /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
         /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
         /// <returns>The result if it only a single row; otherwise, <see langword="null" />.</returns>
-        T SingleOrDefault<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
+        T? SingleOrDefault<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
 
         /// <summary>
         ///     Executes the specified <paramref name="sql"/> statement againts the data soruce, and returns scalar value

@@ -1,5 +1,10 @@
-﻿using Sqlist.NET.Infrastructure;
+﻿using Npgsql.NameTranslation;
+
+using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Migration.Infrastructure;
+using Sqlist.NET.Migration.Tests.Metadata;
+
+using System.Data.Common;
 
 namespace Sqlist.NET.Migration.Tests.IntegrationTests;
 
@@ -26,15 +31,16 @@ public class AppMigrationService : MigrationService
 
     private static DbContext CreateDbContext()
     {
-        return new DbContext(new(), cs =>
+        var options = new NpgsqlOptions()
         {
-            cs.Host = "localhost";
-            cs.Port = 5432;
-            cs.Username = "postgres";
-            cs.Database = TestDatabaseName;
-            cs.Password = "1974563";
-            cs.IncludeErrorDetail = true;
-        });
+            ConnectionString = $"Server=localhost; Port=5432; User Id=postgres; Database={TestDatabaseName}; Password=1974563; Include Error Details=true;",
+            ConfigureDataSource = builder =>
+            {
+                builder.MapEnum<UserStatus>("user_status", new NpgsqlNullNameTranslator());
+            }
+        };
+
+        return new DbContext(options);
     }
 
     private static MigrationOptions CreateMigrationOptions()

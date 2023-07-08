@@ -7,8 +7,6 @@ namespace Sqlist.NET.Sql
 {
     public class NpgsqlBuilder : SqlBuilder
     {
-        private readonly string? _schema;
-
         /// <summary>
         ///     Initalizes a new instance of the <see cref="NpgsqlBuilder"/> class.
         /// </summary>
@@ -39,7 +37,6 @@ namespace Sqlist.NET.Sql
         /// <param name="table">The name of table to base the statement on.</param>
         public NpgsqlBuilder(string? schema, string table) : base(new NpgsqlEncloser(), schema, table)
         {
-            _schema = schema;
         }
 
         /// <summary>
@@ -50,7 +47,6 @@ namespace Sqlist.NET.Sql
         /// <param name="table">The name of table to base the statement on.</param>
         public NpgsqlBuilder(Encloser? encloser, string? schema, string table) : base(encloser ?? new NpgsqlEncloser(), schema, table)
         {
-            _schema = schema;
         }
 
         /// <summary>
@@ -170,13 +166,18 @@ namespace Sqlist.NET.Sql
         {
             var result = new StringBuilder("COPY ");
 
-            result.Append(TableName);
-            result.Append(" (");
 
             if (query is null)
+            {
+                result.Append(TableName);
+                result.Append(" (");
                 result.Append(GetBuilderContent("fields"));
+            }
             else
+            {
+                result.AppendLine("(");
                 Indent(query(new NpgsqlBuilder()), result);
+            }
 
             result.AppendLine(")");
             result.Append(direction + " ");

@@ -1,4 +1,8 @@
-﻿using Sqlist.NET.Infrastructure;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
+
+using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Infrastructure.Internal;
 using Sqlist.NET.Sql;
 
@@ -17,14 +21,17 @@ namespace Sqlist.NET.Extensions
         /// <param name="builder">The <see cref="SqlistBuilder"/> to configure.</param>
         /// <param name="configureOptions">The configuration action to set up the Sqlist options.</param>
         /// <returns>The <see cref="SqlistBuilder"/>.</returns>
-        public static SqlistBuilder AddPostgreSQL(this SqlistBuilder builder, Action<DbOptionsBuilder>? configureOptions = null)
+        public static SqlistBuilder AddPostgreSQL(this SqlistBuilder builder, Action<NpgsqlOptionsBuilder>? configureOptions = null)
         {
-            configureOptions?.Invoke(builder.Options);
+            builder.Services.PostConfigure<NpgsqlOptions>(options =>
+            {
+                configureOptions?.Invoke(new NpgsqlOptionsBuilder(options));
+                options.DelimitedEncloser ??= new NpgsqlEncloser();
+            });
 
-            if (builder.Options.CaseSensitiveNaming)
-                builder.WithDelimitedEncloser(builder.Options.GetOptions().DelimitedEncloser ?? new NpgsqlEncloser());
-
+            builder.Services.TryAddSingleton<IOptions<DbOptions>>(sp => sp.GetRequiredService<IOptions<NpgsqlOptions>>());
             builder.WithContext<DbContext>();
+
             return builder;
         }
     }

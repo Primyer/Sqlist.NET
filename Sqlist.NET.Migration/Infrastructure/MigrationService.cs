@@ -11,6 +11,7 @@ using Sqlist.NET.Migration.Properties;
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -64,7 +65,7 @@ namespace Sqlist.NET.Migration.Infrastructure
             if (await _dbTools.DoesSchemaTableExistAsync())
             {
                 var phase = await _dbTools.GetLastSchemaPhaseAsync();
-                _info.CurrentVersion = new Version(phase.Version);
+                _info.CurrentVersion = new Version(phase.Version!);
             }
             
             var roadMap = GetMigrationRoadMap()
@@ -76,11 +77,11 @@ namespace Sqlist.NET.Migration.Infrastructure
 
             var lastPhase = roadMap.Last();
 
+            _info.Title = lastPhase.Title;
+            _info.Description = lastPhase.Description;
             _info.SchemaChanges = _dataMap.GenerateSummary();
             _info.LatestVersion = lastPhase.Version;
             _info.TargetVersion = version != null && roadMap.LastOrDefault()?.Version == version ? version : _info.LatestVersion;
-            _info.Title = lastPhase.Title;
-            _info.Description = lastPhase.Description;
 
             _initialized = true;
 
@@ -101,11 +102,14 @@ namespace Sqlist.NET.Migration.Infrastructure
                     {
                         [_options.SchemaTable!] = new DefinitionCollection()
                         {
-                            KeyValuePair.Create(Consts.Version, definition),
-                            KeyValuePair.Create(Consts.Title, definition),
-                            KeyValuePair.Create(Consts.Description, definition),
-                            KeyValuePair.Create(Consts.Summary, definition),
-                            KeyValuePair.Create(Consts.Applied, new ColumnDefinition(_db.TypeMapper.TypeName<DateTime>())),
+                            Columns =
+                            {
+                                KeyValuePair.Create(Consts.Version, definition),
+                                KeyValuePair.Create(Consts.Title, definition),
+                                KeyValuePair.Create(Consts.Description, definition),
+                                KeyValuePair.Create(Consts.Summary, definition),
+                                KeyValuePair.Create(Consts.Applied, new ColumnDefinition(_db.TypeMapper.TypeName<DateTime>())),
+                            }
                         }
                     }
                 }
@@ -160,9 +164,7 @@ namespace Sqlist.NET.Migration.Infrastructure
 
             try
             {
-                await _db.Connection.ChangeDatabaseAsync(_db.DefaultDatabase);
-                _db.TerminateDatabaseConnections(dbname);
-
+                await _db.TerminateDatabaseConnectionsAsync(dbname);
                 await _dbTools.RenameDatabaseAsync(dbname, old_db);
                 renamed = true;
 
@@ -179,8 +181,10 @@ namespace Sqlist.NET.Migration.Infrastructure
             {
                 _logger?.LogError("An error has occurred during migration; cleaning up...");
 
-                await _db.Connection.ChangeDatabaseAsync(_db.DefaultDatabase);
-                _db.TerminateDatabaseConnections(dbname);
+                if (_db.Connection.State != ConnectionState.Open)
+                    await _db.Connection.OpenAsync();
+
+                await _db.TerminateDatabaseConnectionsAsync(dbname);
 
                 if (created)
                     await _dbTools.DeleteDatabaseAsync(dbname);
@@ -188,7 +192,7 @@ namespace Sqlist.NET.Migration.Infrastructure
                 if (renamed)
                 {
                     if (_info!.CurrentVersion != null)
-                        _db.TerminateDatabaseConnections(old_db);
+                        await _db.TerminateDatabaseConnectionsAsync(old_db);
 
                     await _dbTools.RenameDatabaseAsync(old_db, dbname);
                 }

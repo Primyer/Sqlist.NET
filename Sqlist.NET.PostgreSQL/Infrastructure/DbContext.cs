@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Npgsql;
@@ -17,65 +18,66 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-using static Npgsql.Replication.PgOutput.Messages.RelationMessage;
-
 namespace Sqlist.NET.Infrastructure
 {
-    public class DbContext : DbContextBase<NpgsqlConnectionStringBuilder>
+    public class DbContext : DbContextBase
     {
+        private readonly ILogger<DbContext>? _logger;
+        private readonly NpgsqlConnectionStringBuilder _csBuilder;
+
         private static readonly MethodInfo ExporterReadMethod = typeof(NpgsqlBinaryExporter)
             .GetMethod("ReadAsync", 1, new[]
             {
                 typeof(NpgsqlDbType),
                 typeof(CancellationToken)
-            });
+            })!;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="DbContext"/> class.
         /// </summary>
-        /// <param name="options">The Sqlist configuration options.</param>
+        /// <param name="options">The Sqlist configuration _options.</param>
         [ActivatorUtilitiesConstructor]
-        public DbContext(IOptions<DbOptions> options) : this(options.Value)
-        {
-        }
+        public DbContext(IOptions<NpgsqlOptions> options, ILogger<DbContext>? logger = null) : this(options.Value, logger)
+        { }
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="DbContext"/> class.
         /// </summary>
-        /// <param name="options">The Sqlist configuration options.</param>
-        public DbContext(DbOptions options) : base(NpgsqlFactory.Instance, options)
+        /// <param name="options">The Sqlist configuration _options.</param>
+        public DbContext(NpgsqlOptions options, ILogger<DbContext>? logger = null) : base(options)
         {
-        }
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="DbContext"/> class.
-        /// </summary>
-        /// <param name="options">The Sqlist configuration options.</param>
-        public DbContext(DbOptions options, Action<NpgsqlConnectionStringBuilder> connectionString) : base(NpgsqlFactory.Instance, options, connectionString)
-        {
+            _logger = logger;
+            _csBuilder = new NpgsqlConnectionStringBuilder(Options.ConnectionString);
         }
 
         /// <inheritdoc />
         public override string? DefaultDatabase => "postgres";
 
+        public override NpgsqlOptions Options => (NpgsqlOptions)base.Options;
+
         /// <inheritdoc />
         public override TypeMapper TypeMapper => NpgsqlTypeMapper.Instance;
 
-        /// <inheritdoc />
-        protected override string ChangeDatabase(string database)
+        public override NpgsqlDataSource BuildDataSource(string? connectionString = null)
         {
-            var current = ConnectionStringBuilder.Database;
+            var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString ?? Options.ConnectionString);
+            Options.ConfigureDataSource?.Invoke(dataSourceBuilder);
 
-            ConnectionStringBuilder.Database = database;
-            var connStr = ConnectionString;
+            return dataSourceBuilder.Build();
+        }
 
-            ConnectionStringBuilder.Database = current;
-            return connStr;
+        /// <inheritdoc />
+        public override string ChangeDatabase(string database)
+        {
+            var csBuilder = new NpgsqlConnectionStringBuilder(Options.ConnectionString) { Database = database };
+            return csBuilder.ConnectionString;
         }
 
         /// <inheritdoc />
         public override async Task CopyAsync(DbConnection exporter, DbConnection importer, string table, TransactionRuleDictionary rules, CancellationToken cancellationToken = default)
         {
+            _logger?.LogInformation("Creating staging table for '{Table}'.", table);
+
             var stagingTable = table + "_staging";
             await CreateStagingTableAsync(stagingTable, rules);
 
@@ -86,6 +88,8 @@ namespace Sqlist.NET.Infrastructure
             using (var reader = await ((NpgsqlConnection)exporter).BeginBinaryExportAsync(exportStmt, cancellationToken))
             using (var writer = await ((NpgsqlConnection)importer).BeginBinaryImportAsync(importStmt, cancellationToken))
             {
+                _logger?.LogInformation("Copying '{Table}' data...", table);
+
                 while (await reader.StartRowAsync(cancellationToken) != -1)
                 {
                     await writer.StartRowAsync(cancellationToken);
@@ -93,17 +97,30 @@ namespace Sqlist.NET.Infrastructure
                     foreach (var (name, rule) in rules)
                     {
                         if (rule.IsNew) continue;
+
+                        var notEnum = !(rule.IsEnum ?? false);
+
+                        var npgType = notEnum ? NpgsqlTypeMapper.GetNpgsqlDbType(rule.Type!) : NpgsqlDbType.Text;
+                        var clrType = notEnum ? NpgsqlTypeMapper.Instance.GetType(rule.Type!) : typeof(string);
+
                         if (reader.IsNull)
                         {
                             await reader.SkipAsync(cancellationToken);
-                            await writer.WriteNullAsync(cancellationToken);
+
+                            if (npgType == NpgsqlDbType.Jsonb)
+                                await writer.WriteAsync<string>(null, "jsonb", cancellationToken);
+                            else
+                                await writer.WriteNullAsync(cancellationToken);
                         }
                         else
                         {
                             try
                             {
-                                var value = await ReadAsync(reader, rule, cancellationToken);
-                                await writer.WriteAsync(value, cancellationToken);
+                                var value = await (dynamic?)ExporterReadMethod
+                                    .MakeGenericMethod(clrType)
+                                    .Invoke(reader, new object[] { npgType, cancellationToken });
+
+                                await writer.WriteAsync(value, npgType, cancellationToken);
                             }
                             catch (Exception ex)
                             {
@@ -120,6 +137,8 @@ namespace Sqlist.NET.Infrastructure
 
             await CommitDataAsync(stagingTable, table, rules);
             await DeleteStagingTableAsync(stagingTable);
+
+            _logger?.LogInformation("Copy of '{Table}' data is completed.", table);
         }
 
         private Task CreateStagingTableAsync(string table, TransactionRuleDictionary rules)
@@ -131,7 +150,9 @@ namespace Sqlist.NET.Infrastructure
                     .Select(entry =>
                     {
                         var (name, rule) = entry;
-                        return new SqlColumn(rule.ColumnName ?? name, rule.CurrentType!);
+                        var type = (rule.IsEnum ?? false) ? "text" : rule.CurrentType!;
+
+                        return new SqlColumn(rule.ColumnName ?? name, type);
                     })
                     .ToArray()
             });
@@ -147,15 +168,22 @@ namespace Sqlist.NET.Infrastructure
 
         private static string CreateExportSqlStatement(string table, TransactionRuleDictionary rules)
         {
-            var trPairs = rules
-                .Where(rule => !rule.Value.IsNew)
-                .Select(pair => pair.Key)
-                .ToArray();
+            return new NpgsqlBuilder().ToCopyTo(CopySource.StdOut, new CopyOptions { Format = "BINARY" }, sql =>
+            {
+                var trPairs = rules
+                    .Where(entry => !entry.Value.IsNew)
+                    .Select(entry =>
+                    {
+                        var (name, rule) = entry;
+                        return (rule.IsEnum ?? false) ? sql.Cast(name, "text") : name;
+                    })
+                    .ToArray();
 
-            var sql = new NpgsqlBuilder(table);
-            sql.RegisterFields(trPairs);
+                sql.TableName = table;
+                sql.RegisterFields(trPairs);
 
-            return sql.ToCopyTo(CopySource.StdOut, new CopyOptions { Format = "BINARY" });
+                return sql.ToSelect();
+            });
         }
 
         private static string CreateImportSqlStatement(string table, TransactionRuleDictionary rules)
@@ -166,29 +194,28 @@ namespace Sqlist.NET.Infrastructure
             return sql.ToCopyFrom(CopySource.StdIn, new CopyOptions { Format = "BINARY" });
         }
 
-        private Task CommitDataAsync(string stagingTable, string table, TransactionRuleDictionary rules)
+        private async Task CommitDataAsync(string stagingTable, string table, TransactionRuleDictionary rules)
         {
+            var sql = Sql(table);
+
             var destColumns = rules
                 .Where(entry => !entry.Value.IsNew || !string.IsNullOrEmpty(entry.Value.Value))
-                .Select(entry =>
-                {
-                    var (name, rule) = entry;
-                    return rule.ColumnName ?? name;
-                });
+                .Select(entry => entry.Value.ColumnName ?? entry.Key)
+                .ToArray();
 
-            var sql = Sql(table);
-            sql.RegisterFields(destColumns.ToArray());
+            sql.RegisterFields(destColumns);
 
             var stmt = sql.ToInsert(sub =>
             {
                 sub.TableName = stagingTable;
-
+                
                 foreach (var (name, rule) in rules)
                 {
                     if (rule.IsNew && string.IsNullOrEmpty(rule.Value))
                         continue;
 
-                    var column = rule.ColumnName ?? name;
+                    var colName = rule.ColumnName ?? name;
+                    var column = (rule.IsEnum ?? false) ? sql.Cast(colName, rule.Type!) : colName;
 
                     if (string.IsNullOrEmpty(rule.Value))
                         sub.RegisterFields(column);
@@ -200,7 +227,7 @@ namespace Sqlist.NET.Infrastructure
                 }
             });
 
-            return Query().ExecuteAsync(stmt);
+            await Query().ExecuteAsync(stmt);
         }
 
         private static string[] ToColumns(TransactionRuleDictionary rules)
@@ -209,16 +236,6 @@ namespace Sqlist.NET.Infrastructure
                 .Where(rule => !rule.Value.IsNew)
                 .Select(rule => rule.Value.ColumnName ?? rule.Key)
                 .ToArray();
-        }
-
-        private static async Task<object?> ReadAsync(NpgsqlBinaryExporter reader, DataTransactionRule rule, CancellationToken cancellationToken)
-        {
-            var clrType = NpgsqlTypeMapper.Instance.GetType(rule.Type!);
-            var npgType = NpgsqlTypeMapper.Instance.GetNpgsqlDbType(rule.Type!);
-
-            return await (dynamic)ExporterReadMethod
-                .MakeGenericMethod(clrType)
-                .Invoke(reader, new object[] { npgType, cancellationToken });
         }
 
         /// <inheritdoc />
@@ -232,19 +249,25 @@ namespace Sqlist.NET.Infrastructure
         }
 
         /// <inheritdoc />
-        public override void TerminateDatabaseConnections(string database)
+        public override async Task TerminateDatabaseConnectionsAsync(string database)
         {
-//            var sql = @$"
-//REVOKE CONNECT ON DATABASE {database} FROM PUBLIC, {ConnectionStringBuilder.Username};
+            if (database == Connection?.Database)
+                await Connection.ChangeDatabaseAsync(DefaultDatabase!);
 
-//SELECT pg_terminate_backend(pid)
-//FROM pg_stat_activity
-//WHERE pid <> pg_backend_pid() AND datname = '{database}';";
+            var sql = $"""
+                REVOKE CONNECT ON DATABASE {database} FROM PUBLIC, {_csBuilder.Username};
 
-//            await Query().ExecuteAsync(sql);
+                SELECT pg_terminate_backend(pid)
+                FROM pg_stat_activity
+                WHERE pid <> pg_backend_pid() AND datname = '{database}';
+                """;
 
-            var conn = new NpgsqlConnection(ChangeDatabase(database));
-            NpgsqlConnection.ClearPool(conn);
+            await Query().ExecuteAsync(sql);
+
+            await using var dataSource = BuildDataSource(ChangeDatabase(database));
+            await using var connection = dataSource.CreateConnection();
+
+            NpgsqlConnection.ClearPool(connection);
         }
     }
 }

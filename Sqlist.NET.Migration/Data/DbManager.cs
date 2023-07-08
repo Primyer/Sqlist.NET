@@ -4,6 +4,7 @@ using Sqlist.NET.Sql;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,14 +27,17 @@ namespace Sqlist.NET.Migration.Data
         public async Task MigrateDataFromAsync(string dbname, DataTransactionMap dataMap)
         {
             var cancellationToken = default(CancellationToken);
-
-            using var source = await _db.CreateConnectionAsync();
-            await source.ChangeDatabaseAsync(dbname, cancellationToken);
+            await using var dataSource = _db.BuildDataSource(_db.ChangeDatabase(dbname));
 
             foreach (var (table, rules) in dataMap)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                await _db.CopyFromAsync(source, table, rules, cancellationToken);
+
+                if (rules.All(rule => rule.Value.IsNew))
+                    continue;
+
+                var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+                await _db.CopyFromAsync(connection, table, rules, cancellationToken);
             }
         }
 

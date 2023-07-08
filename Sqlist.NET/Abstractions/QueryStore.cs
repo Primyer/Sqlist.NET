@@ -31,7 +31,7 @@ namespace Sqlist.NET.Abstractions
         ///     Gets the database connection.
         /// </summary>
         /// <returns>The database connection.</returns>
-        protected abstract Task<DbConnection> GetConnectionAsync();
+        protected abstract ValueTask<DbConnection> GetConnectionAsync();
 
         /// <summary>
         ///     Creates and returns a <see cref="Command"/> object.
@@ -119,13 +119,13 @@ namespace Sqlist.NET.Abstractions
             return RetrieveJsonAsync(sql, prms, altr, timeout, type).Result;
         }
 
-        public async Task<T> JsonAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+        public async Task<T?> JsonAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
             var result = await RetrieveJsonAsync<T>(sql, prms, null, timeout, type);
             return result.FirstOrDefault();
         }
 
-        public T Json<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+        public T? Json<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
             return JsonAsync<T>(sql, prms, timeout, type).Result;
         }
@@ -147,13 +147,13 @@ namespace Sqlist.NET.Abstractions
         }
 
         /// <inheritdoc />
-        public virtual T SingleOrDefault<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+        public virtual T? SingleOrDefault<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
             return SingleOrDefaultAsync<T>(sql, prms, timeout, type).Result;
         }
 
         /// <inheritdoc />
-        public virtual async Task<T> SingleOrDefaultAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+        public virtual async Task<T?> SingleOrDefaultAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
             var result = await RetrieveAsync<T>(sql, prms, null, timeout, type);
             return result.SingleOrDefault();

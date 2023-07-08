@@ -11,17 +11,13 @@ namespace Sqlist.NET.Infrastructure.Internal
         ///     Initializes a new instance of the <see cref="SqlistBuilder"/> struct.
         /// </summary>
         /// <param name="services"></param>
-        internal SqlistBuilder(IServiceCollection services, DbOptionsBuilder options)
+        internal SqlistBuilder(IServiceCollection services)
         {
             Check.NotNull(services, nameof(services));
-            Check.NotNull(options, nameof(options));
-
             Services = services;
-            Options = options;
         }
 
         public IServiceCollection Services { get; }
-        public DbOptionsBuilder Options { get; }
 
         public void WithContext<T>() where T : DbContextBase
         {

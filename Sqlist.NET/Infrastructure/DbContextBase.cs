@@ -1,9 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
-
-using Sqlist.NET.Abstractions;
+﻿using Sqlist.NET.Abstractions;
 using Sqlist.NET.Data;
 using Sqlist.NET.Sql;
-using Sqlist.NET.Utilities;
 
 using System;
 using System.Data;
@@ -18,7 +15,7 @@ namespace Sqlist.NET.Infrastructure
     /// </summary>
     public abstract class DbContextBase : QueryStore, IDisposable, IAsyncDisposable
     {
-        private readonly DbProviderFactory _factory;
+        private readonly DbDataSource _dataSource;
 
         private bool _disposed = false;
 
@@ -32,19 +29,13 @@ namespace Sqlist.NET.Infrastructure
         /// </summary>
         /// <param name="factory">Represents a set of methods for creating instances of a provider's implementation</param>
         /// <param name="options">The Sqlist configuration options.</param>
-        public DbContextBase(DbProviderFactory factory, DbOptions options) : base(options)
+        public DbContextBase(DbOptions options) : base(options)
         {
-            Check.NotNull(factory, nameof(factory));
-
             Options = options;
-            _factory = factory;
+            _dataSource = BuildDataSource(options.ConnectionString!);
         }
 
-        public DbConnection? Connection
-        {
-            get => _conn;
-            internal set => _conn = value;
-        }
+        public DbConnection? Connection { get => _conn; internal set => _conn = value; }
 
         /// <summary>
         ///     Gets or sets the pending transaction, if any.
@@ -52,21 +43,12 @@ namespace Sqlist.NET.Infrastructure
         /// <remarks>
         ///     Only applicable with a <see cref="DbQuery"/>.
         /// </remarks>
-        public DbTransaction? Transaction
-        {
-            get => _trans;
-            internal set => _trans = value;
-        }
+        public DbTransaction? Transaction { get => _trans; internal set => _trans = value; }
 
         /// <summary>
         ///     Gets or sets the Sqlist configuration options.
         /// </summary>
-        public DbOptions Options { get; }
-
-        /// <summary>
-        ///     Gets the connection string.
-        /// </summary>
-        protected abstract string ConnectionString { get; }
+        public virtual DbOptions Options { get; }
 
         /// <summary>
         ///     Gets the default database of the DB provider.
@@ -89,14 +71,14 @@ namespace Sqlist.NET.Infrastructure
         }
 
         /// <inheritdoc />
-        public void Dispose()
+        public virtual void Dispose()
         {
             DisposeAsync().AsTask().Wait();
             GC.SuppressFinalize(this);
         }
 
         /// <inheritdoc />
-        public async ValueTask DisposeAsync()
+        public virtual async ValueTask DisposeAsync()
         {
             if (_disposed || _conn is null)
                 return;
@@ -106,6 +88,8 @@ namespace Sqlist.NET.Infrastructure
 
             if (_conn != null)
                 await _conn.DisposeAsync();
+
+            await _dataSource.DisposeAsync();
 
             GC.SuppressFinalize(this);
             _disposed = true;
@@ -117,13 +101,13 @@ namespace Sqlist.NET.Infrastructure
         /// <returns>The <see cref="Task"/> object that represents the asynchronous operation.</returns>
         public async Task InvokeConnectionAsync()
         {
-            _conn ??= await CreateConnectionAsync();
+            _conn ??= await OpenConnectionAsync();
         }
 
         /// <inheritdoc />
-        protected override Task<DbConnection> GetConnectionAsync()
+        protected override ValueTask<DbConnection> GetConnectionAsync()
         {
-            return CreateConnectionAsync();
+            return OpenConnectionAsync();
         }
 
         /// <summary>Invokes a new <see cref="DbConnection"/>.</summary>
@@ -132,46 +116,29 @@ namespace Sqlist.NET.Infrastructure
         ///     The <see cref="Task"/> that represents the asynchronous operation, containing the invoked <see cref="DbConnection"/>.
         /// </returns>
         /// <exception cref="DbConnectionException"></exception>
-        public async Task<DbConnection> CreateConnectionAsync(string? connectionString = null)
+        public ValueTask<DbConnection> OpenConnectionAsync()
         {
-            DbConnection? conn = null;
-            try
-            {
-                conn = _factory.CreateConnection() ?? throw new DbException("Failed to invoke DB connection.");
-                conn.ConnectionString = connectionString ?? ConnectionString;
-            }
-            catch (Exception ex)
-            {
-                if (conn is null) throw;
+            return _dataSource.OpenConnectionAsync();
+        }
 
-                await conn.DisposeAsync();
-                throw new DbConnectionException("The database connection was created, but failed later on.", ex);
-            }
-
-            await conn.OpenAsync();
-            return conn;
+        public DbConnection CreateConnection()
+        {
+            return _dataSource.CreateConnection();
         }
 
         /// <summary>
-        ///     Re invokes a new connection to the specified <paramref name="database"/>, closing the current one.
+        ///     Builds and returns <see cref="DbDataSource"/> of the related DB provider.
         /// </summary>
-        /// <param name="database">The database to connection to.</param>
-        /// <returns>The <see cref="Task"/> object that represent the asynchronous operation.</returns>
-        public async Task ConnectToDatabaseAsync(string database)
-        {
-            if (_conn != null)
-                await _conn.DisposeAsync();
-
-            var connStr = ChangeDatabase(database);
-            _conn = await CreateConnectionAsync(connStr);
-        }
+        /// <param name="connectionString">The connection string of the DB provider to be used.</param>
+        /// <returns>Returns the <see cref="DbDataSource"/> of the related DB provider.</returns>
+        public abstract DbDataSource BuildDataSource(string connectionString);
 
         /// <summary>
-        ///     Changes the database specified within the connection string, returning the new version.
+        ///     Returns a new version of the internal connection string with the specified <paramref name="database"/>.
         /// </summary>
-        /// <param name="database">The database to set the connection string to.</param>
-        /// <returns>The new version of the connection string with the specified <paramref name="database"/>.</returns>
-        protected abstract string ChangeDatabase(string database);
+        /// <param name="database">The database to modify the internal connection string to.</param>
+        /// <returns>A new version of the internal connection string with the specified <paramref name="database"/></returns>
+        public abstract string ChangeDatabase(string database);
 
         /// <summary>
         ///     Starts a database transaction.
@@ -342,43 +309,14 @@ namespace Sqlist.NET.Infrastructure
 
         public abstract Task CopyAsync(DbConnection exporter, DbConnection importer, string table, TransactionRuleDictionary rules, CancellationToken cancellationToken = default);
 
-        public abstract void TerminateDatabaseConnections(string database);
-    }
-
-
-    /// <summary>
-    ///     Provides the basic API to manage a database.
-    /// </summary>
-    public abstract class DbContextBase<TConnectionStringBuilder> : DbContextBase where TConnectionStringBuilder : DbConnectionStringBuilder, new()
-    {
-        static DbContextBase()
-        {
-
-        }
-
-        /// <param name="connectionString">The connection string configuration action.</param>
-        /// <inheritdoc />
-        public DbContextBase(DbProviderFactory factory, DbOptions options, Action<TConnectionStringBuilder> connectionString) : base(factory, options)
-        {
-            ConnectionStringBuilder = new TConnectionStringBuilder();
-            connectionString(ConnectionStringBuilder);
-        }
-
-        /// <inheritdoc />
-        protected DbContextBase(DbProviderFactory factory, DbOptions options) : base(factory, options)
-        {
-            if (options.ConnectionString is null)
-                throw new DbException("Connection string configuration cannot be null.");
-
-            ConnectionStringBuilder = options.ConnectionString.Get<TConnectionStringBuilder>() ?? throw new DbException("Invalid connection string configuration.");
-        }
-
-        /// <inheritdoc />
-        protected override string ConnectionString => ConnectionStringBuilder.ToString();
-
         /// <summary>
-        ///     Gets the <see cref="DbConnectionStringBuilder"/> implementation of the related DB provider.
+        ///     Terminates remote connections and clears the connection pool of all related connection instances.
         /// </summary>
-        protected TConnectionStringBuilder ConnectionStringBuilder { get; set; }
+        /// <remarks>
+        ///     If the currently connected database is the same as the given <paramref name="database"/>, the connection is switched to the provider-default.
+        /// </remarks>
+        /// <param name="database">The database whose connections are to be terminated.</param>
+        /// <returns>The <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        public abstract Task TerminateDatabaseConnectionsAsync(string database);
     }
 }

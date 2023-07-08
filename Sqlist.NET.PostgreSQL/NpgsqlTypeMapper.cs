@@ -7,12 +7,13 @@ using System.Data;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Text.RegularExpressions;
 
 namespace Sqlist.NET
 {
-    public class NpgsqlTypeMapper : TypeMapper
+    public partial class NpgsqlTypeMapper : TypeMapper
     {
-        private static readonly Dictionary<string, NpgsqlDbType> NameDbTypePairs = new Dictionary<string, NpgsqlDbType>
+        private static readonly Dictionary<string, NpgsqlDbType> NameDbTypePairs = new()
         {
             ["bigint"] = NpgsqlDbType.Bigint,
             ["int8"] = NpgsqlDbType.Bigint,
@@ -117,7 +118,7 @@ namespace Sqlist.NET
             .Select(g => g.OrderBy(d => d.Key).First())
             .ToDictionary(d => d.Value, d => d.Key);
 
-        private static readonly Dictionary<NpgsqlDbType, Type> ClrTypes = new Dictionary<NpgsqlDbType, Type>
+        private static readonly Dictionary<NpgsqlDbType, Type> ClrTypes = new()
         {
             [NpgsqlDbType.Bigint] = typeof(long),
             [NpgsqlDbType.Double] = typeof(double),
@@ -184,7 +185,7 @@ namespace Sqlist.NET
             [NpgsqlDbType.Multirange] = typeof(Range[])
         };
 
-        private static readonly Dictionary<Type, NpgsqlDbType> ClrDbTypePairs = new Dictionary<Type, NpgsqlDbType>
+        private static readonly Dictionary<Type, NpgsqlDbType> ClrDbTypePairs = new()
         {
             [typeof(long)] = NpgsqlDbType.Bigint,
             [typeof(double)] = NpgsqlDbType.Double,
@@ -240,7 +241,7 @@ namespace Sqlist.NET
         private NpgsqlTypeMapper()
         { }
 
-        public static NpgsqlTypeMapper Instance => new NpgsqlTypeMapper();
+        public static NpgsqlTypeMapper Instance => new();
 
         /// <inheritdoc />
         public override string TypeName(DbType dbType)
@@ -249,13 +250,16 @@ namespace Sqlist.NET
         }
 
         /// <inheritdoc />
-        public override Type GetType(string name)
+        public override Type GetType(string typeName)
         {
-            var npgType = GetNpgsqlDbType(name);
-            return ClrTypes[npgType];
+            var type = ClrTypes[NameDbTypePairs[NormalizeType(typeName)]];
+
+            return typeName.Contains('[')
+                ? type.MakeArrayType()
+                : type;
         }
 
-        public string TypeName(NpgsqlDbType dbType)
+        public virtual string TypeName(NpgsqlDbType dbType)
         {
             try
             {
@@ -267,6 +271,25 @@ namespace Sqlist.NET
             }
         }
 
-        public NpgsqlDbType GetNpgsqlDbType(string type) => NameDbTypePairs[type.Trim().ToLower()];
+        public static NpgsqlDbType GetNpgsqlDbType(string type)
+        {
+            var normalized = NormalizeType(type);
+
+            return type.Contains('[')
+                ? NpgsqlDbType.Array | NameDbTypePairs[normalized]
+                : NameDbTypePairs[normalized];
+        }
+
+        private static string NormalizeType(string type)
+        {
+            var index = type.IndexOfAny(new[] { '(', '[' });
+            if (index != -1)
+                return !type.StartsWith("char") || !CharTypeRegex().IsMatch(type) ? type[..(index)].Trim() : "varchar";
+            else
+                return type;
+        }
+
+        [GeneratedRegex(@"(char|character)\s*\(\d+\)")]
+        private static partial Regex CharTypeRegex();
     }
 }

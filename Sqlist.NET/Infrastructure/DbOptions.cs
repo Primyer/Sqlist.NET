@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-
-using Sqlist.NET.Metadata;
+﻿using Sqlist.NET.Metadata;
 using Sqlist.NET.Sql;
 
 using System;
@@ -15,7 +13,7 @@ namespace Sqlist.NET.Infrastructure
         /// <summary>
         ///     Gets or sets the connection string to the target database.
         /// </summary>
-        public IConfiguration? ConnectionString { get; set; }
+        public string? ConnectionString { get; set; }
 
         /// <summary>
         ///     Gets or sets the version of the database.

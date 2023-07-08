@@ -18,7 +18,8 @@ namespace Sqlist.NET.Migration.Deserialization
         {
             _deserializer = new DeserializerBuilder()
                 .WithNodeDeserializer(new VersionNodeDeserializer())
-                .WithNodeDeserializer(new DefinitionCollectionNodeDeserializer())
+                .WithNodeDeserializer(new DefinitionNodeDeserializer())
+                .WithNodeDeserializer(new ColumnsDefinitionNodeDeserializer())
                 .WithNamingConvention(UnderscoredNamingConvention.Instance)
                 .Build();
         }
@@ -40,7 +41,7 @@ namespace Sqlist.NET.Migration.Deserialization
             return phase;
         }
 
-        private void ValidatePhase(MigrationPhase phase)
+        private static void ValidatePhase(MigrationPhase phase)
         {
             if (phase is null)
                 throw new ArgumentException("Invalid input.");
@@ -53,7 +54,7 @@ namespace Sqlist.NET.Migration.Deserialization
                 throw new InvalidOperationException("Migration phase has no guidelines defined.");
         }
 
-        private bool IsNullOrEmpty(IDictionary dictionary)
+        private static bool IsNullOrEmpty(IDictionary dictionary)
         {
             return dictionary is null || dictionary.Count == 0;
         }

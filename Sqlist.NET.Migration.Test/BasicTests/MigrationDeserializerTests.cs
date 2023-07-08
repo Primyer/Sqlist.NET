@@ -60,14 +60,20 @@ public class MigrationDeserializerTests
     public void DeserializePhase_ValidPhase_ShouldSucceed()
     {
         var data = GetEmbeddedResource(Consts.ER_Migration_Intial);
+
         var phase = _deserializer.DeserializePhase(data);
+        var users = phase.Guidelines.Create["Users"];
 
         Assert.NotNull(phase);
+        Assert.NotNull(users.Condition);
+        Assert.NotEmpty(users.Condition);
+
         Assert.NotNull(phase.Title);
         Assert.NotEmpty(phase.Title);
+        
         Assert.NotNull(phase.Guidelines);
         Assert.NotEmpty(phase.Guidelines.Create);
-        Assert.NotEmpty(phase.Guidelines.Create.First().Value);
+        Assert.NotEmpty(phase.Guidelines.Create.First().Value.Columns);
     }
 
     private static string GetEmbeddedResource(string name)
