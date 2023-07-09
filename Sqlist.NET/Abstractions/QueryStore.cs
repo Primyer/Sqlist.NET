@@ -160,7 +160,7 @@ namespace Sqlist.NET.Abstractions
         }
 
         /// <inheritdoc />
-        public virtual async Task<object> ExecuteScalarAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+        public virtual async Task<object?> ExecuteScalarAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
             var cnn = await GetConnectionAsync();
             var cmd = CreateCommand(sql, prms, timeout, type);
@@ -172,7 +172,7 @@ namespace Sqlist.NET.Abstractions
         }
 
         /// <inheritdoc />
-        public virtual object ExecuteScalar(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+        public virtual object? ExecuteScalar(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
             return ExecuteScalarAsync(sql, prms, timeout, type).Result;
         }

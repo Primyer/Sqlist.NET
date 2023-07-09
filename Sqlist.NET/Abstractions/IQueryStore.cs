@@ -166,7 +166,7 @@ namespace Sqlist.NET.Abstractions
         ///     The <see cref="Task"/> object that represents the asynchronous operation, contaning the scalar value on first
         ///     column of first row in the returned result set, if any.
         /// </returns>
-        Task<object> ExecuteScalarAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
+        Task<object?> ExecuteScalarAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
 
         /// <summary>
         ///     Executes the specified <paramref name="sql"/> statement againts the data soruce, and returns scalar value
@@ -177,6 +177,6 @@ namespace Sqlist.NET.Abstractions
         /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
         /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
         /// <returns> The scalar value on first column of first row in the returned result set.</returns>
-        object ExecuteScalar(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
+        object? ExecuteScalar(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
     }
 }
