@@ -13,19 +13,5 @@
         {
             return val?.Replace('`', DI);
         }
-
-        public override string? Reformat(string? val)
-        {
-            if (string.IsNullOrEmpty(val))
-                return val;
-
-            if (val.IndexOf("`") != -1)
-                return Replace(val);
-
-            if (val.IndexOf(' ') == -1)
-                return Wrap(val);
-
-            return val;
-        }
     }
 }

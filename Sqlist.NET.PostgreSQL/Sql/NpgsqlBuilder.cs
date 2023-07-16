@@ -93,7 +93,7 @@ namespace Sqlist.NET.Sql
                 if (i != keys.Length - 1)
                     builder.Append(", ");
             }
-            builder.Append(")");
+            builder.Append(')');
         }
 
         /// <summary>
@@ -187,7 +187,7 @@ namespace Sqlist.NET.Sql
             {
                 result.AppendLine("WITH (");
                 Indent(options.ToString(), result);
-                result.Append(")");
+                result.Append(')');
             }
 
             return result.ToString();
@@ -201,7 +201,7 @@ namespace Sqlist.NET.Sql
             builder.Append(Encloser.Wrap(currentName));
             builder.Append(" RENAME TO ");
             builder.Append(Encloser.Wrap(newName));
-            builder.Append(";");
+            builder.Append(';');
 
             return builder.ToString();
         }

@@ -6,7 +6,20 @@
 
         public abstract string? Wrap(string? val);
         public abstract string? Replace(string? val);
-        public abstract string? Reformat(string? val);
+
+        public virtual string? Reformat(string? val)
+        {
+            if (string.IsNullOrEmpty(val))
+                return val;
+
+            if (val.Contains('`'))
+                return Replace(val);
+
+            if (!val.Contains(' '))
+                return Wrap(val);
+
+            return val;
+        }
 
         public virtual string? Join(string delimiter, params string[] vals)
         {

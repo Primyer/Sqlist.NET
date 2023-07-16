@@ -13,6 +13,8 @@
         /// </summary>
         public ColumnDefinition(string type) => Type = type;
 
+        public bool IsSequence { get; set; }
+        public string? SequenceName { get; set; }
         public string? Type { get; set; }
         public string? Value { get; set; }
         public bool IsEnum { get; set; }

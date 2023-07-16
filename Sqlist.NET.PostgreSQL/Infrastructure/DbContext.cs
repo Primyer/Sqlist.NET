@@ -227,6 +227,24 @@ namespace Sqlist.NET.Infrastructure
                 }
             });
 
+            var sequences = rules.Where(rule => rule.Value.IsSequence);
+            if (sequences.Any())
+            {
+                sql = Sql(table);
+
+                foreach (var (name, rule) in sequences)
+                {
+                    var colName = rule.ColumnName ?? name;
+
+                    var sequenceName = string.IsNullOrWhiteSpace(rule.SequenceName)
+                        ? $"pg_get_serial_sequence('{sql.TableName}', '{colName}')"
+                        : $"'{rule.SequenceName}'";
+
+                    sql.RegisterFields($"setval({sequenceName}, max(`{colName}`))");
+                }
+            }
+
+            stmt += ";\n" + sql.ToSelect();
             await Query().ExecuteAsync(stmt);
         }
 

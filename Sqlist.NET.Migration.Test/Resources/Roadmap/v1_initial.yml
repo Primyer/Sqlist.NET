@@ -7,7 +7,7 @@ guidelines:
         Users:
             condition: "`Status` <> 'Passive'"
             columns:
-                - Id: int
+                - Id: { type: int, is_sequence: true }
                 - Name: name
                 - Email: varchar (125)
                 - Phone: varchar (30)

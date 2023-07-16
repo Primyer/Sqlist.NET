@@ -8,5 +8,7 @@
         public string? Value { get; set; }
         public bool IsNew { get; set; }
         public bool? IsEnum { get; set; }
+        public bool IsSequence { get; set; }
+        public string? SequenceName { get; set; }
     }
 }

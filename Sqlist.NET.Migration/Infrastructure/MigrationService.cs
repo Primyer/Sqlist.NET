@@ -165,11 +165,15 @@ namespace Sqlist.NET.Migration.Infrastructure
             try
             {
                 await _db.TerminateDatabaseConnectionsAsync(dbname);
-                await _dbTools.RenameDatabaseAsync(dbname, old_db);
-                renamed = true;
 
-                await _dbTools.CreateDatabaseAsync(dbname);
-                created = true;
+                if (_info!.CurrentVersion is not null)
+                {
+                    await _dbTools.RenameDatabaseAsync(dbname, old_db);
+                    renamed = true;
+
+                    await _dbTools.CreateDatabaseAsync(dbname);
+                    created = true;
+                }
 
                 _logger?.LogInformation("Created new database.");
 
@@ -184,17 +188,18 @@ namespace Sqlist.NET.Migration.Infrastructure
                 if (_db.Connection.State != ConnectionState.Open)
                     await _db.Connection.OpenAsync();
 
-                await _db.TerminateDatabaseConnectionsAsync(dbname);
-
-                if (created)
-                    await _dbTools.DeleteDatabaseAsync(dbname);
-
-                if (renamed)
+                if (_info!.CurrentVersion is not null)
                 {
-                    if (_info!.CurrentVersion != null)
-                        await _db.TerminateDatabaseConnectionsAsync(old_db);
+                    await _db.TerminateDatabaseConnectionsAsync(dbname);
 
-                    await _dbTools.RenameDatabaseAsync(old_db, dbname);
+                    if (created)
+                        await _dbTools.DeleteDatabaseAsync(dbname);
+
+                    if (renamed)
+                    {
+                        await _db.TerminateDatabaseConnectionsAsync(old_db);
+                        await _dbTools.RenameDatabaseAsync(old_db, dbname);
+                    }
                 }
 
                 throw;

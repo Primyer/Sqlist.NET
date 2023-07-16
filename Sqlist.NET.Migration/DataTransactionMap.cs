@@ -72,7 +72,9 @@ namespace Sqlist.NET.Migration
                         CurrentType = type,
                         Value = !alreadyPerformed ? definition.Value : null,
                         IsNew = !alreadyPerformed,
-                        IsEnum = definition.IsEnum
+                        IsEnum = definition.IsEnum,
+                        IsSequence = definition.IsSequence,
+                        SequenceName = definition.SequenceName
                     });
                 }
             }
