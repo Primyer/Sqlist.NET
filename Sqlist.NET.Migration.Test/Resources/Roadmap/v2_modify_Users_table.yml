@@ -10,7 +10,16 @@ guidelines:
                 type: uuid
                 value: gen_random_uuid()
 
+        DummyRoles:
+            - Id: int
+            - Name: name
+
     update:
         Users:
             Phone:      { column_name: PhoneNumber }
             CreateDate: { value: current_timestamp }
+
+    transfer:
+        DummyRoles:
+            columns: [Id, Name]
+            script: select "Id", "Name" from "Roles"

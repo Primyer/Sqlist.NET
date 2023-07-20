@@ -1,11 +1,14 @@
 ﻿using Sqlist.NET.Data;
 using Sqlist.NET.Migration.Deserialization;
 using Sqlist.NET.Migration.Tests.IntegrationTests;
+using Sqlist.NET.Migration.Tests.Properties;
+using Sqlist.NET.Migration.Tests.Utilities;
 
 namespace Sqlist.NET.Migration.Tests.BasicTests;
 public class DataTransationMapTests : IClassFixture<AppMigrationService>
 {
     private readonly AppMigrationService _service;
+    private readonly MigrationDeserializer _deserializer;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="DataTransationMapTests"/> class.
@@ -13,6 +16,7 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
     public DataTransationMapTests(AppMigrationService service)
     {
         _service = service;
+        _deserializer = new MigrationDeserializer();
     }
 
     [Fact]
@@ -20,7 +24,7 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
     {
         var phase = new MigrationPhase
         {
-            Guidelines = new PhaseGuidelines
+            Guidelines = new()
             {
                 Update = { ["UndefinedTable"] = new() }
             }
@@ -37,7 +41,7 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
             ["SomeTable"] = new()
         };
 
-        var guidelines = new PhaseGuidelines
+        var guidelines = new PhaseGuidelines()
         {
             Update =
             {
@@ -51,7 +55,7 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
 
         var phase = new MigrationPhase
         {
-            Guidelines = new PhaseGuidelines
+            Guidelines = new()
             {
                 Update =
                 {
@@ -70,7 +74,7 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
     {
         var phase = new MigrationPhase
         {
-            Guidelines = new PhaseGuidelines
+            Guidelines = new()
             {
                 Delete = { ["UndefinedTable"] = Array.Empty<string>() }
             }
@@ -89,7 +93,7 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
 
         var phase = new MigrationPhase
         {
-            Guidelines = new PhaseGuidelines
+            Guidelines = new()
             {
                 Delete = { ["SomeTable"] = new[] { "UndefinedColumn" } }
             }
@@ -99,13 +103,64 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
     }
 
     [Fact]
+    public void Merge_TransferOfDeletedColumn_ShouldFail()
+    {
+        var data = AssemblyUtility.GetEmbeddedResource(Consts.ER_Migration_Intial);
+
+        var phase1 = _deserializer.DeserializePhase(data);
+        var phase2 = new MigrationPhase()
+        {
+            Guidelines = new()
+            {
+                Delete = { ["Users"] = new[] { "Id" } }
+            }
+        };
+
+        phase1.Guidelines.Transfer.Add("Users", new()
+        {
+            Script = string.Empty,
+            Columns = new[] { "Id", "Name" }
+        });
+
+        var phases = new[] { phase1, phase2 };
+        Assert.Throws<InvalidOperationException>(() => new DataTransactionMap(phases));
+    }
+
+    [Fact]
+    public void Merge_DeletingTableShouldCancelTransfer()
+    {
+        var data = AssemblyUtility.GetEmbeddedResource(Consts.ER_Migration_Intial);
+
+        var phase1 = _deserializer.DeserializePhase(data);
+        var phase2 = new MigrationPhase()
+        {
+            Guidelines = new()
+            {
+                Delete = { ["Users"] = Array.Empty<string>() }
+            }
+        };
+
+        phase1.Guidelines.Transfer.Add("Users", new()
+        {
+            Script = string.Empty,
+            Columns = new[] { "Id", "Name" }
+        });
+
+        var phases = new[] { phase1, phase2 };
+        var dataMap = new DataTransactionMap(phases);
+
+        Assert.Empty(dataMap.TransferDefinitions);
+    }
+
+    [Fact]
     public void Merge_ShouldSucceed()
     {
         var roadMap = _service.GetMigrationRoadMap();
         var dataMap = new DataTransactionMap(roadMap);
-        
-        Assert.Equal(3, dataMap.Count);
+
+        Assert.Equal(4, dataMap.Count);
         Assert.NotNull(dataMap["Users"]["CreateDate"].Value);
+        Assert.NotEmpty(dataMap.TransferDefinitions);
 
         foreach (var rules in dataMap.Values)
         {

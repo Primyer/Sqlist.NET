@@ -58,13 +58,11 @@ namespace Sqlist.NET.Abstractions
             return () => { };
         }
 
-        /// <inheritdoc />
         public virtual int Execute(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
             return ExecuteAsync(sql, prms, timeout, type).Result;
         }
 
-        /// <inheritdoc />
         public virtual async Task<int> ExecuteAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
             var conn = await GetConnectionAsync();
@@ -77,13 +75,11 @@ namespace Sqlist.NET.Abstractions
             return await task;
         }
 
-        /// <inheritdoc />
         public virtual IEnumerable<T> Retrieve<T>(string sql, object? prms = null, Action<T>? altr = null, int? timeout = null, CommandType? type = null)
         {
             return RetrieveAsync(sql, prms, altr, timeout, type).Result;
         }
 
-        /// <inheritdoc />
         public virtual async Task<IEnumerable<T>> RetrieveAsync<T>(string sql, object? prms = null, Action<T>? altr = null, int? timeout = null, CommandType? type = null)
         {
             var cnn = await GetConnectionAsync();
@@ -100,10 +96,8 @@ namespace Sqlist.NET.Abstractions
                 : await DataSerializer.Object(rdr, _options.MappingOrientation, altr);
         }
 
-        /// <inheritdoc />
         public async Task<IEnumerable<T>> RetrieveJsonAsync<T>(string sql, object? prms = null, Action<T>? altr = null, int? timeout = null, CommandType? type = null)
         {
-            var cnn = await GetConnectionAsync();
             var cmd = CreateCommand(sql, prms, timeout, type);
             var rdr = cmd.PrepareReader();
 
@@ -113,7 +107,6 @@ namespace Sqlist.NET.Abstractions
             return await DataSerializer.Json<T>(rdr);
         }
 
-        /// <inheritdoc />
         public IEnumerable<T> RetrieveJson<T>(string sql, object? prms = null, Action<T>? altr = null, int? timeout = null, CommandType? type = null)
         {
             return RetrieveJsonAsync(sql, prms, altr, timeout, type).Result;
@@ -130,13 +123,11 @@ namespace Sqlist.NET.Abstractions
             return JsonAsync<T>(sql, prms, timeout, type).Result;
         }
 
-        /// <inheritdoc />
         public virtual T FirstOrDefault<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
             return FirstOrDefaultAsync<T>(sql, prms, timeout, type).Result;
         }
 
-        /// <inheritdoc />
         public virtual async Task<T> FirstOrDefaultAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
             var result = await RetrieveAsync<T>(sql, prms, null, timeout, type);
@@ -146,20 +137,17 @@ namespace Sqlist.NET.Abstractions
             return result.First();
         }
 
-        /// <inheritdoc />
         public virtual T? SingleOrDefault<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
             return SingleOrDefaultAsync<T>(sql, prms, timeout, type).Result;
         }
 
-        /// <inheritdoc />
         public virtual async Task<T?> SingleOrDefaultAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
             var result = await RetrieveAsync<T>(sql, prms, null, timeout, type);
             return result.SingleOrDefault();
         }
 
-        /// <inheritdoc />
         public virtual async Task<object?> ExecuteScalarAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
             var cnn = await GetConnectionAsync();
@@ -171,10 +159,20 @@ namespace Sqlist.NET.Abstractions
             return await task;
         }
 
-        /// <inheritdoc />
         public virtual object? ExecuteScalar(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
             return ExecuteScalarAsync(sql, prms, timeout, type).Result;
+        }
+
+        public virtual Task<DbDataReader> ExecuteReaderAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+        {
+            var cmd = CreateCommand(sql, prms, timeout, type);
+            return cmd.ExecuteReaderAsync();
+        }
+
+        public virtual DbDataReader ExecuteReader(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+        {
+            return ExecuteReaderAsync(sql, prms, timeout, type).Result;
         }
     }
 }

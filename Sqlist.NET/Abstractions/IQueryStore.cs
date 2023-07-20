@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Threading.Tasks;
 
 namespace Sqlist.NET.Abstractions
@@ -155,7 +156,7 @@ namespace Sqlist.NET.Abstractions
         T? SingleOrDefault<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
 
         /// <summary>
-        ///     Executes the specified <paramref name="sql"/> statement againts the data soruce, and returns scalar value
+        ///     Executes the specified <paramref name="sql"/> statement againts the data source, and returns scalar value
         ///     on first column of first row in the returned result set, as an asynchronous operation.
         /// </summary>
         /// <param name="sql">The SQL statement to run against the data source.</param>
@@ -169,7 +170,7 @@ namespace Sqlist.NET.Abstractions
         Task<object?> ExecuteScalarAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
 
         /// <summary>
-        ///     Executes the specified <paramref name="sql"/> statement againts the data soruce, and returns scalar value
+        ///     Executes the specified <paramref name="sql"/> statement againts the data source, and returns scalar value
         ///     on first column of first row in the returned result set.
         /// </summary>
         /// <param name="sql">The SQL statement to run against the data source.</param>
@@ -178,5 +179,23 @@ namespace Sqlist.NET.Abstractions
         /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
         /// <returns> The scalar value on first column of first row in the returned result set.</returns>
         object? ExecuteScalar(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
+
+        /// <summary>Invokes <see cref="DbDataReader"/>.</summary>
+        /// <param name="sql">The SQL statement to run against the data source.</param>
+        /// <param name="prms">The parameters associated with the given statement.</param>
+        /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
+        /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
+        /// <returns>
+        ///     The <see cref="Task"/> that represent the asynchronous operation, containing the invoked <see cref="DbDataReader"/>.
+        /// </returns>
+        Task<DbDataReader> ExecuteReaderAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
+
+        /// <summary>Invokes <see cref="DbDataReader"/>.</summary>
+        /// <param name="sql">The SQL statement to run against the data source.</param>
+        /// <param name="prms">The parameters associated with the given statement.</param>
+        /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
+        /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
+        /// <returns>The invoked <see cref="DbDataReader"/>.</returns>
+        DbDataReader ExecuteReader(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
     }
 }

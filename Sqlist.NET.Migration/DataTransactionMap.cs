@@ -1,5 +1,6 @@
 ﻿using Sqlist.NET.Data;
 using Sqlist.NET.Migration.Deserialization;
+using Sqlist.NET.Migration.Deserialization.Collections;
 
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,6 @@ namespace Sqlist.NET.Migration
 {
     public class DataTransactionMap : Dictionary<string, TransactionRuleDictionary>
     {
-        private const string Tab = "   ";
         public const string CastVariable = "{column}";
 
         static readonly KeyValuePair<string, DataTransactionRule> DefaultRecord = default;
@@ -29,8 +29,22 @@ namespace Sqlist.NET.Migration
         public DataTransactionMap(IEnumerable<MigrationPhase> phases, Version? currentVersion = null)
         {
             foreach (var phase in phases)
+            {
                 Merge(phase, currentVersion);
+
+                var transfer = phase.Guidelines.Transfer;
+                if (transfer.Any())
+                {
+                    foreach (var (table, definition) in transfer)
+                        TransferDefinitions[table] = definition;
+                }
+            }
         }
+
+        /// <summary>
+        ///     Gets or sets the lists of SQL scripts to be executed.
+        /// </summary>
+        public Dictionary<string, DataTransferDefinition> TransferDefinitions { get; set; } = new();
 
         public void Merge(MigrationPhase phase, Version? currentVersion = null)
         {
@@ -85,46 +99,58 @@ namespace Sqlist.NET.Migration
             if (!(update?.Any() ?? false))
                 return;
 
-            foreach (var (table, columns) in update)
+            foreach (var (table, rules) in update)
             {
                 EnsureTableExists("update", table);
 
-                foreach (var (name, rule) in columns)
+                foreach (var (name, rule) in rules)
                 {
-                    var record = GetRecord("update", table, name);
+                    UpdateRule(table, name, rule, alreadyPerformed);
 
-                    var type = !string.IsNullOrEmpty(rule.Type)
-                        ? NormalizeType(rule.Type)
-                        : record.Value.Type;
-
-                    var column = new DataTransactionRule
+                    if (TransferDefinitions.TryGetValue(table, out DataTransferDefinition? value))
                     {
-                        Type = type,
-                        IsEnum = rule.IsEnum ?? record.Value.IsEnum,
-                        ColumnName = rule.ColumnName,
-                        
-                        CurrentType = !alreadyPerformed
-                            ? record.Value.CurrentType
-                            : type
-                    };
-
-                    if (!alreadyPerformed)
-                    {
-                        if (!string.IsNullOrEmpty(rule.Value))
-                        {
-                            column.Value = rule.Value.Contains(CastVariable) && !string.IsNullOrEmpty(column.Value)
-                                ? rule.Value.Replace(CastVariable, column.Value)
-                                : rule.Value;
-                        }
-
-                        this[table][record.Key] = column;
-                    }
-                    else
-                    {
-                        this[table].Remove(record.Key);
-                        this[table][column.ColumnName ?? record.Key] = column;
+                        var index = Array.IndexOf(value!.Columns, name);
+                        if (index != -1)
+                            value.Columns[index] = rule.ColumnName!;
                     }
                 }
+            }
+        }
+
+        private void UpdateRule(string table, string columnName, DataTransactionRule rule, bool alreadyPerformed)
+        {
+            var record = GetRecord("update", table, columnName);
+
+            var type = !string.IsNullOrEmpty(rule.Type)
+                ? NormalizeType(rule.Type)
+                : record.Value.Type;
+
+            var column = new DataTransactionRule
+            {
+                Type = type,
+                IsEnum = rule.IsEnum ?? record.Value.IsEnum,
+                ColumnName = rule.ColumnName,
+
+                CurrentType = !alreadyPerformed
+                    ? record.Value.CurrentType
+                    : type
+            };
+
+            if (!alreadyPerformed)
+            {
+                if (!string.IsNullOrEmpty(rule.Value))
+                {
+                    column.Value = rule.Value.Contains(CastVariable) && !string.IsNullOrEmpty(column.Value)
+                        ? rule.Value.Replace(CastVariable, column.Value)
+                        : rule.Value;
+                }
+
+                this[table][record.Key] = column;
+            }
+            else
+            {
+                this[table].Remove(record.Key);
+                this[table][column.ColumnName ?? record.Key] = column;
             }
         }
 
@@ -143,9 +169,19 @@ namespace Sqlist.NET.Migration
                     {
                         var record = GetRecord("delete", table, column);
                         this[table].Remove(record.Key);
+
+                        if (TransferDefinitions.TryGetValue(table, out DataTransferDefinition? value))
+                        {
+                            if (value.Columns.Any(c => c == column))
+                                throw new InvalidOperationException($"Column ({column}) of table ({table}) is set for transfer. Updating the transfer definition accordingly is recommended.");
+                        }
                     }
                 }
-                else Remove(table);
+                else
+                {
+                    Remove(table);
+                    TransferDefinitions.Remove(table);
+                };
             }
         }
 
@@ -159,7 +195,7 @@ namespace Sqlist.NET.Migration
 
                 foreach (var (name, rule) in columns)
                 {
-                    sb.Append(Tab + name + ": " + rule.Type);
+                    sb.Append("   " + name + ": " + rule.Type);
 
                     if (rule is not null)
                     {

@@ -51,6 +51,11 @@ namespace Sqlist.NET.Infrastructure
         }
 
         /// <inheritdoc />
+        public override NpgsqlConnection? Connection => base.Connection as NpgsqlConnection;
+
+        public override NpgsqlTransaction? Transaction => base.Transaction as NpgsqlTransaction;
+
+        /// <inheritdoc />
         public override string? DefaultDatabase => "postgres";
 
         public override NpgsqlOptions Options => (NpgsqlOptions)base.Options;
@@ -139,6 +144,48 @@ namespace Sqlist.NET.Infrastructure
             await DeleteStagingTableAsync(stagingTable);
 
             _logger?.LogInformation("Copy of '{Table}' data is completed.", table);
+        }
+        
+        /// <inheritdoc />
+        public override async Task CopyFromAsync(DbDataReader reader, string table, string[] columns, CancellationToken cancellationToken = default)
+        {
+            var row = 1;
+            var sql = new NpgsqlBuilder(table);
+            sql.RegisterFields(columns);
+
+            var stmt = sql.ToCopyFrom(CopySource.StdIn, new CopyOptions { Format = "BINARY" });
+
+            using (var writer = await Connection!.BeginBinaryImportAsync(stmt, cancellationToken))
+            {
+                _logger?.LogInformation("Transferring data to '{Table}'...", table);
+
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    await writer.StartRowAsync(cancellationToken);
+
+                    for (var i = 0; i < reader.FieldCount; i++)
+                    {
+                        var npgType = NpgsqlTypeMapper.GetNpgsqlDbType(reader.GetDataTypeName(i));
+                        var clrType = reader.GetFieldType(i);
+                        var value = (dynamic)reader.GetValue(i);
+
+                        try
+                        {
+                            await writer.WriteAsync(value, npgType, cancellationToken);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new Exception($"Unexpected exception was thrown while transferring to column '{columns[i]}' at row {row}.", ex);
+                        }
+                    }
+
+                    row++;
+                }
+
+                await writer.CompleteAsync(cancellationToken);
+            }
+
+            _logger?.LogInformation("Transfer to table '{Table}' is completed.", table);
         }
 
         private Task CreateStagingTableAsync(string table, TransactionRuleDictionary rules)
@@ -282,9 +329,7 @@ namespace Sqlist.NET.Infrastructure
 
             await Query().ExecuteAsync(sql);
 
-            await using var dataSource = BuildDataSource(ChangeDatabase(database));
-            await using var connection = dataSource.CreateConnection();
-
+            await using var connection = new NpgsqlConnection(ChangeDatabase(database));
             NpgsqlConnection.ClearPool(connection);
         }
     }

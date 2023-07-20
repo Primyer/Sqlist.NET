@@ -22,9 +22,11 @@
         <None Remove="Resources\Scripts\v2\01_CreateTable_Users.sql" />
         <None Remove="Resources\Scripts\v2\02_CreateTable_Roles.sql" />
         <None Remove="Resources\Scripts\v2\03_CreateTable_UserRoles.sql" />
+        <None Remove="Resources\Scripts\v2\04_CreateTable_DummyRoles.sql" />
         <None Remove="Resources\Scripts\v3\01_CreateTable_Users.sql" />
         <None Remove="Resources\Scripts\v3\02_CreateTable_Roles.sql" />
         <None Remove="Resources\Scripts\v3\03_CreateTable_UserRoles.sql" />
+        <None Remove="Resources\Scripts\v3\04_CreateTable_DummyRoles.sql" />
         <None Remove="Resources\v1.0.0_initial.yml" />
         <None Remove="Resources\v1.1.0_migrate_Users_table.yml" />
     </ItemGroup>
@@ -44,9 +46,11 @@
         <EmbeddedResource Include="Resources\Scripts\v2\01_CreateTable_Users.sql" />
         <EmbeddedResource Include="Resources\Scripts\v2\02_CreateTable_Roles.sql" />
         <EmbeddedResource Include="Resources\Scripts\v2\03_CreateTable_UserRoles.sql" />
+        <EmbeddedResource Include="Resources\Scripts\v2\04_CreateTable_DummyRoles.sql" />
         <EmbeddedResource Include="Resources\Scripts\v3\01_CreateTable_Users.sql" />
         <EmbeddedResource Include="Resources\Scripts\v3\02_CreateTable_Roles.sql" />
         <EmbeddedResource Include="Resources\Scripts\v3\03_CreateTable_UserRoles.sql" />
+        <EmbeddedResource Include="Resources\Scripts\v3\04_CreateTable_DummyRoles.sql" />
     </ItemGroup>
 
     <ItemGroup>

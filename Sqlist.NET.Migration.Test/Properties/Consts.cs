@@ -1,6 +1,8 @@
 ﻿namespace Sqlist.NET.Migration.Tests.Properties;
 internal static class Consts
 {
+    public const string TestDatabaseName = "sqlist_net_test";
+
     public const string ER_Resources = "Sqlist.NET.Migration.Tests.Resources.";
 
     public const string ER_InvalidPhases = ER_Resources + "InvalidPhases.";

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Migration.Data;
 using Sqlist.NET.Migration.Deserialization;
+using Sqlist.NET.Migration.Deserialization.Collections;
 using Sqlist.NET.Migration.Exceptions;
 using Sqlist.NET.Migration.Extensions;
 using Sqlist.NET.Migration.Properties;
@@ -164,20 +165,20 @@ namespace Sqlist.NET.Migration.Infrastructure
 
             try
             {
-                await _db.TerminateDatabaseConnectionsAsync(dbname);
-
                 if (_info!.CurrentVersion is not null)
                 {
+                    await _db.TerminateDatabaseConnectionsAsync(dbname);
                     await _dbTools.RenameDatabaseAsync(dbname, old_db);
                     renamed = true;
 
                     await _dbTools.CreateDatabaseAsync(dbname);
                     created = true;
+
+                    _logger?.LogInformation("Created new database.");
+
+                    await _db.Connection!.ChangeDatabaseAsync(dbname);
                 }
 
-                _logger?.LogInformation("Created new database.");
-
-                await _db.Connection!.ChangeDatabaseAsync(dbname);
                 await ExecuteScriptsAsync();
                 await ExecuteMigrationAsync(old_db);
             }

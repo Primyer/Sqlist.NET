@@ -1,5 +1,6 @@
 ﻿using Sqlist.NET.Migration.Deserialization;
 using Sqlist.NET.Migration.Tests.Properties;
+using Sqlist.NET.Migration.Tests.Utilities;
 
 using System.Runtime.Serialization;
 
@@ -21,7 +22,7 @@ public class MigrationDeserializerTests
     {
         Assert.Throws<SerializationException>(() =>
         {
-            var data = GetEmbeddedResource(Consts.ER_InvalidPhases_InvalidFormat);
+            var data = AssemblyUtility.GetEmbeddedResource(Consts.ER_InvalidPhases_InvalidFormat);
             _deserializer.DeserializePhase(data);
         });
     }
@@ -31,7 +32,7 @@ public class MigrationDeserializerTests
     {
         Assert.Throws<SerializationException>(() =>
         {
-            var data = GetEmbeddedResource(Consts.ER_InvalidPhases_InvalidVersion);
+            var data = AssemblyUtility.GetEmbeddedResource(Consts.ER_InvalidPhases_InvalidVersion);
             _deserializer.DeserializePhase(data);
         });
     }
@@ -41,7 +42,7 @@ public class MigrationDeserializerTests
     {
         Assert.Throws<InvalidOperationException>(() =>
         {
-            var data = GetEmbeddedResource(Consts.ER_InvalidPhases_MissingTitle);
+            var data = AssemblyUtility.GetEmbeddedResource(Consts.ER_InvalidPhases_MissingTitle);
             _deserializer.DeserializePhase(data);
         });
     }
@@ -51,7 +52,7 @@ public class MigrationDeserializerTests
     {
         Assert.Throws<InvalidOperationException>(() =>
         {
-            var data = GetEmbeddedResource(Consts.ER_InvalidPhases_UndefinedGuidelines);
+            var data = AssemblyUtility.GetEmbeddedResource(Consts.ER_InvalidPhases_UndefinedGuidelines);
             _deserializer.DeserializePhase(data);
         });
     }
@@ -59,7 +60,7 @@ public class MigrationDeserializerTests
     [Fact]
     public void DeserializePhase_ValidPhase_ShouldSucceed()
     {
-        var data = GetEmbeddedResource(Consts.ER_Migration_Intial);
+        var data = AssemblyUtility.GetEmbeddedResource(Consts.ER_Migration_Intial);
 
         var phase = _deserializer.DeserializePhase(data);
         var users = phase.Guidelines.Create["Users"];
@@ -74,13 +75,5 @@ public class MigrationDeserializerTests
         Assert.NotNull(phase.Guidelines);
         Assert.NotEmpty(phase.Guidelines.Create);
         Assert.NotEmpty(phase.Guidelines.Create.First().Value.Columns);
-    }
-
-    private static string GetEmbeddedResource(string name)
-    {
-        using var stream = typeof(MigrationDeserializerTests).Assembly.GetManifestResourceStream(name);
-        using var reader = new StreamReader(stream!);
-
-        return reader.ReadToEnd();
     }
 }

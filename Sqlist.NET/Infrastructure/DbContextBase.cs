@@ -5,6 +5,7 @@ using Sqlist.NET.Sql;
 using System;
 using System.Data;
 using System.Data.Common;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,7 +36,7 @@ namespace Sqlist.NET.Infrastructure
             _dataSource = BuildDataSource(options.ConnectionString!);
         }
 
-        public DbConnection? Connection { get => _conn; internal set => _conn = value; }
+        public virtual DbConnection? Connection { get => _conn; internal set => _conn = value; }
 
         /// <summary>
         ///     Gets or sets the pending transaction, if any.
@@ -43,7 +44,7 @@ namespace Sqlist.NET.Infrastructure
         /// <remarks>
         ///     Only applicable with a <see cref="DbQuery"/>.
         /// </remarks>
-        public DbTransaction? Transaction { get => _trans; internal set => _trans = value; }
+        public virtual DbTransaction? Transaction { get => _trans; internal set => _trans = value; }
 
         /// <summary>
         ///     Gets or sets the Sqlist configuration options.
@@ -98,10 +99,15 @@ namespace Sqlist.NET.Infrastructure
         /// <summary>
         ///     Invokes the shared connection, if not doesn't already exit.
         /// </summary>
+        /// <param name="revoke">The flag indicating whether to inforce connection revoke.</param>
         /// <returns>The <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public async Task InvokeConnectionAsync()
+        public async Task InvokeConnectionAsync(bool revoke = false)
         {
-            _conn ??= await OpenConnectionAsync();
+            if (revoke && _conn is not null)
+                await _conn.DisposeAsync();
+
+            if (revoke || _conn is null)
+                _conn = await OpenConnectionAsync();
         }
 
         /// <inheritdoc />
@@ -308,6 +314,8 @@ namespace Sqlist.NET.Infrastructure
         }
 
         public abstract Task CopyAsync(DbConnection exporter, DbConnection importer, string table, TransactionRuleDictionary rules, CancellationToken cancellationToken = default);
+
+        public abstract Task CopyFromAsync(DbDataReader reader, string table, string[] columns, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Terminates remote connections and clears the connection pool of all related connection instances.

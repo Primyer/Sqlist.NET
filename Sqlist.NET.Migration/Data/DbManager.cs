@@ -36,8 +36,21 @@ namespace Sqlist.NET.Migration.Data
                 if (rules.All(rule => rule.Value.IsNew))
                     continue;
 
-                var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-                await _db.CopyFromAsync(connection, table, rules, cancellationToken);
+                await using var cnn = await dataSource.OpenConnectionAsync(cancellationToken);
+                await _db.CopyFromAsync(cnn, table, rules, cancellationToken);
+            }
+
+            foreach (var (table, definition) in dataMap.TransferDefinitions)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                await using var cnn = await dataSource.OpenConnectionAsync(cancellationToken);
+                await using var cmd = cnn.CreateCommand();
+
+                cmd.CommandText = definition.Script;
+
+                await using var rdr = await cmd.ExecuteReaderAsync();
+                await _db.CopyFromAsync(rdr, table, definition.Columns, cancellationToken);
             }
         }
 

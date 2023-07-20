@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Sqlist.NET.Migration.Deserialization
+namespace Sqlist.NET.Migration.Deserialization.Collections
 {
     public class DefinitionCollection : ColumnsDefinition
     {
