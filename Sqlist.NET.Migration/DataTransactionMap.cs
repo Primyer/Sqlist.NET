@@ -109,9 +109,8 @@ namespace Sqlist.NET.Migration
 
                     if (TransferDefinitions.TryGetValue(table, out DataTransferDefinition? value))
                     {
-                        var index = Array.IndexOf(value!.Columns, name);
-                        if (index != -1)
-                            value.Columns[index] = rule.ColumnName!;
+                        if (value.Columns.ContainsKey(name))
+                            value.Columns[name] = rule.ColumnName!;
                     }
                 }
             }
@@ -172,7 +171,7 @@ namespace Sqlist.NET.Migration
 
                         if (TransferDefinitions.TryGetValue(table, out DataTransferDefinition? value))
                         {
-                            if (value.Columns.Any(c => c == column))
+                            if (value.Columns.ContainsKey(column))
                                 throw new InvalidOperationException($"Column ({column}) of table ({table}) is set for transfer. Updating the transfer definition accordingly is recommended.");
                         }
                     }

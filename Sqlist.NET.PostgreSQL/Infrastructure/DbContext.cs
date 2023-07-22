@@ -11,6 +11,8 @@ using Sqlist.NET.Metadata;
 using Sqlist.NET.Sql;
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
@@ -147,11 +149,11 @@ namespace Sqlist.NET.Infrastructure
         }
         
         /// <inheritdoc />
-        public override async Task CopyFromAsync(DbDataReader reader, string table, string[] columns, CancellationToken cancellationToken = default)
+        public override async Task CopyFromAsync(DbDataReader reader, string table, ICollection<KeyValuePair<string, string>> columns, CancellationToken cancellationToken = default)
         {
             var row = 1;
             var sql = new NpgsqlBuilder(table);
-            sql.RegisterFields(columns);
+            sql.RegisterFields(columns.Select(c => c.Key).ToArray());
 
             var stmt = sql.ToCopyFrom(CopySource.StdIn, new CopyOptions { Format = "BINARY" });
 
@@ -165,17 +167,20 @@ namespace Sqlist.NET.Infrastructure
 
                     for (var i = 0; i < reader.FieldCount; i++)
                     {
-                        var npgType = NpgsqlTypeMapper.GetNpgsqlDbType(reader.GetDataTypeName(i));
-                        var clrType = reader.GetFieldType(i);
+                        var (name, type) = columns.ElementAt(i);
+
+                        var dbType = NpgsqlTypeMapper.GetNpgsqlDbType(type);
                         var value = (dynamic)reader.GetValue(i);
 
                         try
                         {
-                            await writer.WriteAsync(value, npgType, cancellationToken);
+                            if (value is null)
+                                await writer.WriteNullAsync(cancellationToken); else
+                                await writer.WriteAsync(value, dbType, cancellationToken);
                         }
                         catch (Exception ex)
                         {
-                            throw new Exception($"Unexpected exception was thrown while transferring to column '{columns[i]}' at row {row}.", ex);
+                            throw new Exception($"Unexpected exception was thrown while transferring to column '{name}' at row {row}.", ex);
                         }
                     }
 

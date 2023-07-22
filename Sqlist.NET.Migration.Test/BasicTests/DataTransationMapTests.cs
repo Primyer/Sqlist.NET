@@ -119,7 +119,11 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
         phase1.Guidelines.Transfer.Add("Users", new()
         {
             Script = string.Empty,
-            Columns = new[] { "Id", "Name" }
+            Columns = new()
+            {
+                ["Id"] = "int",
+                ["Name"] = "name"
+            }
         });
 
         var phases = new[] { phase1, phase2 };
@@ -143,7 +147,11 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
         phase1.Guidelines.Transfer.Add("Users", new()
         {
             Script = string.Empty,
-            Columns = new[] { "Id", "Name" }
+            Columns = new()
+            {
+                ["Id"] = "int",
+                ["Name"] = "name"
+            }
         });
 
         var phases = new[] { phase1, phase2 };

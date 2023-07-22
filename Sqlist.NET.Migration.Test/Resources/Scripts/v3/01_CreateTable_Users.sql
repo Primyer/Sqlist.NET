@@ -6,7 +6,7 @@ create table if not exists "Users"
 	"Id" serial not null primary key,
 	"Name" name,
 	"Email" varchar (125),
-	"PhoneNumber" varchar (30),
+	"Phone" varchar (30),
 	"EmailIsConfirmed" boolean,
 	"CreateDate" timestamp without time zone,
 	"Status" user_status default 'Active'

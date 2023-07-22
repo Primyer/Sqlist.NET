@@ -6,5 +6,9 @@ guidelines:
     create:
         Users: { condition: "" }
 
+    update:
+        Users:
+            PhoneNumber: { column_name: Phone }
+
     delete:
         Users: [ SecurityStamp ]

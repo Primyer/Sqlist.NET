@@ -50,7 +50,7 @@ namespace Sqlist.NET.Migration.Data
                 cmd.CommandText = definition.Script;
 
                 await using var rdr = await cmd.ExecuteReaderAsync();
-                await _db.CopyFromAsync(rdr, table, definition.Columns, cancellationToken);
+                await _db.CopyFromAsync(rdr, table, definition.Columns.ToList(), cancellationToken);
             }
         }
 

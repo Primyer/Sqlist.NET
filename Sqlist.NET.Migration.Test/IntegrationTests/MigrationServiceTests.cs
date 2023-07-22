@@ -33,7 +33,7 @@ public class MigrationServiceTests : IClassFixture<AppMigrationService>
         _output.WriteLine("Schema changes       =\n" + info.SchemaChanges);
     }
 
-    [Theory(Skip = "Manual test."), ClassData(typeof(MigrationData))]
+    [Theory(Skip = "Manual Test"), ClassData(typeof(MigrationData))]
     public async Task MigrateDataAsync(Version? currentVersion, Version targetVersion)
     {
         _service.Options!.ScriptsPath = "Resources.Scripts.v" + targetVersion.Major;
@@ -44,6 +44,26 @@ public class MigrationServiceTests : IClassFixture<AppMigrationService>
         Assert.Equal(targetVersion, info.TargetVersion);
 
         await _service.MigrateDataAsync();
+    }
+
+    [Fact(Skip = "Manual Test")]
+    public async Task RandomTest()
+    {
+        try
+        {
+            _service.Options!.ScriptsPath = "Resources.Scripts.v3";
+
+            var info = await _service.InitializeAsync(
+                new(3, 0, 0),
+                new(1, 0, 0));
+
+            await _service.Db.InvokeConnectionAsync();
+            await _service.MigrateDataAsync();
+        }
+        finally
+        {
+            await ResetDatabase();
+        }
     }
 
     [Fact]

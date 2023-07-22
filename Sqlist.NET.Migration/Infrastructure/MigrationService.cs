@@ -50,19 +50,19 @@ namespace Sqlist.NET.Migration.Infrastructure
         public MigrationOperationInformation? OperationInformation => _info;
 
         /// <summary>Initializes the migration service.</summary>
-        /// <param name="version">The version that database is to be migrated up to.</param>
+        /// <param name="targetVersion">The version that database is to be migrated up to.</param>
         /// <returns>
         ///     The <see cref="Task"/> object that represents the asynchronous operation, containing the <see cref="MigrationOperationInformation"/>.
         /// </returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public async Task<MigrationOperationInformation> InitializeAsync(Version? version = null)
+        public async Task<MigrationOperationInformation> InitializeAsync(Version? targetVersion = null, Version? currentVersion = null)
         {
-            if (version is null)
+            if (targetVersion is null)
                 _logger?.LogInformation("Initializing migration"); else
-                _logger?.LogInformation("Initializing migration to version {version}", version);
+                _logger?.LogInformation("Initializing migration to version {version}", targetVersion);
 
             _info = new MigrationOperationInformation();
-
+            
             if (await _dbTools.DoesSchemaTableExistAsync())
             {
                 var phase = await _dbTools.GetLastSchemaPhaseAsync();
@@ -70,11 +70,14 @@ namespace Sqlist.NET.Migration.Infrastructure
             }
             
             var roadMap = GetMigrationRoadMap()
-                .Where(phase => version is null || phase.Version <= version)
+                .Where(phase => targetVersion is null || phase.Version <= targetVersion)
                 .OrderBy(phase => phase.Version);
 
-            _dataMap = new DataTransactionMap(roadMap, _info.CurrentVersion);
-            MergeSchemaDefinition();
+            _dataMap = new DataTransactionMap(roadMap, _info.CurrentVersion ?? currentVersion);
+
+            if (_info.CurrentVersion is null)
+                _info.CurrentVersion = currentVersion; else
+                MergeSchemaDefinition();
 
             var lastPhase = roadMap.Last();
 
@@ -82,7 +85,7 @@ namespace Sqlist.NET.Migration.Infrastructure
             _info.Description = lastPhase.Description;
             _info.SchemaChanges = _dataMap.GenerateSummary();
             _info.LatestVersion = lastPhase.Version;
-            _info.TargetVersion = version != null && roadMap.LastOrDefault()?.Version == version ? version : _info.LatestVersion;
+            _info.TargetVersion = targetVersion != null && roadMap.LastOrDefault()?.Version == targetVersion ? targetVersion : _info.LatestVersion;
 
             _initialized = true;
 

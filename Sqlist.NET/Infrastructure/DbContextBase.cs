@@ -3,6 +3,7 @@ using Sqlist.NET.Data;
 using Sqlist.NET.Sql;
 
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Numerics;
@@ -315,7 +316,7 @@ namespace Sqlist.NET.Infrastructure
 
         public abstract Task CopyAsync(DbConnection exporter, DbConnection importer, string table, TransactionRuleDictionary rules, CancellationToken cancellationToken = default);
 
-        public abstract Task CopyFromAsync(DbDataReader reader, string table, string[] columns, CancellationToken cancellationToken = default);
+        public abstract Task CopyFromAsync(DbDataReader reader, string table, ICollection<KeyValuePair<string, string>> columns, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Terminates remote connections and clears the connection pool of all related connection instances.
