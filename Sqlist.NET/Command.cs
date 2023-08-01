@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -70,7 +71,7 @@ namespace Sqlist.NET
             get => _prms;
             internal set
             {
-                if (value is object[][] prms)
+                if (value is BulkParameters prms)
                     ConfigureBulkParameters(_cmd, prms);
                 else
                     ConfigureParameters(_cmd, value);
@@ -142,34 +143,26 @@ namespace Sqlist.NET
             return _cmd.ExecuteReaderAsync(commandBehavior, cancellationToken);
         }
 
-        public void ConfigureBulkParameters(DbCommand cmd, object[][] prms)
+        public void ConfigureBulkParameters(DbCommand cmd, BulkParameters prms)
         {
-            if (prms is null || prms.Length == 0)
-                return;
+            var (i, j) = (0, 0);
 
-            var rowCount = prms.Length;
-            var colCount = prms[0].Length;
-
-            for (var i = 0; i < rowCount; i++)
+            foreach (var obj in prms)
             {
-                for (var j = 0; j < colCount; j++)
+                foreach (var (value, type) in obj)
                 {
-                    var prm = cmd.CreateParameter();
-                    var val = prms[i][j];
+                    var param = cmd.CreateParameter();
+                    var nType = Nullable.GetUnderlyingType(type) ?? type;
 
-                    prm.ParameterName = "p" + (j + i * colCount);
-                    prm.Direction = ParameterDirection.Input;
+                    param.ParameterName = "p" + (j++ + i * obj.Length);
+                    param.Direction = ParameterDirection.Input;
+                    param.DbType = _db.TypeMapper.ToDbType(nType);
+                    param.Value = value is null ? DBNull.Value : value;
 
-                    if (val is null)
-                        prm.Value = DBNull.Value;
-                    else
-                    {
-                        prm.DbType = _db.TypeMapper.ToDbType(val.GetType());
-                        prm.Value = val;
-                    }
-
-                    cmd.Parameters.Add(prm);
+                    cmd.Parameters.Add(param);
                 }
+
+                i++;
             }
         }
 
@@ -180,7 +173,7 @@ namespace Sqlist.NET
 
             IterateParamters(prms, (name, value) =>
             {
-                if (value is object[][] bulk)
+                if (value is BulkParameters bulk)
                 {
                     ConfigureBulkParameters(cmd, bulk);
                     return;
