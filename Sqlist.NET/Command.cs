@@ -162,6 +162,7 @@ namespace Sqlist.NET
                     cmd.Parameters.Add(param);
                 }
 
+                j = 0;
                 i++;
             }
         }
