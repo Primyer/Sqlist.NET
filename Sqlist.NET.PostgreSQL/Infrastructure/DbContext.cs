@@ -11,7 +11,6 @@ using Sqlist.NET.Metadata;
 using Sqlist.NET.Sql;
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -289,7 +288,7 @@ namespace Sqlist.NET.Infrastructure
                     var colName = rule.ColumnName ?? name;
 
                     var sequenceName = string.IsNullOrWhiteSpace(rule.SequenceName)
-                        ? $"pg_get_serial_sequence('{sql.TableName}', '{colName}')"
+                        ? $"pg_get_serial_sequence('{rule.Inherits ?? sql.TableName}', '{colName}')"
                         : $"'{rule.SequenceName}'";
 
                     sql.RegisterFields($"setval({sequenceName}, max(`{colName}`))");

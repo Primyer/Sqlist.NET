@@ -15,6 +15,7 @@
 
         public bool IsSequence { get; set; }
         public string? SequenceName { get; set; }
+        public string? Inherits { get; set; }
         public string? Type { get; set; }
         public string? Value { get; set; }
         public bool IsEnum { get; set; }

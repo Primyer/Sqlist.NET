@@ -46,7 +46,7 @@ public class MigrationServiceTests : IClassFixture<AppMigrationService>
         await _service.MigrateDataAsync();
     }
 
-    [Fact(Skip = "Manual Test")]
+    [Fact]
     public async Task RandomTest()
     {
         try
@@ -62,7 +62,6 @@ public class MigrationServiceTests : IClassFixture<AppMigrationService>
         }
         finally
         {
-            await ResetDatabase();
         }
     }
 

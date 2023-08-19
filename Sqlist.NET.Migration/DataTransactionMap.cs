@@ -33,7 +33,7 @@ namespace Sqlist.NET.Migration
                 Merge(phase, currentVersion);
 
                 var transfer = phase.Guidelines.Transfer;
-                if (transfer.Any())
+                if (transfer.Any() && currentVersion > phase.Version)
                 {
                     foreach (var (table, definition) in transfer)
                         TransferDefinitions[table] = definition;
@@ -88,7 +88,8 @@ namespace Sqlist.NET.Migration
                         IsNew = !alreadyPerformed,
                         IsEnum = definition.IsEnum,
                         IsSequence = definition.IsSequence,
-                        SequenceName = definition.SequenceName
+                        SequenceName = definition.SequenceName,
+                        Inherits = definition.Inherits,
                     });
                 }
             }
@@ -129,6 +130,10 @@ namespace Sqlist.NET.Migration
                 Type = type,
                 IsEnum = rule.IsEnum ?? record.Value.IsEnum,
                 ColumnName = rule.ColumnName,
+
+                Inherits = rule.Inherits?.Trim() == string.Empty
+                    ? rule.Inherits
+                    : null,
 
                 CurrentType = !alreadyPerformed
                     ? record.Value.CurrentType
@@ -203,6 +208,25 @@ namespace Sqlist.NET.Migration
 
                         if (!string.IsNullOrEmpty(rule.Value))
                             sb.Append($", casted as ({rule.Value})");
+                    }
+
+                    sb.AppendLine();
+                }
+
+                sb.AppendLine();
+            }
+
+            if (TransferDefinitions.Any())
+            {
+                sb.AppendLine("\n\n>> TRANSFER DEFINITIONS:\n");
+
+                foreach (var (table, definition) in TransferDefinitions)
+                {
+                    sb.AppendLine(table);
+
+                    foreach (var (name, type) in definition.Columns)
+                    {
+                        sb.AppendLine("   " + name + ": " + type);
                     }
 
                     sb.AppendLine();
