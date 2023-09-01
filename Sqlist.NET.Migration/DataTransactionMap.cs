@@ -28,12 +28,14 @@ namespace Sqlist.NET.Migration
         /// <param name="currentVersion">The version of the current DB schema.</param>
         public DataTransactionMap(IEnumerable<MigrationPhase> phases, Version? currentVersion = null)
         {
+            var latest = phases.Max(p => p.Version);
+
             foreach (var phase in phases)
             {
                 Merge(phase, currentVersion);
 
                 var transfer = phase.Guidelines.Transfer;
-                if (transfer.Any() && currentVersion > phase.Version)
+                if (transfer.Any() && currentVersion < phase.Version && phase.Version < latest)
                 {
                     foreach (var (table, definition) in transfer)
                         TransferDefinitions[table] = definition;

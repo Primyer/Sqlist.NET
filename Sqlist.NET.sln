@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sqlist.NET.Migration.Tests"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sqlist.NET.PostgreSQL", "Sqlist.NET.PostgreSQL\Sqlist.NET.PostgreSQL.csproj", "{5453B256-24C0-410F-913E-79C7FC0EACC8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqlist.NET.Common", "Sqlist.NET.Common\Sqlist.NET.Common.csproj", "{05B336AF-D62F-41ED-9FFC-C3FACE4DF8FF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{5453B256-24C0-410F-913E-79C7FC0EACC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5453B256-24C0-410F-913E-79C7FC0EACC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5453B256-24C0-410F-913E-79C7FC0EACC8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05B336AF-D62F-41ED-9FFC-C3FACE4DF8FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05B336AF-D62F-41ED-9FFC-C3FACE4DF8FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05B336AF-D62F-41ED-9FFC-C3FACE4DF8FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05B336AF-D62F-41ED-9FFC-C3FACE4DF8FF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

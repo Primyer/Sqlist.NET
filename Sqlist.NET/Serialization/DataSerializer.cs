@@ -1,13 +1,15 @@
 ﻿using FastMember;
+
+using Sqlist.NET.Annotations;
 using Sqlist.NET.Metadata;
 using Sqlist.NET.Utilities;
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.Reflection;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Sqlist.NET.Serialization
@@ -81,18 +83,11 @@ namespace Sqlist.NET.Serialization
             var count = 0;
             foreach (var prop in typeof(T).GetProperties())
             {
-                if (prop.GetCustomAttribute<NotMappedAttribute>() != null)
+                if (prop.GetCustomAttribute<NotMappedAttribute>() is not null)
                     continue;
 
-                var jsonAttr = prop.GetCustomAttribute<JsonIncludeAttribute>();
-                var clmnAttr = prop.GetCustomAttribute<ColumnAttribute>();
-
-                var field = jsonAttr is null
-                    ? new SerializationField()
-                    : new JsonField(prop.PropertyType);
-
-                field.Name = prop.Name;
-                fields[reader.GetOrdinal(clmnAttr?.Name ?? prop.Name)] = field;
+                var attr = prop.GetCustomAttribute<ColumnAttribute>();
+                fields[reader.GetOrdinal(attr?.Name ?? prop.Name)] = Serialize(prop);
 
                 count++;
             }
@@ -113,20 +108,13 @@ namespace Sqlist.NET.Serialization
             for (var i = 0; i < dbColumns.Length; i++)
             {
                 var prop = props[i];
-                if (prop.GetCustomAttribute<NotMappedAttribute>() != null)
+                if (prop.GetCustomAttribute<NotMappedAttribute>() is not null)
                     continue;
 
-                var jsonAttr = prop.GetCustomAttribute<JsonIncludeAttribute>();
-                var clmnAttr = prop.GetCustomAttribute<ColumnAttribute>();
+                var attr = prop.GetCustomAttribute<ColumnAttribute>();
 
-                var field = jsonAttr is null
-                    ? new SerializationField()
-                    : new JsonField(prop.PropertyType);
-
-                field.Name = prop.Name;
-
-                dbColumns[i] = clmnAttr?.Name ?? prop.Name;
-                serFields[i] = field;
+                dbColumns[i] = attr?.Name ?? prop.Name;
+                serFields[i] = Serialize(prop);
             }
 
             var count = 0;
@@ -146,6 +134,26 @@ namespace Sqlist.NET.Serialization
             }
 
             return fields;
+        }
+
+        private static SerializationField Serialize(PropertyInfo property)
+        {
+            var jsonAttr = property.GetCustomAttribute<JsonAttribute>();
+            var enumAttr = property.GetCustomAttribute<EnumerationAttribute>();
+
+            SerializationField field;
+
+            if (jsonAttr is not null)
+                field = new JsonField(property.PropertyType);
+
+            else if (enumAttr is not null)
+                field = new EnumField(property.PropertyType);
+            else
+                field = new SerializationField();
+
+            field.Name = property.Name;
+
+            return field;
         }
     }
 }

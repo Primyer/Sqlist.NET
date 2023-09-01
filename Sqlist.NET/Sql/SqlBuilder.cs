@@ -501,20 +501,6 @@ namespace Sqlist.NET.Sql
         }
 
         /// <summary>
-        ///     Registers a <c>GROUP BY</c> statement with the specified <paramref name="field"/>.
-        /// </summary>
-        /// <param name="field">The field to group by.</param>
-        public virtual void GroupBy(string field)
-        {
-            Check.NotNullOrEmpty(field, nameof(field));
-
-            var builder = GetOrCreateBuilder("filters");
-
-            builder.Append("\nGROUP BY ");
-            builder.Append(Encloser.Reformat(field));
-        }
-
-        /// <summary>
         ///     Registers a <c>WINDOW</c> statement with the specified <paramref name="alias"/>.
         /// </summary>
         /// <param name="alias">The alias of the statement.</param>
@@ -528,6 +514,20 @@ namespace Sqlist.NET.Sql
 
             builder.AppendLine();
             builder.Append($"WINDOW {Encloser.Replace(alias)} AS ({Encloser.Replace(content)})");
+        }
+
+        /// <summary>
+        ///     Registers a <c>GROUP BY</c> statement with the specified <paramref name="field"/>.
+        /// </summary>
+        /// <param name="field">The field to group by.</param>
+        public virtual void GroupBy(string field)
+        {
+            Check.NotNullOrEmpty(field, nameof(field));
+
+            var builder = GetOrCreateBuilder("filters");
+
+            builder.Append("\nGROUP BY ");
+            builder.Append(Encloser.Reformat(field));
         }
 
         /// <summary>
@@ -612,6 +612,20 @@ namespace Sqlist.NET.Sql
             var builder = GetOrCreateBuilder("filters");
             builder.Append("\nOFFSET ");
             builder.Append(value);
+        }
+
+        /// <summary>
+        ///     Registers a <c>HAVING</c> statement with the specified <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="condition">The field to group by.</param>
+        public virtual void Having(string condition)
+        {
+            ThrowIfNull(condition);
+
+            var builder = GetOrCreateBuilder("filters");
+
+            builder.Append("\nHAVING ");
+            builder.Append(Encloser.Reformat(condition));
         }
 
         /// <summary>

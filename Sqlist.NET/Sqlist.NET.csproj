@@ -27,4 +27,8 @@
 		<PackageReference Include="System.Text.Json" Version="7.0.2" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\Sqlist.NET.Common\Sqlist.NET.Common.csproj" />
+	</ItemGroup>
+
 </Project>

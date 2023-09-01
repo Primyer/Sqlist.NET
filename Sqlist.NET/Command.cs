@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,7 +14,7 @@ namespace Sqlist.NET
     {
         private readonly DbContextBase _db;
         private readonly DbCommand _cmd;
-
+        private readonly DbConnection _conn;
         private object? _prms;
 
         /// <summary>
@@ -28,6 +27,21 @@ namespace Sqlist.NET
 
             _db = db;
             _cmd = _db.Connection!.CreateCommand();
+            _conn = _db.Connection;
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="Command"/> class.
+        /// </summary>
+        /// <param name="db">The <see cref="DbContextBase"/> implementation.</param>
+        /// <param name="connection">A custom connection, which the command is to be executed over.</param>
+        internal Command(DbContextBase db, DbConnection connection)
+        {
+            Check.NotNull(db, nameof(db));
+
+            _db = db;
+            _cmd = connection.CreateCommand();
+            _conn = connection;
         }
 
         /// <summary>
@@ -213,8 +227,8 @@ namespace Sqlist.NET
 
         private void EnsureConnectionOpen()
         {
-            if (_db.Connection!.State == ConnectionState.Closed)
-                _db.Connection.Open();
+            if (_conn.State == ConnectionState.Closed)
+                _conn.Open();
         }
 
         public async ValueTask DisposeAsync()

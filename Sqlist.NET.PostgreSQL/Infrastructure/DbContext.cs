@@ -15,7 +15,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,13 +24,6 @@ namespace Sqlist.NET.Infrastructure
     {
         private readonly ILogger<DbContext>? _logger;
         private readonly NpgsqlConnectionStringBuilder _csBuilder;
-
-        private static readonly MethodInfo ExporterReadMethod = typeof(NpgsqlBinaryExporter)
-            .GetMethod("ReadAsync", 1, new[]
-            {
-                typeof(NpgsqlDbType),
-                typeof(CancellationToken)
-            })!;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="DbContext"/> class.
@@ -54,6 +46,7 @@ namespace Sqlist.NET.Infrastructure
         /// <inheritdoc />
         public override NpgsqlConnection? Connection => base.Connection as NpgsqlConnection;
 
+        /// <inheritdoc />
         public override NpgsqlTransaction? Transaction => base.Transaction as NpgsqlTransaction;
 
         /// <inheritdoc />
@@ -87,16 +80,14 @@ namespace Sqlist.NET.Infrastructure
             var stagingTable = table + "_staging";
             await CreateStagingTableAsync(stagingTable, rules);
 
-            var exportStmt = CreateExportSqlStatement(table, rules);
-            var importStmt = CreateImportSqlStatement(stagingTable, rules);
-            var rowIndex = 1;
+            var row = 0;
 
-            using (var reader = await ((NpgsqlConnection)exporter).BeginBinaryExportAsync(exportStmt, cancellationToken))
-            using (var writer = await ((NpgsqlConnection)importer).BeginBinaryImportAsync(importStmt, cancellationToken))
+            using (var reader = await ExecuteReaderAsync(exporter, table, rules, cancellationToken))
+            using (var writer = await CreateImporterAsync(importer, stagingTable, rules, cancellationToken))
             {
                 _logger?.LogInformation("Copying '{Table}' data...", table);
 
-                while (await reader.StartRowAsync(cancellationToken) != -1)
+                while (await reader.ReadAsync(cancellationToken))
                 {
                     await writer.StartRowAsync(cancellationToken);
 
@@ -104,49 +95,45 @@ namespace Sqlist.NET.Infrastructure
                     {
                         if (rule.IsNew) continue;
 
+                        var ordinal = reader.GetOrdinal(name);
                         var notEnum = !(rule.IsEnum ?? false);
 
                         var npgType = notEnum ? NpgsqlTypeMapper.GetNpgsqlDbType(rule.Type!) : NpgsqlDbType.Text;
                         var clrType = notEnum ? NpgsqlTypeMapper.Instance.GetType(rule.Type!) : typeof(string);
 
-                        if (reader.IsNull)
+                        try
                         {
-                            await reader.SkipAsync(cancellationToken);
-
-                            if (npgType == NpgsqlDbType.Jsonb)
-                                await writer.WriteAsync<string>(null, "jsonb", cancellationToken);
-                            else
-                                await writer.WriteNullAsync(cancellationToken);
-                        }
-                        else
-                        {
-                            try
+                            if (await reader.IsDBNullAsync(ordinal, cancellationToken))
                             {
-                                var value = await (dynamic?)ExporterReadMethod
-                                    .MakeGenericMethod(clrType)
-                                    .Invoke(reader, new object[] { npgType, cancellationToken });
-
+                                if (npgType == NpgsqlDbType.Jsonb)
+                                    await writer.WriteAsync<string>(null, "jsonb", cancellationToken);
+                                else
+                                    await writer.WriteNullAsync(cancellationToken);
+                            }
+                            else
+                            {
+                                var value = reader.GetValue(ordinal);
                                 await writer.WriteAsync(value, npgType, cancellationToken);
                             }
-                            catch (Exception ex)
-                            {
-                                throw new Exception($"Unexpected exception was thrown while copying column '{rule.ColumnName ?? name}' at row {rowIndex}.", ex);
-                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new Exception($"Unexpected exception was thrown while copying column '{rule.ColumnName ?? name}' at row {row + 1}.", ex);
                         }
                     }
-
-                    rowIndex++;
+                    row++;
                 }
 
                 await writer.CompleteAsync(cancellationToken);
             }
 
-            await CommitDataAsync(stagingTable, table, rules);
-            await DeleteStagingTableAsync(stagingTable);
+            if (row != 0)
+                await CommitDataAsync(stagingTable, table, rules);
 
+            await DeleteStagingTableAsync(stagingTable);
             _logger?.LogInformation("Copy of '{Table}' data is completed.", table);
         }
-        
+
         /// <inheritdoc />
         public override async Task CopyFromAsync(DbDataReader reader, string table, ICollection<KeyValuePair<string, string>> columns, CancellationToken cancellationToken = default)
         {
@@ -217,6 +204,22 @@ namespace Sqlist.NET.Infrastructure
             return Query().ExecuteAsync(sql);
         }
 
+        private Task<DbDataReader> ExecuteReaderAsync(DbConnection connection, string table, TransactionRuleDictionary rules, CancellationToken cancellationToken)
+        {
+            var sql = Sql(table);
+
+            var fields = rules.Where(entry => !entry.Value.IsNew)
+                .Select(entry => (entry.Value.IsEnum ?? false) ? sql.Cast(entry.Key, "text") : entry.Key)
+                .ToArray();
+
+            sql.RegisterFields(fields);
+
+            var cmd = CreateCommand(connection);
+            cmd.Statement = sql.ToSelect();
+
+            return cmd.ExecuteReaderAsync(cancellationToken: cancellationToken);
+        }
+
         private static string CreateExportSqlStatement(string table, TransactionRuleDictionary rules)
         {
             return new NpgsqlBuilder().ToCopyTo(CopySource.StdOut, new CopyOptions { Format = "BINARY" }, sql =>
@@ -237,12 +240,13 @@ namespace Sqlist.NET.Infrastructure
             });
         }
 
-        private static string CreateImportSqlStatement(string table, TransactionRuleDictionary rules)
+        private static Task<NpgsqlBinaryImporter> CreateImporterAsync(DbConnection connection, string table, TransactionRuleDictionary rules, CancellationToken cancellationToken)
         {
             var sql = new NpgsqlBuilder(table);
             sql.RegisterFields(ToColumns(rules));
 
-            return sql.ToCopyFrom(CopySource.StdIn, new CopyOptions { Format = "BINARY" });
+            var stmt = sql.ToCopyFrom(CopySource.StdIn, new CopyOptions { Format = "BINARY" });
+            return ((NpgsqlConnection)connection).BeginBinaryImportAsync(stmt, cancellationToken);
         }
 
         private async Task CommitDataAsync(string stagingTable, string table, TransactionRuleDictionary rules)
@@ -287,8 +291,11 @@ namespace Sqlist.NET.Infrastructure
                 {
                     var colName = rule.ColumnName ?? name;
 
+                    if (rule.Inherits is not null)
+                        sql.TableName = rule.Inherits;
+
                     var sequenceName = string.IsNullOrWhiteSpace(rule.SequenceName)
-                        ? $"pg_get_serial_sequence('{rule.Inherits ?? sql.TableName}', '{colName}')"
+                        ? $"pg_get_serial_sequence('{sql.TableName}', '{colName}')"
                         : $"'{rule.SequenceName}'";
 
                     sql.RegisterFields($"setval({sequenceName}, max(`{colName}`))");

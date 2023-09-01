@@ -65,6 +65,12 @@ namespace Sqlist.NET.Infrastructure
         }
 
         /// <inheritdoc />
+        public override Command CreateCommand(DbConnection connection)
+        {
+            return _db.CreateCommand(connection);
+        }
+
+        /// <inheritdoc />
         public override Command CreateCommand(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
             return _db.CreateCommand(sql, prms, timeout, type);

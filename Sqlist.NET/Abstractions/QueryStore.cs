@@ -42,6 +42,13 @@ namespace Sqlist.NET.Abstractions
         /// <summary>
         ///     Creates and returns a <see cref="Command"/> object.
         /// </summary>
+        /// <param name="connection">A custom connection, which the command is to be executed over.</param>
+        /// <returns>The <see cref="Command"/> object.</returns>
+        public abstract Command CreateCommand(DbConnection connection);
+
+        /// <summary>
+        ///     Creates and returns a <see cref="Command"/> object.
+        /// </summary>
         /// <param name="sql">The SQL statement to run against the data source.</param>
         /// <param name="prms">The parameters associated with the given statement.</param>
         /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
