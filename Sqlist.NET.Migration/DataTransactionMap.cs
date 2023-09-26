@@ -3,17 +3,22 @@ using Sqlist.NET.Migration.Deserialization;
 using Sqlist.NET.Migration.Deserialization.Collections;
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
 namespace Sqlist.NET.Migration
 {
-    public class DataTransactionMap : Dictionary<string, TransactionRuleDictionary>
+    public class DataTransactionMap : IDictionary<string, TransactionRuleDictionary>, ICollection
     {
         public const string CastVariable = "{column}";
 
         static readonly KeyValuePair<string, DataTransactionRule> DefaultRecord = default;
+
+        readonly List<string> _orderList = new();
+        readonly Dictionary<string, TransactionRuleDictionary> _map = new();
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="DataTransactionMap"/> class.
@@ -43,10 +48,34 @@ namespace Sqlist.NET.Migration
             }
         }
 
+
+
         /// <summary>
         ///     Gets or sets the lists of SQL scripts to be executed.
         /// </summary>
         public Dictionary<string, DataTransferDefinition> TransferDefinitions { get; set; } = new();
+
+        public int Count => _map.Count;
+
+        public bool IsReadOnly => true;
+
+        public bool IsSynchronized => false;
+
+        public object SyncRoot => this;
+
+        public ICollection<string> Keys => _orderList;
+
+        public ICollection<TransactionRuleDictionary> Values => _map.Values;
+
+        public TransactionRuleDictionary this[string key]
+        {
+            get => _map[key];
+            set
+            {
+                _map[key] = value;
+                _orderList.Add(key);
+            }
+        }
 
         public void Merge(MigrationPhase phase, Version? currentVersion = null)
         {
@@ -64,15 +93,30 @@ namespace Sqlist.NET.Migration
 
             foreach (var (table, collection) in create)
             {
-                if (!ContainsKey(table))
-                    this[table] = new TransactionRuleDictionary { Condition = collection.Condition };
+                if (!_map.ContainsKey(table))
+                {
+                    _map[table] = new TransactionRuleDictionary { Condition = collection.Condition };
+
+                    if (!string.IsNullOrEmpty(collection.Before))
+                    {
+                        var index = _orderList.IndexOf(collection.Before);
+                        if (index == -1)
+                            throw new InvalidOperationException($"Cannot execute table ({table}) before ({collection.Before}) because it doesn't exist.");
+
+                        _orderList.Insert(index, table);
+                    }
+                    else
+                    {
+                        _orderList.Add(table);
+                    }
+                }
                 else
                 {
                     if (collection.Condition?.Trim() == "")
-                        this[table].Condition = null;
+                        _map[table].Condition = null;
                     
                     else if (!string.IsNullOrWhiteSpace(collection.Condition))
-                        this[table].Condition = collection.Condition;
+                        _map[table].Condition = collection.Condition;
                 }
 
                 foreach (var (name, definition) in collection.Columns)
@@ -82,7 +126,7 @@ namespace Sqlist.NET.Migration
 
                     var type = NormalizeType(definition.Type);
 
-                    this[table].Add(name, new DataTransactionRule
+                    _map[table].Add(name, new DataTransactionRule
                     {
                         Type = type,
                         CurrentType = type,
@@ -104,6 +148,10 @@ namespace Sqlist.NET.Migration
 
             foreach (var (table, rules) in update)
             {
+                if (table == "Coupons")
+                {
+                    var x = 5;
+                }
                 EnsureTableExists("update", table);
 
                 foreach (var (name, rule) in rules)
@@ -151,12 +199,12 @@ namespace Sqlist.NET.Migration
                         : rule.Value;
                 }
 
-                this[table][record.Key] = column;
+                _map[table][record.Key] = column;
             }
             else
             {
-                this[table].Remove(record.Key);
-                this[table][column.ColumnName ?? record.Key] = column;
+                _map[table].Remove(record.Key);
+                _map[table][column.ColumnName ?? record.Key] = column;
             }
         }
 
@@ -174,7 +222,7 @@ namespace Sqlist.NET.Migration
                     foreach (var column in columns)
                     {
                         var record = GetRecord("delete", table, column);
-                        this[table].Remove(record.Key);
+                        _map[table].Remove(record.Key);
 
                         if (TransferDefinitions.TryGetValue(table, out DataTransferDefinition? value))
                         {
@@ -185,7 +233,8 @@ namespace Sqlist.NET.Migration
                 }
                 else
                 {
-                    Remove(table);
+                    _map.Remove(table);
+                    _orderList.Remove(table);
                     TransferDefinitions.Remove(table);
                 };
             }
@@ -238,15 +287,21 @@ namespace Sqlist.NET.Migration
             return sb.ToString();
         }
 
+        IEnumerator<KeyValuePair<string, TransactionRuleDictionary>> IEnumerable<KeyValuePair<string, TransactionRuleDictionary>>.GetEnumerator()
+            => new Enumerator(_orderList, _map);
+
+        IEnumerator IEnumerable.GetEnumerator()
+            => new Enumerator(_orderList, _map);
+
         private void EnsureTableExists(string operation, string table)
         {
-            if (!ContainsKey(table))
+            if (!_map.ContainsKey(table))
                 throw new InvalidOperationException($"Cannot {operation} undefined table ({table}).");
         }
 
         private KeyValuePair<string, DataTransactionRule> GetRecord(string operation, string table, string column)
         {
-            var record = this[table].SingleOrDefault(record => record.Key == column || record.Value?.ColumnName == column);
+            var record = _map[table].SingleOrDefault(record => record.Key == column || record.Value?.ColumnName == column);
             if (record.Equals(DefaultRecord))
                 throw new InvalidOperationException($"Cannot {operation} undefined column ({column}) of table ({table}).");
 
@@ -256,6 +311,92 @@ namespace Sqlist.NET.Migration
         private static string NormalizeType(string type)
         {
             return type.Trim().ToLower();
+        }
+
+        public void Add(KeyValuePair<string, TransactionRuleDictionary> item)
+        {
+            Add(item.Key, item.Value);
+        }
+
+        public void Add(string key, TransactionRuleDictionary value)
+        {
+            _map.Add(key, value);
+        }
+
+        public void Clear()
+        {
+            _map.Clear();
+        }
+
+        public bool Contains(KeyValuePair<string, TransactionRuleDictionary> item)
+        {
+            return _map.Contains(item);
+        }
+
+        void ICollection<KeyValuePair<string, TransactionRuleDictionary>>.CopyTo(KeyValuePair<string, TransactionRuleDictionary>[] array, int arrayIndex)
+        {
+        }
+
+        void ICollection.CopyTo(Array array, int index)
+        {
+        }
+
+        public bool Remove(KeyValuePair<string, TransactionRuleDictionary> item)
+        {
+            return _map.Remove(item.Key);
+        }
+
+        public bool ContainsKey(string key)
+        {
+            return _map.ContainsKey(key);
+        }
+
+        public bool Remove(string key)
+        {
+            return _map.Remove(key);
+        }
+
+        public bool TryGetValue(string key, [MaybeNullWhen(false)] out TransactionRuleDictionary value)
+        {
+            return _map.TryGetValue(key, out value);
+        }
+
+        public struct Enumerator : IEnumerator<KeyValuePair<string, TransactionRuleDictionary>>, IEnumerator
+        {
+            private readonly List<string> _list;
+            private readonly Dictionary<string, TransactionRuleDictionary> _dictionary;
+
+            private int _index = 0;
+            private KeyValuePair<string, TransactionRuleDictionary> _current = default;
+
+            internal Enumerator(List<string> list, Dictionary<string, TransactionRuleDictionary> dictionary)
+            {
+                _list = list;
+                _dictionary = dictionary;
+            }
+
+            public KeyValuePair<string, TransactionRuleDictionary> Current => _current;
+
+            object IEnumerator.Current => _current;
+
+            public void Dispose()
+            {
+            }
+
+            public bool MoveNext()
+            {
+                if (_index == _list.Count)
+                    return false;
+
+                var key = _list[_index++];
+                _current = KeyValuePair.Create(key, _dictionary[key]);
+
+                return true;
+            }
+
+            void IEnumerator.Reset()
+            {
+            }
         }
     }
 }

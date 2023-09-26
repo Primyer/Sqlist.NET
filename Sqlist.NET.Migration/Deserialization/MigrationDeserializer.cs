@@ -54,9 +54,9 @@ namespace Sqlist.NET.Migration.Deserialization
                 throw new InvalidOperationException("Migration phase has no guidelines defined.");
         }
 
-        private static bool IsNullOrEmpty(IDictionary dictionary)
+        private static bool IsNullOrEmpty(ICollection collection)
         {
-            return dictionary is null || dictionary.Count == 0;
+            return collection is null || collection.Count == 0;
         }
     }
 }

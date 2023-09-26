@@ -10,5 +10,6 @@ namespace Sqlist.NET.Migration.Deserialization.Collections
     {
         public List<KeyValuePair<string, ColumnDefinition>> Columns { get; set; } = new();
         public string? Condition { get; set; }
+        public string? Before { get; set; }
     }
 }
