@@ -374,7 +374,7 @@ namespace Sqlist.NET.Sql
         /// <param name="stmt">The statement to register.</param>
         public virtual void Join(string stmt)
         {
-            Check.NotNullOrEmpty(stmt, nameof(stmt));
+            Check.NotNullOrEmpty(stmt);
 
             GetOrCreateBuilder("joins").Append('\n' + stmt);
         }
@@ -385,7 +385,13 @@ namespace Sqlist.NET.Sql
         /// <param name="condition">The condition to register.</param>
         public virtual void Where(string condition)
         {
-            Check.NotNullOrEmpty(condition, nameof(condition));
+            Check.NotNullOrEmpty(condition);
+
+            if (Builders.ContainsKey("where"))
+            {
+                AppendAnd(condition);
+                return;
+            }
 
             var builder = Builders["where"] = new StringBuilder();
 
@@ -447,7 +453,7 @@ namespace Sqlist.NET.Sql
         /// <param name="condition">The condition to append.</param>
         public virtual void AppendCondition(string condition)
         {
-            Check.NotNullOrEmpty(condition, nameof(condition));
+            Check.NotNullOrEmpty(condition);
 
             if (!Builders.TryGetValue("where", out var builder))
                 throw new InvalidOperationException("The 'where' condition wasn't initialized.");
@@ -462,7 +468,7 @@ namespace Sqlist.NET.Sql
         /// <param name="reformat">Indicates whether to re-format.</param>
         public virtual void RegisterFields(string field, bool reformat = true)
         {
-            Check.NotNullOrEmpty(field, nameof(field));
+            Check.NotNullOrEmpty(field);
 
             var builder = GetOrCreateBuilder("fields");
             if (builder.Length != 0)
@@ -477,7 +483,7 @@ namespace Sqlist.NET.Sql
         /// <param name="fields">The fields to register.</param>
         public virtual void RegisterFields(string[] fields)
         {
-            Check.NotEmpty(fields, nameof(fields));
+            Check.NotEmpty(fields);
 
             var builder = GetOrCreateBuilder("fields");
             if (builder.Length != 0)
@@ -507,8 +513,8 @@ namespace Sqlist.NET.Sql
         /// <param name="content">The conetnt of the statement.</param>
         public virtual void Window(string alias, string content)
         {
-            Check.NotNullOrEmpty(alias, nameof(alias));
-            Check.NotNullOrEmpty(content, nameof(content));
+            Check.NotNullOrEmpty(alias);
+            Check.NotNullOrEmpty(content);
 
             var builder = GetOrCreateBuilder("filters");
 
@@ -522,7 +528,7 @@ namespace Sqlist.NET.Sql
         /// <param name="field">The field to group by.</param>
         public virtual void GroupBy(string field)
         {
-            Check.NotNullOrEmpty(field, nameof(field));
+            Check.NotNullOrEmpty(field);
 
             var builder = GetOrCreateBuilder("filters");
 
@@ -536,7 +542,7 @@ namespace Sqlist.NET.Sql
         /// <param name="fields">The fields to group by.</param>
         public virtual void GroupBy(string[] fields)
         {
-            Check.NotEmpty(fields, nameof(fields));
+            Check.NotEmpty(fields);
 
             var result = string.Empty;
             for (var i = 0; i < fields.Length; i++)
@@ -558,7 +564,7 @@ namespace Sqlist.NET.Sql
         /// <param name="field">The field to order by.</param>
         public virtual void OrderBy(string field)
         {
-            Check.NotNullOrEmpty(field, nameof(field));
+            Check.NotNullOrEmpty(field);
 
             var builder = GetOrCreateBuilder("filters");
 
@@ -572,7 +578,7 @@ namespace Sqlist.NET.Sql
         /// <param name="fields">The fields to order by.</param>
         public virtual void OrderBy(string[] fields)
         {
-            Check.NotEmpty(fields, nameof(fields));
+            Check.NotEmpty(fields);
 
             var result = string.Empty;
             for (var i = 0; i < fields.Length; i++)
@@ -594,7 +600,7 @@ namespace Sqlist.NET.Sql
         /// <param name="value">The amout to limit by.</param>
         public virtual void Limit(string value)
         {
-            Check.NotNullOrEmpty(value, nameof(value));
+            Check.NotNullOrEmpty(value);
 
             var builder = GetOrCreateBuilder("filters");
             builder.Append("\nLIMIT ");
@@ -607,7 +613,7 @@ namespace Sqlist.NET.Sql
         /// <param name="value">The value to offset from.</param>
         public virtual void Offset(string value)
         {
-            Check.NotNullOrEmpty(value, nameof(value));
+            Check.NotNullOrEmpty(value);
 
             var builder = GetOrCreateBuilder("filters");
             builder.Append("\nOFFSET ");
@@ -688,8 +694,8 @@ namespace Sqlist.NET.Sql
         /// <param name="recursive">The flag that indicates whether CTE is recursive.</param>
         public virtual void RegisterWith(string name, string[] fields, string body, bool recursive = false)
         {
-            Check.NotNullOrEmpty(name, nameof(name));
-            Check.NotNullOrEmpty(body, nameof(body));
+            Check.NotNullOrEmpty(name);
+            Check.NotNullOrEmpty(body);
 
             var builder = GetOrCreateBuilder("with_queries");
 
@@ -804,8 +810,8 @@ namespace Sqlist.NET.Sql
         /// <param name="all">The flag that indicates whether to union all.</param>
         protected void RegisterCombinedQuery(string type, Func<SqlBuilder, string> query, bool all = false)
         {
-            Check.NotNullOrEmpty(type, nameof(type));
-            Check.NotNull(query, nameof(query));
+            Check.NotNullOrEmpty(type);
+            Check.NotNull(query);
 
             var result = query.Invoke(new SqlBuilder(Encloser));
             if (string.IsNullOrEmpty(result))

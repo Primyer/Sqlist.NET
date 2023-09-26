@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Sqlist.NET.Abstractions
@@ -72,9 +73,7 @@ namespace Sqlist.NET.Abstractions
 
         public virtual async Task<int> ExecuteAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
-            var conn = await GetConnectionAsync();
-            var cmd = CreateCommand(sql, prms, timeout, type);
-
+            var cmd = await CreateCommandAsync(sql, prms, timeout, type);
             var task = cmd.ExecuteNonQueryAsync();
 
             task.GetAwaiter().OnCompleted(OnCommandCompleted());
@@ -89,8 +88,7 @@ namespace Sqlist.NET.Abstractions
 
         public virtual async Task<IEnumerable<T>> RetrieveAsync<T>(string sql, object? prms = null, Action<T>? altr = null, int? timeout = null, CommandType? type = null)
         {
-            var cnn = await GetConnectionAsync();
-            var cmd = CreateCommand(sql, prms, timeout, type);
+            var cmd = await CreateCommandAsync(sql, prms, timeout, type);
             var rdr = cmd.PrepareReader();
 
             var action = OnCommandCompleted();
@@ -105,7 +103,7 @@ namespace Sqlist.NET.Abstractions
 
         public async Task<IEnumerable<T>> RetrieveJsonAsync<T>(string sql, object? prms = null, Action<T>? altr = null, int? timeout = null, CommandType? type = null)
         {
-            var cmd = CreateCommand(sql, prms, timeout, type);
+            var cmd = await CreateCommandAsync(sql, prms, timeout, type);
             var rdr = cmd.PrepareReader();
 
             var action = OnCommandCompleted();
@@ -157,10 +155,9 @@ namespace Sqlist.NET.Abstractions
 
         public virtual async Task<object?> ExecuteScalarAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
-            var cnn = await GetConnectionAsync();
-            var cmd = CreateCommand(sql, prms, timeout, type);
-
+            var cmd = await CreateCommandAsync(sql, prms, timeout, type);
             var task = cmd.ExecuteScalarAsync();
+
             task.GetAwaiter().OnCompleted(OnCommandCompleted());
 
             return await task;
@@ -171,15 +168,28 @@ namespace Sqlist.NET.Abstractions
             return ExecuteScalarAsync(sql, prms, timeout, type).Result;
         }
 
-        public virtual Task<DbDataReader> ExecuteReaderAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+        public virtual async Task<DbDataReader> ExecuteReaderAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
-            var cmd = CreateCommand(sql, prms, timeout, type);
-            return cmd.ExecuteReaderAsync();
+            var cmd = await CreateCommandAsync(sql, prms, timeout, type);
+            return await cmd.ExecuteReaderAsync();
         }
 
         public virtual DbDataReader ExecuteReader(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
         {
             return ExecuteReaderAsync(sql, prms, timeout, type).Result;
+        }
+
+        private async Task<Command> CreateCommandAsync(string sql, object? prms, int? timeout, CommandType? type)
+        {
+            var cnn = await GetConnectionAsync();
+            var cmd = CreateCommand(cnn);
+
+            cmd.Statement = sql;
+            cmd.Parameters = prms;
+            cmd.Timeout = timeout;
+            cmd.Type = type;
+
+            return cmd;
         }
     }
 }

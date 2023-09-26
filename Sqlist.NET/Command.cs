@@ -171,7 +171,12 @@ namespace Sqlist.NET
                     param.ParameterName = "p" + (j++ + i * obj.Length);
                     param.Direction = ParameterDirection.Input;
                     param.DbType = _db.TypeMapper.ToDbType(nType);
-                    param.Value = value is null ? DBNull.Value : value;
+                    param.Value = value switch
+                    {
+                        null => DBNull.Value,
+                        Enumeration @enum => @enum.DisplayName,
+                        _ => value
+                    };
 
                     cmd.Parameters.Add(param);
                 }
@@ -198,14 +203,12 @@ namespace Sqlist.NET
 
                 prm.ParameterName = name;
                 prm.Direction = ParameterDirection.Input;
-
-                if (value is null)
-                    prm.Value = DBNull.Value;
-                else
+                prm.Value = value switch
                 {
-                    prm.DbType = _db.TypeMapper.ToDbType(value.GetType());
-                    prm.Value = value;
-                }
+                    null => DBNull.Value,
+                    Enumeration @enum => @enum.DisplayName,
+                    _ => value
+                };
 
                 cmd.Parameters.Add(prm);
             });

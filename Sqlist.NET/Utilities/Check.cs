@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Sqlist.NET.Utilities
 {
@@ -12,22 +13,22 @@ namespace Sqlist.NET.Utilities
                 throw new InvalidOperationException($"The type {type.Name} must be an instantiable class.");
         }
 
-        public static void NotNull<T>(T prm, string prmName)
+        public static void NotNull<T>(T? argument, [CallerArgumentExpression(nameof(argument))] string? paramName = null)
         {
-            if (prm == null)
-                throw new ArgumentNullException(prmName);
+            if (argument == null)
+                throw new ArgumentNullException(paramName);
         }
 
-        public static void NotNullOrEmpty(string prm, string prmName)
+        public static void NotNullOrEmpty(string? argument, [CallerArgumentExpression(nameof(argument))] string? paramName = null)
         {
-            if (string.IsNullOrEmpty(prm))
-                throw new ArgumentException($"The argument {prmName} can neither be null or empty.");
+            if (string.IsNullOrEmpty(argument))
+                throw new ArgumentException($"The argument {paramName} can neither be null or empty.");
         }
 
-        public static void NotEmpty<T>(IEnumerable<T> prm, string prmName)
+        public static void NotEmpty<T>(IEnumerable<T> argument, [CallerArgumentExpression(nameof(argument))] string? paramName = null)
         {
-            if (prm.Count() == 0)
-                throw new ArgumentException($"The argument {prmName} cannot be empty.");
+            if (!argument.Any())
+                throw new ArgumentException($"The argument {paramName} cannot be empty.");
         }
     }
 }

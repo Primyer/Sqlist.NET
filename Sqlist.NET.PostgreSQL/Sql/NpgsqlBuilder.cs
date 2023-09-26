@@ -59,6 +59,16 @@ namespace Sqlist.NET.Sql
         }
 
         /// <summary>
+        ///     Registers an <c>CROSS JOIN</c> on the specified <paramref name="table"/> with the given <paramref name="condition"/>.
+        /// </summary>
+        /// <param name="table">The table to join.</param>
+        /// <param name="condition">The join conditions.</param>
+        public virtual void CrossJoin(string table, string? condition = null)
+        {
+            Join("CROSS", table, condition);
+        }
+
+        /// <summary>
         ///     Registers an <c>CROSS JOIN</c> of the specified on the result of the <paramref name="configureSql"/>.
         /// </summary>
         /// <param name="alias">The alias of the subquery.</param>

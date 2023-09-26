@@ -15,7 +15,7 @@
             if (val.Contains('`'))
                 return Replace(val);
 
-            if (!val.Contains(' '))
+            if (val.IndexOfAny(new[] { ' ', '@' }) == -1)
                 return Wrap(val);
 
             return val;
