@@ -15,7 +15,6 @@
 		<RepositoryUrl>https://github.com/Primyer/Sqlist.NET</RepositoryUrl>
 		<PackageTags>orm;sql;micro-orm;postgresql;postgre;npgsql</PackageTags>
 		<PackageProjectUrl>https://github.com/Primyer/Sqlist.NET</PackageProjectUrl>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
     </PropertyGroup>
