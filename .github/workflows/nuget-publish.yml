@@ -31,5 +31,5 @@ jobs:
 
       - name: Publish to GitHub Packages (using PAT)
         run: |
-          cd ${{ github.workspace }}/${{ env.MAIN_PROJECT }}/bin  # Navigate to the directory containing the generated package
+          cd ${{ github.workspace }}/${{ env.MAIN_PROJECT }}/bin/Release  # Navigate to the directory containing the generated package
           dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://nuget.pkg.github.com/Primyer/index.json
