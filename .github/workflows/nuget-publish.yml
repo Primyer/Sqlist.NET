@@ -26,4 +26,7 @@ jobs:
       - name: Publish to GitHub Packages (using PAT)
         run: |
           cd "$temp_dir"  # Navigate to the directory containing the generated package
+          ls
+          echo "-----------------------------------------"
+          echo "-----------------------------------------"
           dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://nuget.pkg.github.com/Primyer/index.json
