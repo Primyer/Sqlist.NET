@@ -15,11 +15,11 @@
 		<PackageProjectUrl>https://github.com/Primyer/Sqlist.NET</PackageProjectUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 	</PropertyGroup>
 	
 	<ItemGroup>
-	  <None Include="$(SolutionDir)LICENSE.txt">
+	  <None Include="$(SolutionDir)LICENSE">
 	    <Pack>True</Pack>
 	    <PackagePath>\</PackagePath>
 	  </None>
