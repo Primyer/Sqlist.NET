@@ -1,7 +1,7 @@
+name: NuGet Publish - Sqlist.NET
+
 env:
   MAIN_PROJECT: Sqlist.NET
-
-name: NuGet Publish - ${{ env.MAIN_PROJECT }}
 
 on:
   push:
