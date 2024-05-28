@@ -18,18 +18,12 @@ jobs:
         with:
           dotnet-version: '>= 7.0'
 
-      - name: Restore dependencies
-        run: |
-          cd ${{ env.MAIN_PROJECT }}
-          dotnet restore
-
-      - name: Build project
-        run: dotnet build --configuration Release
-
       - name: Pack NuGet package
-        run: dotnet pack --configuration Release ${{ env.MAIN_PROJECT }}/${{ env.MAIN_PROJECT }}.csproj
+        run: |
+          temp_dir=$(mktemp -d) # Create a temporary directory
+          dotnet pack --configuration Release --output "$temp_dir"
 
       - name: Publish to GitHub Packages (using PAT)
         run: |
-          cd ${{ github.workspace }}/${{ env.MAIN_PROJECT }}/bin/Release  # Navigate to the directory containing the generated package
+          cd "$temp_dir"  # Navigate to the directory containing the generated package
           dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://nuget.pkg.github.com/Primyer/index.json

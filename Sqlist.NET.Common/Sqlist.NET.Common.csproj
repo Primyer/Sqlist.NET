@@ -1,10 +1,29 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <RootNamespace>Sqlist.NET</RootNamespace>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<RootNamespace>Sqlist.NET</RootNamespace>
+		<Description>Common tools for Sqlist.NET</Description>
+		<Copyright>(c) 2024, Primyer</Copyright>
+		<Authors>Primyer</Authors>
+		<Company>Primyer</Company>
+		<NeutralLanguage>en-GB</NeutralLanguage>
+		<Configurations>Debug;Release</Configurations>
+		<Platforms>AnyCPU</Platforms>
+		<RepositoryUrl>https://github.com/Primyer/Sqlist.NET</RepositoryUrl>
+		<PackageTags>orm;sql;micro-orm;tools</PackageTags>
+		<PackageProjectUrl>https://github.com/Primyer/Sqlist.NET</PackageProjectUrl>
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\LICENSE">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
+	</ItemGroup>
 
 </Project>
