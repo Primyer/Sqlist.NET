@@ -16,7 +16,7 @@
 		<RepositoryUrl>https://github.com/Primyer/Sqlist.NET</RepositoryUrl>
 		<PackageTags>orm;sql;micro-orm;migration</PackageTags>
 		<PackageProjectUrl>https://github.com/Primyer/Sqlist.NET</PackageProjectUrl>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageReadmeFile>Readme.md</PackageReadmeFile>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 	</PropertyGroup>
@@ -26,7 +26,7 @@
 			<Pack>True</Pack>
 			<PackagePath></PackagePath>
 		</None>
-		<None Include="README.md">
+		<None Include="Readme.md">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
