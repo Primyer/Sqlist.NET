@@ -1,0 +1,5 @@
+name: Common Configuration
+
+env:
+    BASE_DIR: ./
+    MAIN_PROJECT: Sqlist.NET
