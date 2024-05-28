@@ -18,14 +18,15 @@ jobs:
         with:
           dotnet-version: '>= 7.0'
 
+      - name: Create a temporary directory
+        run: echo "TEMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
+
       - name: Pack NuGet package
-        run: |
-          temp_dir=$(mktemp -d) # Create a temporary directory
-          dotnet pack --configuration Release --output "$temp_dir"
+        run: dotnet pack --configuration Release --output ${{ env.TEMP_DIR }}
 
       - name: Publish to GitHub Packages (using PAT)
         run: |
-          cd "$temp_dir"  # Navigate to the directory containing the generated package
+          cd ${{ env.TEMP_DIR }}  # Navigate to the directory containing the generated package
           ls
           echo "-----------------------------------------"
           echo "-----------------------------------------"
