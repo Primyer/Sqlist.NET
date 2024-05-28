@@ -148,10 +148,6 @@ namespace Sqlist.NET.Migration
 
             foreach (var (table, rules) in update)
             {
-                if (table == "Coupons")
-                {
-                    var x = 5;
-                }
                 EnsureTableExists("update", table);
 
                 foreach (var (name, rule) in rules)

@@ -106,7 +106,7 @@ namespace Sqlist.NET.Infrastructure
                             if (await reader.IsDBNullAsync(ordinal, cancellationToken))
                             {
                                 if (npgType == NpgsqlDbType.Jsonb)
-                                    await writer.WriteAsync<string>(null, "jsonb", cancellationToken);
+                                    await writer.WriteAsync<string?>(null, "jsonb", cancellationToken);
                                 else
                                     await writer.WriteNullAsync(cancellationToken);
                             }
