@@ -1,6 +1,7 @@
-name: NuGet Publish - ${{ env.MAIN_PROJECT }}
+env:
+  MAIN_PROJECT: Sqlist.NET
 
-uses: ./_common.yml
+name: NuGet Publish - ${{ env.MAIN_PROJECT }}
 
 on:
   push:
@@ -19,7 +20,7 @@ jobs:
 
       - name: Restore dependencies
         run: |
-            cd ${{ env.BASE_DIR }}${{ env.MAIN_PROJECT }}
+            cd ${{ env.MAIN_PROJECT }}
             dotnet restore
 
       - name: Build project
