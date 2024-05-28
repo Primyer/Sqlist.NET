@@ -16,7 +16,7 @@ jobs:
       - name: Use NuGet CLI
         uses: actions/setup-dotnet@v4.0.0  # Setup .NET environment
         with:
-          dotnet-version: '>= 7.0'  # Specify desired .NET version
+          dotnet-version: '>= 7.0'
 
       - name: Restore dependencies
         run: |
@@ -28,9 +28,7 @@ jobs:
 
       - name: Pack NuGet package
         run: |
-          pwd
-          ls
-          dotnet pack --configuration Release ${{ env.MAIN_PROJECT }}.csproj  # Replace with your project path
+          dotnet pack --configuration Release ${{ env.MAIN_PROJECT }}/${{ env.MAIN_PROJECT }}.csproj
 
       - name: Publish to GitHub Packages (using PAT)
         run: |
