@@ -4,7 +4,6 @@
 		<TargetFramework>net7.0</TargetFramework>
 		<Description>A micro ORM with highly efficient API.</Description>
 		<Copyright>(c) 2024, Saleh Kawaf Kulla</Copyright>
-		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 		<Authors>Saleh Kawaf Kulla</Authors>
 		<Company>Primyer</Company>
 		<NeutralLanguage>en-GB</NeutralLanguage>
@@ -13,16 +12,17 @@
 		<Nullable>enable</Nullable>
 		<RepositoryUrl>https://github.com/Primyer/Sqlist.NET</RepositoryUrl>
 		<PackageTags>orm;sql;micro-orm</PackageTags>
-		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<PackageProjectUrl>https://github.com/Primyer/Sqlist.NET</PackageProjectUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 	</PropertyGroup>
 	
 	<ItemGroup>
-		<None Remove="LICENSE.txt" />
-	</ItemGroup>
-	
-	<ItemGroup>
+	  <None Include="$(SolutionDir)LICENSE.txt">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
 	  <None Include="..\README.md">
 	    <Pack>True</Pack>
 	    <PackagePath>\</PackagePath>

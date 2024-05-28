@@ -27,8 +27,7 @@ jobs:
         run: dotnet build --configuration Release
 
       - name: Pack NuGet package
-        run: |
-          dotnet pack --configuration Release ${{ env.MAIN_PROJECT }}/${{ env.MAIN_PROJECT }}.csproj
+        run: dotnet pack --configuration Release ${{ env.MAIN_PROJECT }}/${{ env.MAIN_PROJECT }}.csproj
 
       - name: Publish to GitHub Packages (using PAT)
         run: |
