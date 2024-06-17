@@ -21,7 +21,7 @@ namespace Sqlist.NET.Extensions
         /// <param name="builder">The <see cref="SqlistBuilder"/> to configure.</param>
         /// <param name="configureOptions">The configuration action to set up the Sqlist options.</param>
         /// <returns>The <see cref="SqlistBuilder"/>.</returns>
-        public static SqlistBuilder AddPostgreSQL(this SqlistBuilder builder, Action<NpgsqlOptionsBuilder>? configureOptions = null)
+        public static SqlistBuilder ForPostgreSQL(this SqlistBuilder builder, Action<NpgsqlOptionsBuilder>? configureOptions = null)
         {
             builder.Services.PostConfigure<NpgsqlOptions>(options =>
             {

@@ -67,8 +67,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Sqlist.NET.Migration\Sqlist.NET.Migration.csproj" />
-        <ProjectReference Include="..\Sqlist.NET.PostgreSQL\Sqlist.NET.PostgreSQL.csproj" />
+      <ProjectReference Include="..\..\src\Sqlist.NET.Migration\Sqlist.NET.Migration.csproj" />
+      <ProjectReference Include="..\..\src\Sqlist.NET.PostgreSQL\Sqlist.NET.PostgreSQL.csproj" />
     </ItemGroup>
 
 </Project>

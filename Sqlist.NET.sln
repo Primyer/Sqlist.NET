@@ -3,15 +3,23 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33530.505
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sqlist.NET", "Sqlist.NET\Sqlist.NET.csproj", "{465450FC-B616-4057-87A0-B6BB7EE15814}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sqlist.NET", "src\Sqlist.NET\Sqlist.NET.csproj", "{465450FC-B616-4057-87A0-B6BB7EE15814}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sqlist.NET.Migration", "Sqlist.NET.Migration\Sqlist.NET.Migration.csproj", "{CC21A243-4493-41BA-9C99-17FCE3B17828}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sqlist.NET.Migration", "src\Sqlist.NET.Migration\Sqlist.NET.Migration.csproj", "{CC21A243-4493-41BA-9C99-17FCE3B17828}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sqlist.NET.Migration.Tests", "Sqlist.NET.Migration.Test\Sqlist.NET.Migration.Tests.csproj", "{5A2E5F56-7D2A-48DF-903D-8EF65C060A46}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sqlist.NET.Migration.Tests", "test\Sqlist.NET.Migration.Test\Sqlist.NET.Migration.Tests.csproj", "{5A2E5F56-7D2A-48DF-903D-8EF65C060A46}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sqlist.NET.PostgreSQL", "Sqlist.NET.PostgreSQL\Sqlist.NET.PostgreSQL.csproj", "{5453B256-24C0-410F-913E-79C7FC0EACC8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sqlist.NET.PostgreSQL", "src\Sqlist.NET.PostgreSQL\Sqlist.NET.PostgreSQL.csproj", "{5453B256-24C0-410F-913E-79C7FC0EACC8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqlist.NET.Common", "Sqlist.NET.Common\Sqlist.NET.Common.csproj", "{05B336AF-D62F-41ED-9FFC-C3FACE4DF8FF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sqlist.NET.Common", "src\Sqlist.NET.Common\Sqlist.NET.Common.csproj", "{05B336AF-D62F-41ED-9FFC-C3FACE4DF8FF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sqlist.NET.Tools", "src\Sqlist.NET.Tools\Sqlist.NET.Tools.csproj", "{F0BD2737-7C3D-4EE9-BD09-0DA3F45F98D2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1F6BF5DE-ED17-4B9F-A3F5-9175C6A3CD99}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{48BD4DC6-DAE1-40F5-8458-4E9C95C4235B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqlist.NET.Tools.Test", "test\Sqlist.NET.Tools.Test\Sqlist.NET.Tools.Test.csproj", "{8AE53D5E-7E06-4AEC-976D-0B0B8C3BA13A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,9 +47,26 @@ Global
 		{05B336AF-D62F-41ED-9FFC-C3FACE4DF8FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{05B336AF-D62F-41ED-9FFC-C3FACE4DF8FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{05B336AF-D62F-41ED-9FFC-C3FACE4DF8FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F0BD2737-7C3D-4EE9-BD09-0DA3F45F98D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0BD2737-7C3D-4EE9-BD09-0DA3F45F98D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0BD2737-7C3D-4EE9-BD09-0DA3F45F98D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0BD2737-7C3D-4EE9-BD09-0DA3F45F98D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8AE53D5E-7E06-4AEC-976D-0B0B8C3BA13A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8AE53D5E-7E06-4AEC-976D-0B0B8C3BA13A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8AE53D5E-7E06-4AEC-976D-0B0B8C3BA13A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8AE53D5E-7E06-4AEC-976D-0B0B8C3BA13A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{465450FC-B616-4057-87A0-B6BB7EE15814} = {1F6BF5DE-ED17-4B9F-A3F5-9175C6A3CD99}
+		{CC21A243-4493-41BA-9C99-17FCE3B17828} = {1F6BF5DE-ED17-4B9F-A3F5-9175C6A3CD99}
+		{5A2E5F56-7D2A-48DF-903D-8EF65C060A46} = {48BD4DC6-DAE1-40F5-8458-4E9C95C4235B}
+		{5453B256-24C0-410F-913E-79C7FC0EACC8} = {1F6BF5DE-ED17-4B9F-A3F5-9175C6A3CD99}
+		{05B336AF-D62F-41ED-9FFC-C3FACE4DF8FF} = {1F6BF5DE-ED17-4B9F-A3F5-9175C6A3CD99}
+		{F0BD2737-7C3D-4EE9-BD09-0DA3F45F98D2} = {1F6BF5DE-ED17-4B9F-A3F5-9175C6A3CD99}
+		{8AE53D5E-7E06-4AEC-976D-0B0B8C3BA13A} = {48BD4DC6-DAE1-40F5-8458-4E9C95C4235B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FB33ADC0-801E-4A58-9D91-0EDCE9392553}

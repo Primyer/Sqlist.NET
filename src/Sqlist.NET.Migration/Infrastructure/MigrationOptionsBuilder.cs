@@ -1,10 +1,27 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 
 namespace Sqlist.NET.Migration.Infrastructure
 {
     public class MigrationOptionsBuilder
     {
-        private readonly MigrationOptions _options = new MigrationOptions();
+        private readonly MigrationOptions _options;
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="MigrationOptionsBuilder"/> class.
+        /// </summary>
+        internal MigrationOptionsBuilder() : this(new())
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="MigrationOptionsBuilder"/> class.
+        /// </summary>
+        internal MigrationOptionsBuilder(MigrationOptions options)
+        {
+            ArgumentNullException.ThrowIfNull(options);
+            _options = options;
+        }
 
         /// <summary>
         ///     Sets the <paramref name="assembly"/> of where the migration scripts exist.

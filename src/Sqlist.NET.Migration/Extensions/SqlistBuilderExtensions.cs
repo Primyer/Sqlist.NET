@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Sqlist.NET.Infrastructure.Internal;
 using Sqlist.NET.Migration.Data;
@@ -18,13 +19,14 @@ namespace Sqlist.NET.Migration.Extensions
         /// <returns>The <see cref="SqlistBuilder"/>.</returns>
         public static SqlistBuilder AddSqlistMigration(this SqlistBuilder builder, Action<MigrationOptionsBuilder> configureOptions)
         {
-            var options = new MigrationOptionsBuilder();
-            configureOptions(options);
+            builder.Services.Configure<MigrationOptions>(options =>
+            {
+                var builder = new MigrationOptionsBuilder(options);
+                configureOptions(builder);
+            });
 
-            builder.Services.ConfigureOptions(options.GetOptions());
-
-            builder.Services.AddScoped<DbManager>();
-            builder.Services.AddTransient<MigrationService>();
+            builder.Services.TryAddScoped<DbManager>();
+            builder.Services.TryAddTransient<MigrationService>();
 
             return builder;
         }
