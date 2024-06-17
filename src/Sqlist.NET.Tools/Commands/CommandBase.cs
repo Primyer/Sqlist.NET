@@ -1,6 +1,7 @@
 ﻿using McMaster.Extensions.CommandLineUtils;
 
 using Sqlist.NET.Tools.Handlers;
+using Sqlist.NET.Tools.Logging;
 using Sqlist.NET.Tools.Properties;
 
 namespace Sqlist.NET.Tools.Commands;
