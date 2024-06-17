@@ -61,6 +61,60 @@ namespace Sqlist.NET.Tools.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The configuration to use..
+        /// </summary>
+        internal static string ConfigurationDescription {
+            get {
+                return ResourceManager.GetString("ConfigurationDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Force all dependencies to be resolved even if the last restore was successful..
+        /// </summary>
+        internal static string ForceDescription {
+            get {
+                return ResourceManager.GetString("ForceDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The target framework. Defaults to the first one in the project..
+        /// </summary>
+        internal static string FrameworkDescription {
+            get {
+                return ResourceManager.GetString("FrameworkDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No value has been provided for the handler project option..
+        /// </summary>
+        internal static string HandlerProjectNoValueException {
+            get {
+                return ResourceManager.GetString("HandlerProjectNoValueException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The handler project option is null..
+        /// </summary>
+        internal static string HandlerProjectNullException {
+            get {
+                return ResourceManager.GetString("HandlerProjectNullException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The name of the launch profile (if any) to use when launching the application. Launch profiles are defined in the launchSettings.json file and are typically called Development, Staging, and Production..
+        /// </summary>
+        internal static string LaunchProfileDescription {
+            get {
+                return ResourceManager.GetString("LaunchProfileDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Don&apos;t build the project. Intended to be used when the build is up-to-date..
         /// </summary>
         internal static string NoBuildDescription {
@@ -79,6 +133,15 @@ namespace Sqlist.NET.Tools.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Don&apos;t execute an implicit restore when running the command..
+        /// </summary>
+        internal static string NoRestoreDescription {
+            get {
+                return ResourceManager.GetString("NoRestoreDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Prefix output with level..
         /// </summary>
         internal static string PrefixDescription {
@@ -93,6 +156,15 @@ namespace Sqlist.NET.Tools.Properties {
         internal static string ProjectDescription {
             get {
                 return ResourceManager.GetString("ProjectDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The target runtime to bundle for..
+        /// </summary>
+        internal static string RuntimeDescription {
+            get {
+                return ResourceManager.GetString("RuntimeDescription", resourceCulture);
             }
         }
         

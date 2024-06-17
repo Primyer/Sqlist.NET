@@ -1,5 +1,7 @@
-﻿namespace Sqlist.NET.Tools;
+﻿using Sqlist.NET.Tools.Handlers;
+
+namespace Sqlist.NET.Tools;
 internal interface ICommandTransmitter
 {
-    Task TransmitAsync(string[] args, CancellationToken cancellationToken);
+    Task TransmitAsync<THandler>(THandler handler, CancellationToken cancellationToken) where THandler : TransmittableCommandHandler;
 }

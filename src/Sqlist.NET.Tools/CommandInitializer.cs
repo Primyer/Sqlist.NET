@@ -11,9 +11,9 @@ internal class CommandInitializer(ICommandTransmitter transmitter) : ICommandIni
 
     public Task ExecuteAsync<THandler>(THandler handler, CancellationToken cancellationToken) where THandler : ICommandHandler
     {
-        if (!handler.Transmittable)
+        if (handler is not TransmittableCommandHandler transmittable)
             return handler.OnExecuteAsync(cancellationToken);
 
-        return transmitter.TransmitAsync(_cmdArgs, cancellationToken);
+        return transmitter.TransmitAsync(transmittable, cancellationToken);
     }
 }
