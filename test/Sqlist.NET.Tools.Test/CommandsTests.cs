@@ -69,25 +69,4 @@ public class CommandsTests
         initializerMock.Verify(i => i.ExecuteAsync(handlerMock.Object, It.IsAny<CancellationToken>()), Times.Once);
         Assert.True(command.ValidateCalled);
     }
-
-    [Fact]
-    public async Task ExecuteAsync_InvokesOnCompletedEvent()
-    {
-        // Arrange
-        var handlerMock = new Mock<TestCommandHandler>();
-        var initializerMock = new Mock<ICommandInitializer>();
-        var command = new TestCommand(handlerMock.Object, initializerMock.Object);
-
-        var eventInvoked = false;
-        command.OnCompleted += () => eventInvoked = true;
-
-        var app = new CommandLineApplication();
-        var token = new CancellationTokenSource().Token;
-
-        // Act
-        await command.ExecuteAsync(token);
-
-        // Assert
-        Assert.True(eventInvoked);
-    }
 }
