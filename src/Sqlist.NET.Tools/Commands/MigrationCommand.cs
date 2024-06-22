@@ -11,11 +11,13 @@ internal class MigrationCommand(MigrationHandler handler, ICommandInitializer in
 {
     private readonly MigrationHandler _handler = handler;
 
-    public override void Configure(CommandLineApplication command)
+    public override void Configure(CommandLineApplication app)
     {
         if (Configured) return;
 
-        _handler.Initialize(command);
-        base.Configure(command);
+        var command = app.Command("migrate", _ => { });
+
+        _handler.Initialize(app);
+        base.Configure(app);
     }
 }

@@ -178,6 +178,15 @@ namespace Sqlist.NET.Tools.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unhandled exception!.
+        /// </summary>
+        internal static string UnhandledException {
+            get {
+                return ResourceManager.GetString("UnhandledException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Show verbose output..
         /// </summary>
         internal static string VerboseDescription {

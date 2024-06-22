@@ -156,6 +156,9 @@
   <data name="RuntimeDescription" xml:space="preserve">
     <value>The target runtime to bundle for.</value>
   </data>
+  <data name="UnhandledException" xml:space="preserve">
+    <value>Unhandled exception!</value>
+  </data>
   <data name="VerboseDescription" xml:space="preserve">
     <value>Show verbose output.</value>
   </data>

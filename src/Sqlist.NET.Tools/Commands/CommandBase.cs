@@ -36,8 +36,6 @@ internal abstract class CommandBase : ICommand
 /// </summary>
 internal abstract class CommandBase<THandler>(THandler handler, ICommandInitializer initializer) : CommandBase where THandler : ICommandHandler
 {
-    public event CommandCompletionEvent OnCompleted = () => { };
-
     public override void Configure(CommandLineApplication app)
     {
         if (Configured) return;
@@ -55,7 +53,6 @@ internal abstract class CommandBase<THandler>(THandler handler, ICommandInitiali
         Validate();
 
         await initializer.ExecuteAsync(handler, cancellationToken);
-        OnCompleted?.Invoke();
     }
 
     public virtual void Validate() { }

@@ -1,20 +1,14 @@
 ﻿using McMaster.Extensions.CommandLineUtils;
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Sqlist.NET.Tools.Commands;
+
 using Sqlist.NET.Tools.Extensions;
 using Sqlist.NET.Tools.Logging;
 
 try
 {
     await Host.CreateDefaultBuilder(args)
-        .ConfigureServices(services =>
-        {
-            services.AddSingleton<RootCommand>();
-            services.AddSingleton<MigrationCommand>();
-        })
-        .UseCommandLineApplication<RootCommand>()
+        .UseCommandLineApplication()
         .RunConsoleAsync();
 }
 catch (Exception ex)

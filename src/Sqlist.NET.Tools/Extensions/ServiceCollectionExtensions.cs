@@ -4,7 +4,6 @@ using Sqlist.NET.Infrastructure.Internal;
 using Sqlist.NET.Tools;
 using Sqlist.NET.Tools.Commands;
 using Sqlist.NET.Tools.Infrastructure;
-using Sqlist.NET.Tools.Services;
 
 using ExecutionContext = Sqlist.NET.Tools.Infrastructure.ExecutionContext;
 
@@ -14,18 +13,21 @@ public static class ServiceCollectionExtensions
 {
     public static SqlistBuilder AddSqlistTools(this SqlistBuilder builder)
     {
-        builder.Services.TryAddSingleton<MigrationCommand>();
-        builder.Services.AddHostedService<MigrationService>();
         builder.Services.AddCommonServices();
+        builder.Services.TryAddSingleton<IApplicationExecutor, ToolCliExecutor>();
 
         return builder;
     }
 
     internal static void AddCommonServices(this IServiceCollection services)
     {
+        services.TryAddSingleton<MigrationCommand>();
+
         services.TryAddSingleton<IProcessManager, ProcessManager>();
         services.TryAddSingleton<ICommandTransmitter, CommandTransmitter>();
         services.TryAddSingleton<ICommandInitializer, CommandInitializer>();
         services.TryAddSingleton<IExecutionContext, ExecutionContext>();
+
+        services.AddHostedService<CommandHandlerService>();
     }
 }

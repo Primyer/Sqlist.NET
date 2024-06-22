@@ -1,25 +1,17 @@
-﻿using McMaster.Extensions.CommandLineUtils;
-
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-
-using Sqlist.NET.Tools.Commands;
-using Sqlist.NET.Tools.Services;
+using Sqlist.NET.Tools.Infrastructure;
 
 namespace Sqlist.NET.Tools.Extensions;
 internal static class HostExtensions
 {
-    public static IHostBuilder UseCommandLineApplication<TCommand>(this IHostBuilder host) where TCommand : ICommand
+    public static IHostBuilder UseCommandLineApplication(this IHostBuilder host)
     {
-        var app = new CommandLineApplication { Name = "dotnet sqlist" };
-
         host.ConfigureServices(services =>
         {
             services.AddCommonServices();
-            services.TryAddSingleton(app);
-
-            services.AddHostedService<ConsoleService<TCommand>>();
+            services.TryAddSingleton<IApplicationExecutor, ToolCliExecutor>();
         });
 
         return host;
