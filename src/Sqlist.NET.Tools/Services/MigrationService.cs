@@ -3,24 +3,40 @@
 using Microsoft.Extensions.Hosting;
 
 using Sqlist.NET.Tools.Commands;
+using Sqlist.NET.Tools.Infrastructure;
 
 namespace Sqlist.NET.Tools.Services;
 
 /// <summary>
 ///     Initializes a new instance of the <see cref="MigrationService"/> class.
 /// </summary>
-internal class MigrationService(MigrationCommand migrationCommand, IHostApplicationLifetime lifetime) : IHostedService
+internal class MigrationService(MigrationCommand migrationCommand, IHostApplicationLifetime lifetime, IExecutionContext context) : IHostedService
 {
-    static readonly string[] _cmdArgs = Environment.GetCommandLineArgs();
-
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
-        var app = new CommandLineApplication();
+        var args = context.CommandLineArgs;
 
-        migrationCommand.Configure(app);
-        migrationCommand.OnCompleted += lifetime.StopApplication;
+        lifetime.ApplicationStarted.Register(() =>
+        {
+            Task.Run(async () =>
+            {
+                try
+                {
+                    var app = new CommandLineApplication();
 
-        await app.ExecuteAsync(_cmdArgs, cancellationToken);
+                    migrationCommand.Configure(app);
+                    migrationCommand.OnCompleted += lifetime.StopApplication;
+
+                    await app.ExecuteAsync(args, cancellationToken);
+                }
+                finally
+                {
+                    lifetime.StopApplication();
+                }
+            });
+        });
+
+        return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

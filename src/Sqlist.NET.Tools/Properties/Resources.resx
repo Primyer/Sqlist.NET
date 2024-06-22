@@ -147,6 +147,9 @@
   <data name="PrefixDescription" xml:space="preserve">
     <value>Prefix output with level.</value>
   </data>
+  <data name="ProcessAlreadyRunningException" xml:space="preserve">
+    <value>The process is already running.</value>
+  </data>
   <data name="ProjectDescription" xml:space="preserve">
     <value>The path to the startup project file.</value>
   </data>

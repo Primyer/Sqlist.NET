@@ -14,9 +14,6 @@ internal abstract class TransmittableCommandHandler : ICommandHandler
     public CommandOption? NoBuild { get; set; }
     public CommandOption? NoRestore { get; set; }
 
-
-    public abstract Task<int> OnExecuteAsync(CancellationToken cancellationToken);
-
     internal void Initialize(CommandLineApplication command)
     {
         Project = command.Option("-p|--project <PROJECT>", Resources.ProjectDescription, CommandOptionType.SingleValue, o => o.IsRequired());
@@ -28,4 +25,6 @@ internal abstract class TransmittableCommandHandler : ICommandHandler
         NoBuild = command.Option("--no-build", Resources.NoBuildDescription, CommandOptionType.NoValue);
         NoRestore = command.Option("--no-restore", Resources.NoRestoreDescription, CommandOptionType.NoValue);
     }
+
+    public abstract Task<int> OnExecuteAsync(CancellationToken cancellationToken);
 }

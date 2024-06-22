@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using Sqlist.NET.Tools.Commands;
+using Sqlist.NET.Tools.Infrastructure;
 
 namespace Sqlist.NET.Tools.Services;
 
@@ -11,12 +12,17 @@ namespace Sqlist.NET.Tools.Services;
 ///     Initializes a new instance of the <see cref="ConsoleService"/> class.
 /// </summary>
 internal class ConsoleService<TCommand>(
-    IHostApplicationLifetime lifetime, CommandLineApplication app, TCommand rootCommand, ILogger<ConsoleService<TCommand>> logger) : IHostedService where TCommand : ICommand
+    IHostApplicationLifetime lifetime,
+    CommandLineApplication app,
+    TCommand rootCommand,
+    IExecutionContext context,
+    ILogger<ConsoleService<TCommand>> logger) : IHostedService where TCommand : ICommand
 {
-    static readonly string[] _cmdArgs = Environment.GetCommandLineArgs();
-
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        context.IsTransmitter = true;
+        var args = context.CommandLineArgs;
+
         lifetime.ApplicationStarted.Register(() =>
         {
             Task.Run(async () =>
@@ -24,7 +30,7 @@ internal class ConsoleService<TCommand>(
                 try
                 {
                     rootCommand.Configure(app);
-                    await app.ExecuteAsync(_cmdArgs, cancellationToken);
+                    await app.ExecuteAsync(args, cancellationToken);
                 }
                 catch (Exception ex)
                 {

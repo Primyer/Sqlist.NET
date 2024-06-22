@@ -1,17 +1,16 @@
 ﻿using Sqlist.NET.Tools.Handlers;
+using Sqlist.NET.Tools.Infrastructure;
 
 namespace Sqlist.NET.Tools;
 
 /// <summary>
 ///     Initializes a new instance of the <see cref="CommandInitializer"/> class.
 /// </summary>
-internal class CommandInitializer(ICommandTransmitter transmitter) : ICommandInitializer
+internal class CommandInitializer(ICommandTransmitter transmitter, IExecutionContext context) : ICommandInitializer
 {
-    static readonly string[] _cmdArgs = Environment.GetCommandLineArgs();
-
     public Task ExecuteAsync<THandler>(THandler handler, CancellationToken cancellationToken) where THandler : ICommandHandler
     {
-        if (handler is not TransmittableCommandHandler transmittable)
+        if (!context.IsTransmitter || handler is not TransmittableCommandHandler transmittable)
             return handler.OnExecuteAsync(cancellationToken);
 
         return transmitter.TransmitAsync(transmittable, cancellationToken);

@@ -13,9 +13,9 @@ public delegate void CommandCompletionEvent();
 /// </summary>
 internal abstract class CommandBase : ICommand
 {
-    protected CommandOption? Verbose { get; set; }
-    protected CommandOption? NoColor { get; set; }
-    protected CommandOption? PrefixOutput { get; set; }
+    public CommandOption? Verbose { get; set; }
+    public CommandOption? NoColor { get; set; }
+    public CommandOption? PrefixOutput { get; set; }
 
     public bool Configured { get; private set; }
 
@@ -46,7 +46,7 @@ internal abstract class CommandBase<THandler>(THandler handler, ICommandInitiali
         base.Configure(app);
     }
 
-    private async Task ExecuteAsync(CancellationToken cancellationToken)
+    public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         Reporter.NoColor = NoColor?.HasValue() ?? false;
         Reporter.IsVerbose = Verbose?.HasValue() ?? false;
@@ -58,5 +58,5 @@ internal abstract class CommandBase<THandler>(THandler handler, ICommandInitiali
         OnCompleted?.Invoke();
     }
 
-    protected virtual void Validate() { }
+    public virtual void Validate() { }
 }

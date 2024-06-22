@@ -151,6 +151,15 @@ namespace Sqlist.NET.Tools.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The process is already running..
+        /// </summary>
+        internal static string ProcessAlreadyRunningException {
+            get {
+                return ResourceManager.GetString("ProcessAlreadyRunningException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The path to the startup project file..
         /// </summary>
         internal static string ProjectDescription {

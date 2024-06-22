@@ -1,22 +1,23 @@
 ﻿using System.Diagnostics;
 using System.Text;
 
+using Microsoft.Extensions.Logging;
+
 namespace Sqlist.NET.Tools;
-public class ProcessRunner : IProcessRunner
+internal class ProcessManager(ILogger<ProcessManager> logger) : IProcessManager
 {
-    public async Task<int> RunAsync(
+    public IProcess Prepare(
         string executable,
         IReadOnlyList<string> args,
         string? workingDirectory = null,
         Action<string?>? handleOutput = null,
         Action<string?>? handleError = null,
-        Action<string>? processCommandLine = null,
-        CancellationToken cancellationToken = default)
+        Action<string>? processCommandLine = null)
     {
         var arguments = ToArguments(args);
 
-        processCommandLine ??= Console.WriteLine;
-        processCommandLine(executable + " " + arguments);
+        processCommandLine ??= message => logger.LogInformation("{message}", message);
+        processCommandLine($"{executable} {arguments}");
 
         var startInfo = new ProcessStartInfo
         {
@@ -25,59 +26,25 @@ public class ProcessRunner : IProcessRunner
             UseShellExecute = false,
             RedirectStandardOutput = handleOutput is not null,
             RedirectStandardError = handleError is not null,
-            CreateNoWindow = true
+            CreateNoWindow = true,
+            WorkingDirectory = workingDirectory ?? string.Empty
         };
 
-        if (workingDirectory is not null)
-        {
-            startInfo.WorkingDirectory = workingDirectory;
-        }
-
-        using var process = new Process
+        var process = new Process
         {
             StartInfo = startInfo,
             EnableRaisingEvents = true
         };
 
-        var tcs = new TaskCompletionSource<int>();
-
-        void ProcessExited(object? sender, EventArgs e)
-        {
-            tcs.TrySetResult(process.ExitCode);
-        }
-
-        process.Exited += ProcessExited;
+        var internalProcess = new ManagedProcess(process, logger);
 
         if (handleOutput is not null)
-            process.OutputDataReceived += (sender, args) => handleOutput(args.Data);
+            internalProcess.OutputDataReceived += handleOutput;
 
         if (handleError is not null)
-            process.ErrorDataReceived += (sender, args) => handleError(args.Data);
+            internalProcess.ErrorDataReceived += handleError;
 
-        try
-        {
-            process.Start();
-
-            if (handleOutput is not null)
-                process.BeginOutputReadLine();
-
-            if (handleError is not null)
-                process.BeginErrorReadLine();
-
-            using (cancellationToken.Register(process.Kill))
-            {
-                return await tcs.Task.ConfigureAwait(false);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error running process: {ex.Message}");
-            return -1;
-        }
-        finally
-        {
-            process.Exited -= ProcessExited;
-        }
+        return internalProcess;
     }
 
     public static string ToArguments(IReadOnlyList<string> args)

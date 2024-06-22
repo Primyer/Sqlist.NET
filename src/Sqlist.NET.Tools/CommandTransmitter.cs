@@ -5,18 +5,18 @@ using Sqlist.NET.Tools.Handlers;
 using Sqlist.NET.Tools.Properties;
 
 namespace Sqlist.NET.Tools;
-internal class CommandTransmitter(IProcessRunner processRunner) : ICommandTransmitter
+internal class CommandTransmitter(IProcessManager processRunner) : ICommandTransmitter
 {
     public Task TransmitAsync<THandler>(THandler handler, CancellationToken cancellationToken) where THandler : TransmittableCommandHandler
     {
         if (handler.Project is null)
             throw new CommandTransmissionException(Resources.HandlerProjectNullException);
 
-        if (!handler.Project.HasValue())
+        if (string.IsNullOrEmpty(handler.Project.Value()))
             throw new CommandTransmissionException(Resources.HandlerProjectNoValueException);
 
         var exec = "dotnet";
-        var args = new List<string> { "run" };
+        var args = new List<string> { "run", "--" };
 
         AddArguments(args,
             handler.Project,
@@ -28,10 +28,11 @@ internal class CommandTransmitter(IProcessRunner processRunner) : ICommandTransm
             handler.NoBuild,
             handler.NoRestore);
 
-        return processRunner.RunAsync(exec, args, cancellationToken: cancellationToken);
+        using var process = processRunner.Prepare(exec, args);
+        return process.RunAsync(cancellationToken);
     }
 
-    private static void AddArguments(in List<string> args, params CommandOption?[] options)
+    public static void AddArguments(in List<string> args, params CommandOption?[] options)
     {
         foreach (var option in options)
         {
@@ -39,11 +40,19 @@ internal class CommandTransmitter(IProcessRunner processRunner) : ICommandTransm
 
             foreach (var value in option.Values)
             {
-                args.Add(option.LongName ?? option.ShortName ?? option.SymbolName!);
+                args.Add(GetOptionName(option));
 
-                if (value is not null)
+                if (!string.IsNullOrEmpty(value))
                     args.Add(value);
             }
         }
+    }
+
+    public static string GetOptionName(CommandOption option)
+    {
+        if (option.LongName is not null)
+            return "--" + option.LongName;
+
+        return "-" + (option.ShortName ?? option.SymbolName ?? string.Empty);
     }
 }
