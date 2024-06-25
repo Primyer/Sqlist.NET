@@ -1,22 +1,28 @@
 ﻿using McMaster.Extensions.CommandLineUtils;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Sqlist.NET.Tools.Extensions;
 using Sqlist.NET.Tools.Logging;
 
+var host = Host.CreateDefaultBuilder(args)
+    .UseCommandLineApplication()
+    .UseConsoleLifetime()
+    .Build();
+
+var auditor = host.Services.GetRequiredService<IAuditor>();
+
 try
 {
-    await Host.CreateDefaultBuilder(args)
-        .UseCommandLineApplication()
-        .RunConsoleAsync();
+    await host.RunAsync();
 }
 catch (Exception ex)
 {
     if (ex is CommandParsingException)
-        Reporter.WriteVerbose(ex.ToString());
+        auditor.WriteVerbose(ex.ToString());
     else
-        Reporter.WriteInformation(ex.ToString());
+        auditor.WriteInformation(ex.ToString());
 
-    Reporter.WriteError(ex.Message);
+    auditor.WriteError(ex.Message);
 }

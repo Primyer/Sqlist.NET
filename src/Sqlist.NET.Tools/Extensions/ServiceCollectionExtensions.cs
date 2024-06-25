@@ -5,6 +5,7 @@ using Sqlist.NET.Tools;
 using Sqlist.NET.Tools.Commands;
 using Sqlist.NET.Tools.Handlers;
 using Sqlist.NET.Tools.Infrastructure;
+using Sqlist.NET.Tools.Logging;
 
 using ExecutionContext = Sqlist.NET.Tools.Infrastructure.ExecutionContext;
 
@@ -22,6 +23,11 @@ public static class ServiceCollectionExtensions
 
     internal static void AddCommonServices(this IServiceCollection services)
     {
+        services.TryAddSingleton<IAuditor, Auditor>();
+#if DEBUG
+        services.TryAddSingleton<TestHandler>();
+        services.TryAddSingleton<TestCommand>();
+#endif
         services.TryAddSingleton<MigrationHandler>();
         services.TryAddSingleton<MigrationCommand>();
 

@@ -27,4 +27,17 @@ internal abstract class TransmittableCommandHandler : ICommandHandler
     }
 
     public abstract Task<int> OnExecuteAsync(CancellationToken cancellationToken);
+    public CommandOption?[] GetOptions()
+    {
+        return [
+            Project,
+            Framework,
+            Configuration,
+            Runtime,
+            LaunchProfile,
+            Force,
+            NoBuild,
+            NoRestore
+        ];
+    }
 }

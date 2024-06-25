@@ -6,8 +6,6 @@ using Sqlist.NET.Tools.Properties;
 
 namespace Sqlist.NET.Tools.Commands;
 
-public delegate void CommandCompletionEvent();
-
 /// <summary>
 ///     Initializes a new instance of the <see cref="CommandBase{THandler}"/> class.
 /// </summary>
@@ -17,17 +15,11 @@ internal abstract class CommandBase : ICommand
     public CommandOption? NoColor { get; set; }
     public CommandOption? PrefixOutput { get; set; }
 
-    public bool Configured { get; private set; }
-
     public virtual void Configure(CommandLineApplication app)
     {
-        if (Configured) return;
-
         Verbose = app.Option("-v|--verbose", Resources.VerboseDescription, CommandOptionType.NoValue);
         NoColor = app.Option("--no-color", Resources.NoColorDescription, CommandOptionType.NoValue);
         PrefixOutput = app.Option("--prefix-output", Resources.PrefixDescription, CommandOptionType.NoValue);
-
-        Configured = true;
     }
 }
 
@@ -38,21 +30,19 @@ internal abstract class CommandBase<THandler>(THandler handler, ICommandInitiali
 {
     public override void Configure(CommandLineApplication app)
     {
-        if (Configured) return;
-
         app.OnExecuteAsync(ExecuteAsync);
         base.Configure(app);
     }
 
-    public async Task ExecuteAsync(CancellationToken cancellationToken)
+    public Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        Reporter.NoColor = NoColor?.HasValue() ?? false;
-        Reporter.IsVerbose = Verbose?.HasValue() ?? false;
-        Reporter.PrefixOutput = PrefixOutput?.HasValue() ?? false;
+        Auditor.NoColor = NoColor?.HasValue() ?? false;
+        Auditor.IsVerbose = Verbose?.HasValue() ?? false;
+        Auditor.PrefixOutput = PrefixOutput?.HasValue() ?? false;
 
         Validate();
 
-        await initializer.ExecuteAsync(handler, cancellationToken);
+        return initializer.ExecuteAsync(handler, cancellationToken);
     }
 
     public virtual void Validate() { }

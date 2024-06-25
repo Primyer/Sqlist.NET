@@ -11,6 +11,8 @@
 		<PackageOutputPath>./nupkg</PackageOutputPath>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'" />
+
 	<ItemGroup>
 	  <Compile Remove="nupkg\**" />
 	  <EmbeddedResource Remove="nupkg\**" />

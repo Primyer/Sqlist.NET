@@ -1,21 +1,15 @@
-﻿using Microsoft.Extensions.Logging;
-
-using Sqlist.NET.Tools;
+﻿using Sqlist.NET.Tools;
+using Sqlist.NET.Tools.Logging;
 
 using System.Diagnostics;
 
-internal class ManagedProcess(Process process, ILogger logger) : IProcess
+internal class ManagedProcess(Process process, IAuditor auditor) : IProcess
 {
     public bool Started { get; private set; }
     public bool Terminated => process.HasExited;
 
     public event Action<string?>? OutputDataReceived;
     public event Action<string?>? ErrorDataReceived;
-
-    public void Dispose()
-    {
-        ((IDisposable)process).Dispose();
-    }
 
     public async Task<int> RunAsync(CancellationToken cancellationToken = default)
     {
@@ -40,20 +34,27 @@ internal class ManagedProcess(Process process, ILogger logger) : IProcess
                     process.Kill();
             });
 
-            Started = process.Start();
+            using (process)
+            {
+                Started = process.Start();
+                if (!Started)
+                {
+                    auditor.WriteError("Failed to start process.");
+                    return -1;
+                }
 
-            if (process.StartInfo.RedirectStandardOutput)
-                process.BeginOutputReadLine();
+                if (process.StartInfo.RedirectStandardOutput)
+                    process.BeginOutputReadLine();
 
-            if (process.StartInfo.RedirectStandardError)
-                process.BeginErrorReadLine();
+                if (process.StartInfo.RedirectStandardError)
+                    process.BeginErrorReadLine();
 
-            await process.WaitForExitAsync(cancellationToken);
-            return await tcs.Task.ConfigureAwait(false);
+                return await tcs.Task.ConfigureAwait(false);
+            }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            logger.LogError("Error running process: {Message}", ex.Message);
+            auditor.WriteError($"Error running process: {ex.Message}");
             return -1;
         }
         finally

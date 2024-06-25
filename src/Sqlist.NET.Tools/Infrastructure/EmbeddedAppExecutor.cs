@@ -1,27 +1,37 @@
-﻿using McMaster.Extensions.CommandLineUtils;
-
-using Sqlist.NET.Tools.Commands;
+﻿using Sqlist.NET.Tools.Commands;
 
 namespace Sqlist.NET.Tools.Infrastructure;
+
 internal class EmbeddedAppExecutor : IApplicationExecutor, IDisposable
 {
-    private readonly CommandLineApplication _app = new();
+    private readonly IExecutionContext _context;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="EmbeddedAppExecutor"/> class.
     /// </summary>
-    public EmbeddedAppExecutor(MigrationCommand migrationCommand)
+    public EmbeddedAppExecutor(
+        IExecutionContext context,
+#if DEBUG
+        TestCommand testCommand,
+#endif
+        MigrationCommand migrationCommand)
+
     {
-        migrationCommand.Configure(_app);
+        _context = context;
+
+        migrationCommand.Configure(_context.Application);
+#if DEBUG
+        testCommand.Configure(_context.Application);
+#endif
     }
 
     public void Dispose()
     {
-        ((IDisposable)_app).Dispose();
+        ((IDisposable)_context.Application).Dispose();
     }
 
     public Task<int> ExecuteAsync(string[] args, CancellationToken cancellationToken)
     {
-        return _app.ExecuteAsync(args, cancellationToken);
+        return _context.Application.ExecuteAsync(args, cancellationToken);
     }
 }

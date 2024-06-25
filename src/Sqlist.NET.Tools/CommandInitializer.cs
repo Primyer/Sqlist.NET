@@ -10,7 +10,7 @@ internal class CommandInitializer(ICommandTransmitter transmitter, IExecutionCon
 {
     public Task ExecuteAsync<THandler>(THandler handler, CancellationToken cancellationToken) where THandler : ICommandHandler
     {
-        if (!context.IsTransmitter || handler is not TransmittableCommandHandler transmittable)
+        if (!context.IsToolContext || handler is not TransmittableCommandHandler transmittable)
             return handler.OnExecuteAsync(cancellationToken);
 
         return transmitter.TransmitAsync(transmittable, cancellationToken);

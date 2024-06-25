@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="CommandSucceeded" xml:space="preserve">
+    <value>Command has successfully completed.</value>
+  </data>
   <data name="ConfigurationDescription" xml:space="preserve">
     <value>The configuration to use.</value>
   </data>
@@ -143,6 +146,9 @@
   </data>
   <data name="NoRestoreDescription" xml:space="preserve">
     <value>Don't execute an implicit restore when running the command.</value>
+  </data>
+  <data name="NoSelectedCommandException" xml:space="preserve">
+    <value>The selected command isn't available before execution.</value>
   </data>
   <data name="PrefixDescription" xml:space="preserve">
     <value>Prefix output with level.</value>

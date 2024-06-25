@@ -1,34 +1,42 @@
-﻿
-using McMaster.Extensions.CommandLineUtils;
-
-using Sqlist.NET.Tools.Commands;
+﻿using Sqlist.NET.Tools.Commands;
 
 using System.Reflection;
 
 namespace Sqlist.NET.Tools.Infrastructure;
 internal class ToolCliExecutor : IApplicationExecutor, IDisposable
 {
-    private readonly CommandLineApplication _app = new() { Name = "dotnet sqlist" };
+    private readonly IExecutionContext _context;
 
-/// <summary>
-///     Initializes a new instance of the <see cref="ToolCliExecutor"/> class.
-/// </summary>
-public ToolCliExecutor(MigrationCommand migrationCommand, IExecutionContext context)
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="ToolCliExecutor"/> class.
+    /// </summary>
+    public ToolCliExecutor(
+    IExecutionContext context,
+#if DEBUG
+    TestCommand testCommand,
+#endif
+    MigrationCommand migrationCommand)
     {
-        context.IsTransmitter = true;
+        _context = context;
+        _context.IsToolContext = true;
 
-        _app.VersionOption("-v|--version", GetVersion);
-        migrationCommand.Configure(_app);
+        _context.Application.Name = "dotnet sqlist";
+        _context.Application.VersionOption("-v|--version", GetVersion);
+
+        migrationCommand.Configure(_context.Application);
+#if DEBUG
+        testCommand.Configure(_context.Application);
+#endif
     }
 
     public void Dispose()
     {
-        ((IDisposable)_app).Dispose();
+        ((IDisposable)_context.Application).Dispose();
     }
 
     public Task<int> ExecuteAsync(string[] args, CancellationToken cancellationToken)
     {
-        return _app.ExecuteAsync(args, cancellationToken);
+        return _context.Application.ExecuteAsync(args, cancellationToken);
     }
 
     private static string GetVersion()

@@ -61,6 +61,15 @@ namespace Sqlist.NET.Tools.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Command has successfully completed..
+        /// </summary>
+        internal static string CommandSucceeded {
+            get {
+                return ResourceManager.GetString("CommandSucceeded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The configuration to use..
         /// </summary>
         internal static string ConfigurationDescription {
@@ -138,6 +147,15 @@ namespace Sqlist.NET.Tools.Properties {
         internal static string NoRestoreDescription {
             get {
                 return ResourceManager.GetString("NoRestoreDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The selected command isn&apos;t available before execution..
+        /// </summary>
+        internal static string NoSelectedCommandException {
+            get {
+                return ResourceManager.GetString("NoSelectedCommandException", resourceCulture);
             }
         }
         

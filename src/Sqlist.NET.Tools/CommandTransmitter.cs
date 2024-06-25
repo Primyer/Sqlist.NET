@@ -2,10 +2,11 @@
 
 using Sqlist.NET.Tools.Exceptions;
 using Sqlist.NET.Tools.Handlers;
+using Sqlist.NET.Tools.Infrastructure;
 using Sqlist.NET.Tools.Properties;
 
 namespace Sqlist.NET.Tools;
-internal class CommandTransmitter(IProcessManager processRunner) : ICommandTransmitter
+internal class CommandTransmitter(IProcessManager processRunner, IExecutionContext context) : ICommandTransmitter
 {
     public Task TransmitAsync<THandler>(THandler handler, CancellationToken cancellationToken) where THandler : TransmittableCommandHandler
     {
@@ -16,23 +17,38 @@ internal class CommandTransmitter(IProcessManager processRunner) : ICommandTrans
             throw new CommandTransmissionException(Resources.HandlerProjectNoValueException);
 
         var exec = "dotnet";
-        var args = new List<string> { "run", "--" };
+        var args = new List<string> { "run" };
+        var opts = handler.GetOptions();
 
-        AddArguments(args,
-            handler.Project,
-            handler.Framework,
-            handler.Configuration,
-            handler.Runtime,
-            handler.LaunchProfile,
-            handler.Force,
-            handler.NoBuild,
-            handler.NoRestore);
+        AddArguments(args, opts);
 
-        using var process = processRunner.Prepare(exec, args);
-        return process.RunAsync(cancellationToken);
+        args.Add("--");
+        AddTransmittableArgs(args, handler, context.SelectedCommand);
+
+        return processRunner
+            .Prepare(exec, args)
+            .RunAsync(cancellationToken);
     }
 
-    public static void AddArguments(in List<string> args, params CommandOption?[] options)
+    public static void AddTransmittableArgs<THandler>(List<string> args, THandler handler, CommandLineApplication selectedCommand) where THandler : TransmittableCommandHandler
+    {
+        var command = selectedCommand;
+        var options = selectedCommand.Options.Except(handler.GetOptions());
+        var cmdName = new List<string>();
+
+        while (command.Parent is not null)
+        {
+            cmdName.Add(command.Name!);
+            command = command.Parent;
+        }
+
+        cmdName.Reverse();
+        args.AddRange(cmdName);
+        
+        AddArguments(args, options);
+    }
+
+    public static void AddArguments(in List<string> args, IEnumerable<CommandOption?> options)
     {
         foreach (var option in options)
         {

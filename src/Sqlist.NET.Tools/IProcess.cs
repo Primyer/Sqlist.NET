@@ -1,5 +1,5 @@
 ﻿namespace Sqlist.NET.Tools;
-internal interface IProcess : IDisposable
+internal interface IProcess
 {
     bool Started { get; }
     bool Terminated { get; }

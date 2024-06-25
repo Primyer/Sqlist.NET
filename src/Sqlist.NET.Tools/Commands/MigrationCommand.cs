@@ -13,11 +13,9 @@ internal class MigrationCommand(MigrationHandler handler, ICommandInitializer in
 
     public override void Configure(CommandLineApplication app)
     {
-        if (Configured) return;
-
         var command = app.Command("migrate", _ => { });
 
-        _handler.Initialize(app);
-        base.Configure(app);
+        _handler.Initialize(command);
+        base.Configure(command);
     }
 }

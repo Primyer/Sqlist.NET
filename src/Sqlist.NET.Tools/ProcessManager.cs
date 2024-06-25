@@ -1,10 +1,10 @@
-﻿using System.Diagnostics;
+﻿using Sqlist.NET.Tools.Logging;
+
+using System.Diagnostics;
 using System.Text;
 
-using Microsoft.Extensions.Logging;
-
 namespace Sqlist.NET.Tools;
-internal class ProcessManager(ILogger<ProcessManager> logger) : IProcessManager
+internal class ProcessManager(IAuditor auditor) : IProcessManager
 {
     public IProcess Prepare(
         string executable,
@@ -16,8 +16,11 @@ internal class ProcessManager(ILogger<ProcessManager> logger) : IProcessManager
     {
         var arguments = ToArguments(args);
 
-        processCommandLine ??= message => logger.LogInformation("{message}", message);
+        processCommandLine ??= auditor.WriteInformation;
         processCommandLine($"{executable} {arguments}");
+
+        handleOutput ??= auditor.WriteVerbose;
+        handleError ??= auditor.WriteError;
 
         var startInfo = new ProcessStartInfo
         {
@@ -26,7 +29,7 @@ internal class ProcessManager(ILogger<ProcessManager> logger) : IProcessManager
             UseShellExecute = false,
             RedirectStandardOutput = handleOutput is not null,
             RedirectStandardError = handleError is not null,
-            CreateNoWindow = true,
+            CreateNoWindow = false,
             WorkingDirectory = workingDirectory ?? string.Empty
         };
 
@@ -36,7 +39,7 @@ internal class ProcessManager(ILogger<ProcessManager> logger) : IProcessManager
             EnableRaisingEvents = true
         };
 
-        var internalProcess = new ManagedProcess(process, logger);
+        var internalProcess = new ManagedProcess(process, auditor);
 
         if (handleOutput is not null)
             internalProcess.OutputDataReceived += handleOutput;

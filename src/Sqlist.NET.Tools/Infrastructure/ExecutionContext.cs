@@ -1,21 +1,47 @@
-﻿namespace Sqlist.NET.Tools.Infrastructure;
+﻿using McMaster.Extensions.CommandLineUtils;
+
+using Sqlist.NET.Tools.Properties;
+
+namespace Sqlist.NET.Tools.Infrastructure;
 
 /// <summary>
 ///     Initializes a new instance of the <see cref="ExecutionContext"/> class.
 /// </summary>
 internal class ExecutionContext : IExecutionContext
 {
-    private bool? _isTransmitter;
+    private bool? _isToolContext;
+    private CommandLineApplication? _selectedCommand;
 
-    public bool IsTransmitter
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="ExecutionContext"/> class.
+    /// </summary>
+    public ExecutionContext()
     {
-        get => _isTransmitter ?? false;
+        Application.OnParsingComplete(result => _selectedCommand = result.SelectedCommand);
+    }
+
+    public bool IsToolContext
+    {
+        get => _isToolContext ?? false;
         set
         {
-            if (!_isTransmitter.HasValue)
-                _isTransmitter = value;
+            if (!_isToolContext.HasValue)
+                _isToolContext = value;
         }
     }
 
     public string[] CommandLineArgs => Environment.GetCommandLineArgs();
+
+    public CommandLineApplication Application { get; } = new();
+
+    public CommandLineApplication SelectedCommand
+    {
+        get
+        {
+            if (_selectedCommand is null)
+                throw new InvalidOperationException(Resources.NoSelectedCommandException);
+
+            return _selectedCommand;
+        }
+    }
 }
