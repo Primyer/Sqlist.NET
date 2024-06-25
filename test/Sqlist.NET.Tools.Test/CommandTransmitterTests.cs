@@ -2,6 +2,10 @@
 
 using Moq;
 using Sqlist.NET.Tools.Exceptions;
+using Sqlist.NET.Tools.Handlers;
+using Sqlist.NET.Tools.Infrastructure;
+
+using static Sqlist.NET.Tools.Tests.CommandsTests;
 
 namespace Sqlist.NET.Tools.Tests;
 public class CommandTransmitterTests
@@ -18,7 +22,7 @@ public class CommandTransmitterTests
         app.Parse("-p MyProject.csproj");
 
         // Act
-        CommandTransmitter.AddArguments(args, projectOption);
+        CommandTransmitter.AddArguments(args, [projectOption]);
 
         // Assert
         Assert.Contains("--project", args);
@@ -37,7 +41,7 @@ public class CommandTransmitterTests
         app.Parse("-s Value");
 
         // Act
-        CommandTransmitter.AddArguments(args, shortOption);
+        CommandTransmitter.AddArguments(args, [shortOption]);
 
         // Assert
         Assert.Contains("-s", args);
@@ -56,7 +60,7 @@ public class CommandTransmitterTests
         app.Parse("--novalue");
 
         // Act
-        CommandTransmitter.AddArguments(args, noValueOption);
+        CommandTransmitter.AddArguments(args, [noValueOption]);
 
         // Assert
         Assert.Contains("--novalue", args);
@@ -83,7 +87,9 @@ public class CommandTransmitterTests
     {
         // Arrange
         var mockProcessRunner = new Mock<IProcessManager>();
-        var transmitter = new CommandTransmitter(mockProcessRunner.Object);
+        var mockContext = new Mock<IExecutionContext>();
+
+        var transmitter = new CommandTransmitter(mockProcessRunner.Object, mockContext.Object);
         var handler = new TestTransmittableCommandHandler();
 
         // Act & Assert
@@ -96,9 +102,12 @@ public class CommandTransmitterTests
     {
         // Arrange
         var mockProcessRunner = new Mock<IProcessManager>();
-        var transmitter = new CommandTransmitter(mockProcessRunner.Object);
+        var mockContext = new Mock<IExecutionContext>();
+
+        var transmitter = new CommandTransmitter(mockProcessRunner.Object, mockContext.Object);
         var handler = new TestTransmittableCommandHandler();
         var app = new CommandLineApplication();
+
         handler.Initialize(app);
 
         // Simulate setting the value of the project option to an empty string
@@ -114,7 +123,12 @@ public class CommandTransmitterTests
     {
         // Arrange
         var mockProcessRunner = new Mock<IProcessManager>();
+        var mockContext = new Mock<IExecutionContext>();
         var mockProcess = new Mock<IProcess>();
+        var app = new CommandLineApplication();
+
+        mockContext.Setup(c => c.Application).Returns(app);
+        mockContext.Setup(c => c.SelectedCommand).Returns(app);
 
         mockProcessRunner.Setup(pr => pr.Prepare(
             It.IsAny<string>(),
@@ -128,9 +142,9 @@ public class CommandTransmitterTests
         mockProcess.Setup(p => p.RunAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
 
-        var transmitter = new CommandTransmitter(mockProcessRunner.Object);
+        var transmitter = new CommandTransmitter(mockProcessRunner.Object, mockContext.Object);
         var handler = new TestTransmittableCommandHandler();
-        var app = new CommandLineApplication();
+        
         handler.Initialize(app);
 
         // Simulate setting the value of the project option
@@ -149,5 +163,30 @@ public class CommandTransmitterTests
             It.IsAny<Action<string?>>()), Times.Once);
 
         mockProcess.Verify(p => p.RunAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public void AddTransmittableArgs_ExcludesHandlerOptions_AddsRemainingOptions()
+    {
+        // Arrange
+        var args = new List<string>();
+
+        var handler = new TestTransmittableCommandHandler();
+        var command = new CommandLineApplication();
+
+        var expectedArgs = new List<string> { "subcommand", "--other", "the other", "--test", "the test" };
+
+        var selectedCommand = command.Command("subcommand", cmd =>
+        {
+            cmd.Option("-o|--other <OTHER>", "Other option", CommandOptionType.SingleValue);
+            handler.Configure(cmd);
+        });
+
+        // Act
+        command.Parse([.. expectedArgs, "--project", "path/to/project", "--framework", ".net8.0", "-c", "Debug"]);
+        CommandTransmitter.AddTransmittableArgs(args, handler, selectedCommand);
+
+        // Assert
+        Assert.Equal(expectedArgs, args);
     }
 }

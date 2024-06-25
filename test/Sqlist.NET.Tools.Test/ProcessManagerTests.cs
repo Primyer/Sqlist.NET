@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using Moq;
 
+using Sqlist.NET.Tools.Logging;
+
 using System.Reflection;
 
 namespace Sqlist.NET.Tools.Tests;
@@ -51,8 +53,8 @@ public class ProcessManagerTests
     public async Task RunAsync_HandlesOutput()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<ProcessManager>>();
-        var procRunner = new ProcessManager(mockLogger.Object);
+        var mockAuditor = new Mock<IAuditor>();
+        var procRunner = new ProcessManager(mockAuditor.Object);
 
         var output = string.Empty;
         var expected = "Hello, World!";
@@ -73,8 +75,8 @@ public class ProcessManagerTests
     public async Task RunAsync_HandlesErrors()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<ProcessManager>>();
-        var procRunner = new ProcessManager(mockLogger.Object);
+        var mockAuditor = new Mock<IAuditor>();
+        var procRunner = new ProcessManager(mockAuditor.Object);
 
         var errors = new List<string?>();
 
@@ -94,8 +96,8 @@ public class ProcessManagerTests
     public async Task RunAsync_CancelsProcess()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<ProcessManager>>();
-        var procRunner = new ProcessManager(mockLogger.Object);
+        var mockAuditor = new Mock<IAuditor>();
+        var procRunner = new ProcessManager(mockAuditor.Object);
 
         var cts = new CancellationTokenSource();
         var cancellationToken = cts.Token;

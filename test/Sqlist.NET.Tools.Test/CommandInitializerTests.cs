@@ -15,7 +15,7 @@ public class CommandInitializerTests
         var mockHandler = new Mock<TransmittableCommandHandler>();
         var cancellationToken = new CancellationToken();
 
-        mockExecContext.Setup(c => c.IsTransmitter).Returns(true);
+        mockExecContext.Setup(c => c.IsToolContext).Returns(true);
 
         // Act
         await initializer.ExecuteAsync(mockHandler.Object, cancellationToken);

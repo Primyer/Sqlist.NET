@@ -5,11 +5,12 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 using Sqlist.NET.Tools.Infrastructure;
+using Sqlist.NET.Tools.Logging;
 using Sqlist.NET.Tools.Properties;
 using Sqlist.NET.Tools.Tests.TestUtilities;
 
 namespace Sqlist.NET.Tools.Tests;
-public class ConsoleServiceTests
+public class CommandHandlerServiceTests
 {
     [Fact]
     public async Task StartAsync_ExecutesAndStopsApplication()
@@ -18,7 +19,7 @@ public class ConsoleServiceTests
         var lifetimeMock = new Mock<IHostApplicationLifetime>();
         var executorMock = new Mock<IApplicationExecutor>();
         var execContextMock = new Mock<IExecutionContext>();
-        var loggerMock = new LoggerMock<CommandHandlerService>();
+        var auditorMock = new Mock<IAuditor>();
 
         // Setup lifetime cancellation tokens
         var cts = new CancellationTokenSource();
@@ -28,7 +29,7 @@ public class ConsoleServiceTests
             lifetimeMock.Object,
             executorMock.Object,
             execContextMock.Object,
-            loggerMock
+            auditorMock.Object
         );
 
         // Act
@@ -50,7 +51,19 @@ public class ConsoleServiceTests
         var lifetimeMock = new Mock<IHostApplicationLifetime>();
         var executorMock = new Mock<IApplicationExecutor>();
         var execContextMock = new Mock<IExecutionContext>();
-        var loggerMock = new LoggerMock<CommandHandlerService>();
+        var auditorMock = new Mock<IAuditor>();
+
+        List<LogEntry> logEntries = [];
+        
+        auditorMock.Setup(a => a.WriteError(It.IsAny<Exception>(), It.IsAny<string?>()))
+            .Callback((Exception ex, string? message) =>
+            {
+                logEntries.Add(new()
+                {
+                    Exception = ex,
+                    Message = message
+                });
+            });
 
         // Setup lifetime cancellation tokens
         var cts = new CancellationTokenSource();
@@ -63,7 +76,7 @@ public class ConsoleServiceTests
             lifetimeMock.Object,
             executorMock.Object,
             execContextMock.Object,
-            loggerMock
+            auditorMock.Object
         );
 
         // Act
@@ -74,8 +87,7 @@ public class ConsoleServiceTests
         await Task.Delay(100); // Give some time for the task to run
 
         // Assert
-        var logEntry = Assert.Single(loggerMock.LogEntries);
-        Assert.Equal(LogLevel.Error, logEntry.LogLevel);
+        var logEntry = Assert.Single(logEntries);
         Assert.Equal(Resources.UnhandledException, logEntry.Message);
         Assert.IsType<UnrecognizedCommandParsingException>(logEntry.Exception);
         lifetimeMock.Verify(l => l.StopApplication(), Times.Once);

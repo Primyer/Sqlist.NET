@@ -62,9 +62,9 @@ public class CommandsTests
         await app.ExecuteAsync(["--verbose", "--no-color", "--prefix-output"], new());
 
         // Assert
-        Assert.True(Reporter.IsVerbose);
-        Assert.True(Reporter.NoColor);
-        Assert.True(Reporter.PrefixOutput);
+        Assert.True(Auditor.IsVerbose);
+        Assert.True(Auditor.NoColor);
+        Assert.True(Auditor.PrefixOutput);
 
         initializerMock.Verify(i => i.ExecuteAsync(handlerMock.Object, It.IsAny<CancellationToken>()), Times.Once);
         Assert.True(command.ValidateCalled);
