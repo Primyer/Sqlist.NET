@@ -1,4 +1,5 @@
 ﻿using Sqlist.NET.Tools.Commands;
+using Sqlist.NET.Tools.Properties;
 
 using System.Reflection;
 
@@ -20,7 +21,7 @@ internal class ToolCliExecutor : IApplicationExecutor, IDisposable
         _context = context;
         _context.IsToolContext = true;
 
-        _context.Application.Name = "dotnet sqlist";
+        _context.Application.Name = Resources.RootCommandName;
         _context.Application.VersionOption("-v|--version", GetVersion);
 
         migrationCommand.Configure(_context.Application);

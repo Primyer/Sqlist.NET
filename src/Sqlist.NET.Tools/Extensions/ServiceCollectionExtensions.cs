@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection.Extensions;
 
-using Sqlist.NET.Infrastructure.Internal;
 using Sqlist.NET.Tools;
 using Sqlist.NET.Tools.Commands;
 using Sqlist.NET.Tools.Handlers;
@@ -13,14 +12,6 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class ServiceCollectionExtensions
 {
-    public static SqlistBuilder AddSqlistTools(this SqlistBuilder builder)
-    {
-        builder.Services.AddCommonServices();
-        builder.Services.TryAddSingleton<IApplicationExecutor, ToolCliExecutor>();
-
-        return builder;
-    }
-
     internal static void AddCommonServices(this IServiceCollection services)
     {
         services.TryAddSingleton<IAuditor, Auditor>();
@@ -38,4 +29,14 @@ public static class ServiceCollectionExtensions
 
         services.AddHostedService<CommandHandlerService>();
     }
+
+    public static void RemoveServices<T>(this IServiceCollection services)
+    {
+        var descriptors = services.Where(d => d.ServiceType == typeof(T)).ToList();
+        foreach (var descriptor in descriptors)
+        {
+            services.Remove(descriptor);
+        }
+    }
+
 }

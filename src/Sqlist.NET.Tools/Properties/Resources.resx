@@ -159,6 +159,9 @@
   <data name="ProjectDescription" xml:space="preserve">
     <value>The path to the startup project file.</value>
   </data>
+  <data name="RootCommandName" xml:space="preserve">
+    <value>dotnet sqlist</value>
+  </data>
   <data name="RuntimeDescription" xml:space="preserve">
     <value>The target runtime to bundle for.</value>
   </data>

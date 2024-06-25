@@ -187,6 +187,15 @@ namespace Sqlist.NET.Tools.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to dotnet sqlist.
+        /// </summary>
+        internal static string RootCommandName {
+            get {
+                return ResourceManager.GetString("RootCommandName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The target runtime to bundle for..
         /// </summary>
         internal static string RuntimeDescription {

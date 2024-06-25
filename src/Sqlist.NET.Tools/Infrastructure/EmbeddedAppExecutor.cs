@@ -1,4 +1,5 @@
 ﻿using Sqlist.NET.Tools.Commands;
+using Sqlist.NET.Tools.Properties;
 
 namespace Sqlist.NET.Tools.Infrastructure;
 
@@ -15,7 +16,6 @@ internal class EmbeddedAppExecutor : IApplicationExecutor, IDisposable
         TestCommand testCommand,
 #endif
         MigrationCommand migrationCommand)
-
     {
         _context = context;
 
@@ -32,6 +32,14 @@ internal class EmbeddedAppExecutor : IApplicationExecutor, IDisposable
 
     public Task<int> ExecuteAsync(string[] args, CancellationToken cancellationToken)
     {
-        return _context.Application.ExecuteAsync(args, cancellationToken);
+        var arguments = string.Join(' ', args);
+        if (!arguments.StartsWith(Resources.RootCommandName))
+        {
+            throw new InvalidOperationException($"The arguments must start with '{Resources.RootCommandName}'.");
+        }
+
+        return _context.Application.ExecuteAsync(
+            args.Skip(2).ToArray(),
+            cancellationToken);
     }
 }
