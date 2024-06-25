@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-
-namespace Sqlist.NET.Tools.Tests.TestUtilities;
+﻿namespace Sqlist.NET.Tools.Tests.TestUtilities;
 internal static class ProjectHelpers
 {
     public static string GetSandboxProjectPath()
@@ -13,7 +11,14 @@ internal static class ProjectHelpers
 
     public static string GetProjectDirectory()
     {
-        var assembly = Assembly.GetExecutingAssembly();
-        return Path.GetDirectoryName(assembly.Location) ?? string.Empty;
+        var baseDirectory = AppContext.BaseDirectory;
+        var directoryInfo = new DirectoryInfo(baseDirectory);
+
+        while (directoryInfo is not null && directoryInfo.GetFiles("*.csproj").Length == 0)
+        {
+            directoryInfo = directoryInfo.Parent;
+        }
+
+        return directoryInfo?.FullName ?? string.Empty;
     }
 }
