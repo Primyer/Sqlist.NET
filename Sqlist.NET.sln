@@ -19,7 +19,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1F6BF5DE-ED1
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{48BD4DC6-DAE1-40F5-8458-4E9C95C4235B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqlist.NET.Tools.Test", "test\Sqlist.NET.Tools.Test\Sqlist.NET.Tools.Test.csproj", "{8AE53D5E-7E06-4AEC-976D-0B0B8C3BA13A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sqlist.NET.Tools.Tests", "test\Sqlist.NET.Tools.Test\Sqlist.NET.Tools.Tests.csproj", "{8AE53D5E-7E06-4AEC-976D-0B0B8C3BA13A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqlist.NET.Tools.Sandbox", "test\Sqlist.NET.Tools.Sandbox\Sqlist.NET.Tools.Sandbox.csproj", "{C247E5A2-80C1-43F4-ACFA-D1082AC307D6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,6 +57,10 @@ Global
 		{8AE53D5E-7E06-4AEC-976D-0B0B8C3BA13A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8AE53D5E-7E06-4AEC-976D-0B0B8C3BA13A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8AE53D5E-7E06-4AEC-976D-0B0B8C3BA13A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C247E5A2-80C1-43F4-ACFA-D1082AC307D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C247E5A2-80C1-43F4-ACFA-D1082AC307D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C247E5A2-80C1-43F4-ACFA-D1082AC307D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C247E5A2-80C1-43F4-ACFA-D1082AC307D6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -67,6 +73,7 @@ Global
 		{05B336AF-D62F-41ED-9FFC-C3FACE4DF8FF} = {1F6BF5DE-ED17-4B9F-A3F5-9175C6A3CD99}
 		{F0BD2737-7C3D-4EE9-BD09-0DA3F45F98D2} = {1F6BF5DE-ED17-4B9F-A3F5-9175C6A3CD99}
 		{8AE53D5E-7E06-4AEC-976D-0B0B8C3BA13A} = {48BD4DC6-DAE1-40F5-8458-4E9C95C4235B}
+		{C247E5A2-80C1-43F4-ACFA-D1082AC307D6} = {48BD4DC6-DAE1-40F5-8458-4E9C95C4235B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FB33ADC0-801E-4A58-9D91-0EDCE9392553}

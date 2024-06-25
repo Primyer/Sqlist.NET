@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Sqlist.NET.PostgreSQL\Sqlist.NET.PostgreSQL.csproj" />
+    <ProjectReference Include="..\..\src\Sqlist.NET.Tools\Sqlist.NET.Tools.csproj" />
+    <ProjectReference Include="..\..\src\Sqlist.NET\Sqlist.NET.csproj" />
+  </ItemGroup>
+
+</Project>
