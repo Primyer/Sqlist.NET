@@ -1,13 +1,16 @@
 using Sqlist.NET.Extensions;
+using Sqlist.NET.Tools.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var config = builder.Configuration;
-
 builder.Services
-    .AddSqlist()
-    .ForPostgreSQL(o => o.SetConnectionString(config.GetConnectionString("Default") ?? ""))
-    .AddSqlistTools();
+       .AddSqlist()
+       .ForPostgreSQL(options =>
+       {
+           var connectionString = builder.Configuration.GetConnectionString("Default");
+           options.SetConnectionString(connectionString ?? "");
+       });
 
-var app = builder.Build();
-app.Run();
+builder.UseSqlistTools()
+       .Build()
+       .Run();
