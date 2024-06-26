@@ -1,11 +1,14 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 using Moq;
 
 using Sqlist.NET.Extensions;
 using Sqlist.NET.Tools.Extensions;
+using Sqlist.NET.Tools.Properties;
 using Sqlist.NET.Tools.Tests.TestUtilities;
+using Sqlist.NET.Tools.Utilities;
 
 namespace Sqlist.NET.Tools.Tests.Integration;
 public class DependencyRegistrationTests
@@ -20,7 +23,8 @@ public class DependencyRegistrationTests
 
         services.AddLogging();
         services.AddSingleton(appLifetimeMock.Object);
-        services.AddSqlist().AddSqlistTools();
+        services.AddSqlist();
+        services.AddSqlistTools();
 
         var serviceProvider = services.BuildServiceProvider();
         var hostedServices = serviceProvider.GetServices<IHostedService>();
@@ -37,6 +41,34 @@ public class DependencyRegistrationTests
         {
             Assert.Fail($"Expected no exception, but got: {ex}");
         }
+    }
+
+    [Fact]
+    public void UseSqlistTools_RemovesHostedServicesAndAddsSqlistTools_WhenCommandStartsWithRootCommandName()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        services.AddHostedService<MockHostedService>();
+
+        var loggingBuilderMock = new Mock<ILoggingBuilder>();
+
+        loggingBuilderMock.Setup(lb => lb.Services).Returns(services);
+        loggingBuilderMock.Object.AddConsole();
+
+        var builderMock = new Mock<IHostApplicationBuilder>();
+        builderMock.Setup(b => b.Services).Returns(services);
+        builderMock.Setup(b => b.Logging).Returns(loggingBuilderMock.Object);
+
+        CommandLine.Args = [Resources.RootCommandName, "arg1", "arg2"];
+
+        // Act
+        builderMock.Object.UseSqlistTools();
+
+        // Assert
+        Assert.DoesNotContain(services, s => s.ServiceType == typeof(ILoggerProvider));
+        Assert.DoesNotContain(services, s => s.ServiceType == typeof(MockHostedService));
+        Assert.Contains(services, s => s.ImplementationType == typeof(CommandHandlerService));
     }
 
     [Fact]
@@ -57,5 +89,11 @@ public class DependencyRegistrationTests
         {
             Assert.Fail($"Expected no exception, but got: {ex}");
         }
+    }
+
+    public class MockHostedService : IHostedService
+    {
+        public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

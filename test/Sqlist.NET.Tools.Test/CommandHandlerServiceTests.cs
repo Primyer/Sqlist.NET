@@ -18,7 +18,6 @@ public class CommandHandlerServiceTests
         // Arrange
         var lifetimeMock = new Mock<IHostApplicationLifetime>();
         var executorMock = new Mock<IApplicationExecutor>();
-        var execContextMock = new Mock<IExecutionContext>();
         var auditorMock = new Mock<IAuditor>();
 
         // Setup lifetime cancellation tokens
@@ -28,7 +27,6 @@ public class CommandHandlerServiceTests
         var service = new CommandHandlerService(
             lifetimeMock.Object,
             executorMock.Object,
-            execContextMock.Object,
             auditorMock.Object
         );
 
@@ -50,7 +48,6 @@ public class CommandHandlerServiceTests
         // Arrange
         var lifetimeMock = new Mock<IHostApplicationLifetime>();
         var executorMock = new Mock<IApplicationExecutor>();
-        var execContextMock = new Mock<IExecutionContext>();
         var auditorMock = new Mock<IAuditor>();
 
         List<LogEntry> logEntries = [];
@@ -75,7 +72,6 @@ public class CommandHandlerServiceTests
         var service = new CommandHandlerService(
             lifetimeMock.Object,
             executorMock.Object,
-            execContextMock.Object,
             auditorMock.Object
         );
 
