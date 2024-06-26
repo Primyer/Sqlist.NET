@@ -10,9 +10,15 @@ using ExecutionContext = Sqlist.NET.Tools.Infrastructure.ExecutionContext;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
-public static class ServiceCollectionExtensions
+internal static class ServiceCollectionExtensions
 {
-    internal static void AddCommonServices(this IServiceCollection services)
+    public static void AddSqlistTools(this IServiceCollection services)
+    {
+        services.AddCommonServices();
+        services.TryAddSingleton<IApplicationExecutor, EmbeddedAppExecutor>();
+    }
+
+    public static void AddCommonServices(this IServiceCollection services)
     {
         services.TryAddSingleton<IAuditor, Auditor>();
 #if DEBUG

@@ -3,13 +3,14 @@
 using Sqlist.NET.Tools.Infrastructure;
 using Sqlist.NET.Tools.Logging;
 using Sqlist.NET.Tools.Properties;
+using Sqlist.NET.Tools.Utilities;
 
 namespace Sqlist.NET.Tools;
 
 /// <summary>
 ///     Initializes a new instance of the <see cref="CommandHandlerService"/> class.
 /// </summary>
-internal class CommandHandlerService(IHostApplicationLifetime lifetime, IApplicationExecutor application, IExecutionContext context, IAuditor auditor) : IHostedService
+internal class CommandHandlerService(IHostApplicationLifetime lifetime, IApplicationExecutor application, IAuditor auditor) : IHostedService
 {
     public Task StartAsync(CancellationToken cancellationToken)
     {
@@ -19,7 +20,7 @@ internal class CommandHandlerService(IHostApplicationLifetime lifetime, IApplica
             {
                 try
                 {
-                    await application.ExecuteAsync(context.CommandLineArgs, cancellationToken);
+                    await application.ExecuteAsync(CommandLine.Args, cancellationToken);
                 }
                 catch (Exception ex)
                 {

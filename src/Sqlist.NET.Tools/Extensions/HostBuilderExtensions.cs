@@ -5,11 +5,12 @@ using Microsoft.Extensions.Logging;
 
 using Sqlist.NET.Tools.Infrastructure;
 using Sqlist.NET.Tools.Properties;
+using Sqlist.NET.Tools.Utilities;
 
 namespace Sqlist.NET.Tools.Extensions;
 public static class HostExtensions
 {
-    public static IHostBuilder UseCommandLineApplication(this IHostBuilder host)
+    internal static IHostBuilder UseCommandLineApplication(this IHostBuilder host)
     {
         host.ConfigureServices(services =>
         {
@@ -22,15 +23,19 @@ public static class HostExtensions
 
     public static TBuilder UseSqlistTools<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
-        var args = string.Join(' ', Environment.GetCommandLineArgs());
-        if (args.StartsWith(Resources.RootCommandName))
+        if (CommandLine.String.StartsWith(Resources.RootCommandName))
         {
             builder.Logging.ClearProviders();
+            
             builder.Services.RemoveServices<IHostedService>();
-
-            builder.Services.AddCommonServices();
-            builder.Services.TryAddSingleton<IApplicationExecutor, ToolCliExecutor>();
+            builder.Services.AddSqlistTools();
         }
+#if TEST
+        else
+        {
+            throw new InvalidOperationException(string.Format(Resources.RootCommandExpectedException, Resources.RootCommandName));
+        }
+#endif
 
         return builder;
     }

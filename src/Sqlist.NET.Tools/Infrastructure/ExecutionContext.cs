@@ -30,8 +30,6 @@ internal class ExecutionContext : IExecutionContext
         }
     }
 
-    public string[] CommandLineArgs => Environment.GetCommandLineArgs();
-
     public CommandLineApplication Application { get; } = new();
 
     public CommandLineApplication SelectedCommand

@@ -5,8 +5,10 @@ using Sqlist.NET.Tools.Handlers;
 using Sqlist.NET.Tools.Infrastructure;
 using Sqlist.NET.Tools.Properties;
 
+using System.Text.RegularExpressions;
+
 namespace Sqlist.NET.Tools;
-internal class CommandTransmitter(IProcessManager processRunner, IExecutionContext context) : ICommandTransmitter
+internal partial class CommandTransmitter(IProcessManager processRunner, IExecutionContext context) : ICommandTransmitter
 {
     public Task TransmitAsync<THandler>(THandler handler, CancellationToken cancellationToken) where THandler : TransmittableCommandHandler
     {
@@ -22,7 +24,7 @@ internal class CommandTransmitter(IProcessManager processRunner, IExecutionConte
 
         AddArguments(args, opts);
 
-        args.Add("--");
+        args.AddRange(["--", .. WhiteSpaceRegex().Split(Resources.RootCommandName)]);
         AddTransmittableArgs(args, handler, context.SelectedCommand);
 
         return processRunner
@@ -71,4 +73,7 @@ internal class CommandTransmitter(IProcessManager processRunner, IExecutionConte
 
         return "-" + (option.ShortName ?? option.SymbolName ?? string.Empty);
     }
+
+    [GeneratedRegex("\\s+")]
+    private static partial Regex WhiteSpaceRegex();
 }

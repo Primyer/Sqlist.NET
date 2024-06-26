@@ -187,6 +187,15 @@ namespace Sqlist.NET.Tools.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The arguments must start with &apos;{0}&apos;..
+        /// </summary>
+        internal static string RootCommandExpectedException {
+            get {
+                return ResourceManager.GetString("RootCommandExpectedException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to dotnet sqlist.
         /// </summary>
         internal static string RootCommandName {

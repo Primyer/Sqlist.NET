@@ -5,8 +5,6 @@ internal interface IExecutionContext
 {
     bool IsToolContext { get; set; }
 
-    string[] CommandLineArgs { get; }
-
     CommandLineApplication Application { get; }
 
     /// <exception cref="InvalidOperationException" />

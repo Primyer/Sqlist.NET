@@ -35,7 +35,7 @@ internal class EmbeddedAppExecutor : IApplicationExecutor, IDisposable
         var arguments = string.Join(' ', args);
         if (!arguments.StartsWith(Resources.RootCommandName))
         {
-            throw new InvalidOperationException($"The arguments must start with '{Resources.RootCommandName}'.");
+            throw new InvalidOperationException(string.Format(Resources.RootCommandExpectedException, Resources.RootCommandName));
         }
 
         return _context.Application.ExecuteAsync(
