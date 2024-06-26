@@ -29,7 +29,7 @@ internal class ProcessManager(IAuditor auditor) : IProcessManager
             UseShellExecute = false,
             RedirectStandardOutput = handleOutput is not null,
             RedirectStandardError = handleError is not null,
-            CreateNoWindow = false,
+            CreateNoWindow = true,
             WorkingDirectory = workingDirectory ?? string.Empty
         };
 

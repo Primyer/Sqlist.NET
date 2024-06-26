@@ -22,37 +22,35 @@ internal class ManagedProcess(Process process, IAuditor auditor) : IProcess
             tcs.TrySetResult(process.ExitCode);
         }
 
+        using var ctr = cancellationToken.Register(() =>
+        {
+            if (!process.HasExited)
+                process.Kill();
+        });
+
         process.Exited += OnProcessExited;
         process.OutputDataReceived += OnOutputDataReceived;
         process.ErrorDataReceived += OnErrorDataReceived;
 
         try
         {
-            using var ctr = cancellationToken.Register(() =>
+            Started = process.Start();
+            if (!Started)
             {
-                if (!process.HasExited)
-                    process.Kill();
-            });
-
-            using (process)
-            {
-                Started = process.Start();
-                if (!Started)
-                {
-                    auditor.WriteError("Failed to start process.");
-                    return -1;
-                }
-
-                if (process.StartInfo.RedirectStandardOutput)
-                    process.BeginOutputReadLine();
-
-                if (process.StartInfo.RedirectStandardError)
-                    process.BeginErrorReadLine();
-
-                return await tcs.Task.ConfigureAwait(false);
+                auditor.WriteError("Failed to start process.");
+                return -1;
             }
+
+            if (process.StartInfo.RedirectStandardOutput)
+                process.BeginOutputReadLine();
+
+            if (process.StartInfo.RedirectStandardError)
+                process.BeginErrorReadLine();
+
+            await process.WaitForExitAsync(cancellationToken);
+            return await tcs.Task.ConfigureAwait(false);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex) when (ex is not TaskCanceledException)
         {
             auditor.WriteError($"Error running process: {ex.Message}");
             return -1;
@@ -62,6 +60,9 @@ internal class ManagedProcess(Process process, IAuditor auditor) : IProcess
             process.Exited -= OnProcessExited;
             process.OutputDataReceived -= OnOutputDataReceived;
             process.ErrorDataReceived -= OnErrorDataReceived;
+
+            if (!cancellationToken.IsCancellationRequested)
+                process.Dispose();
         }
     }
 
