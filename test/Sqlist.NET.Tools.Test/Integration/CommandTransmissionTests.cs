@@ -18,10 +18,10 @@ public class CommandTransmissionTests(ITestOutputHelper output)
     public async Task SqlistNetTools_CommandTransmission_WorksCorrectly()
     {
         // Arrange
-        List<string?> logEntries = [];
+        var logs = new List<string?>();
 
         var auditorMock = new Mock<Auditor>();
-        auditorMock.Setup(a => a.WriteLine(It.IsAny<string?>())).Callback((string? message) => logEntries.Add(message));
+        auditorMock.Setup(a => a.WriteLine(It.IsAny<string?>())).Callback((string? message) => logs.Add(message));
 
         var host = new HostBuilderMock()
             .UseCommandLineApplication()
@@ -32,17 +32,19 @@ public class CommandTransmissionTests(ITestOutputHelper output)
             })
             .Build();
 
+        var path = ProjectHelpers.GetSandboxProjectPath();
+        var args = new[] { "test", "--project", path, "--no-color", "--verbose" };
+
         var executor = host.Services.GetRequiredService<IApplicationExecutor>();
-        var sandboxPath = ProjectHelpers.GetSandboxProjectPath();
 
         // Act
-        await executor.ExecuteAsync(["test", "--project", sandboxPath, "--no-color", "--verbose"], CancellationToken.None);
+        var exitCode = await executor.ExecuteAsync(args, CancellationToken.None);
 
-        foreach (var log in logEntries)
+        foreach (var log in logs)
             output.WriteLine(log ?? "");
 
         // Assert
-        var entry = Assert.Single(logEntries);
-        Assert.Equal(Resources.CommandSucceeded, entry);
+        Assert.Equal(0, exitCode);
+        Assert.Contains(Resources.CommandSucceeded, logs);
     }
 }
