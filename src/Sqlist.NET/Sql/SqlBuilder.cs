@@ -13,10 +13,13 @@ namespace Sqlist.NET.Sql
     /// <summary>
     ///     Provides the API to automatically generate SQL statements.
     /// </summary>
-    public class SqlBuilder
+    /// <remarks>
+    ///     Initalizes a new instance of the <see cref="SqlBuilder"/> class.
+    /// </remarks>
+    /// <param name="encloser">The appopertiate <see cref="Sql.Encloser"/> implementation according to the target DBMS.</param>
+    public class SqlBuilder(Encloser? encloser)
     {
         private const string Tab = "    ";
-        private readonly string? _schema;
         private string? _tableName;
 
         /// <summary>
@@ -35,8 +38,6 @@ namespace Sqlist.NET.Sql
         {
             if (!string.IsNullOrEmpty(schema))
                 TableName = Encloser.Replace(schema) + "." + TableName;
-
-            _schema = schema;
         }
 
         /// <summary>
@@ -49,18 +50,9 @@ namespace Sqlist.NET.Sql
             TableName = table ?? throw new ArgumentNullException(nameof(table));
         }
 
-        /// <summary>
-        ///     Initalizes a new instance of the <see cref="SqlBuilder"/> class.
-        /// </summary>
-        /// <param name="encloser">The appopertiate <see cref="Sql.Encloser"/> implementation according to the target DBMS.</param>
-        public SqlBuilder(Encloser? encloser)
-        {
-            Encloser = encloser ?? new DummyEncloser();
-        }
+        protected Dictionary<string, StringBuilder> Builders { get; } = [];
 
-        protected Dictionary<string, StringBuilder> Builders { get; } = new Dictionary<string, StringBuilder>();
-
-        public Encloser Encloser { get; set; }
+        public Encloser Encloser { get; set; } = encloser ?? new DummyEncloser();
 
         /// <summary>
         ///     Gets or sets the name of the table name that the to-be-generated statement should base on.
@@ -149,7 +141,7 @@ namespace Sqlist.NET.Sql
         /// <param name="row">The row to register.</param>
         public virtual void RegisterValues(object[] row)
         {
-            RegisterValues(new[] { row });
+            RegisterValues([row]);
         }
 
         /// <summary>
@@ -641,7 +633,7 @@ namespace Sqlist.NET.Sql
         /// <param name="body">The body as a separate <see cref="SqlBuilder"/>.</param>
         public virtual void With(string name, Func<SqlBuilder, string> body)
         {
-            With(name, Array.Empty<string>(), body);
+            With(name, [], body);
         }
 
         /// <summary>
@@ -666,7 +658,7 @@ namespace Sqlist.NET.Sql
         /// <param name="body">The body as a separate <see cref="SqlBuilder"/>.</param>
         public virtual void RecursiveWith(string name, Func<SqlBuilder, string> body)
         {
-            RecursiveWith(name, Array.Empty<string>(), body);
+            RecursiveWith(name, [], body);
         }
 
         /// <summary>

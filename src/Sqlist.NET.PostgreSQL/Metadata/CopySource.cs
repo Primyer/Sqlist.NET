@@ -9,8 +9,8 @@
         /// </summary>
         private CopySource(string content) => _content = content;
 
-        public static CopySource StdIn => new CopySource("STDIN");
-        public static CopySource StdOut => new CopySource("STDOUT");
+        public static CopySource StdIn => new("STDIN");
+        public static CopySource StdOut => new("STDOUT");
 
         public static CopySource File(string file)
         {

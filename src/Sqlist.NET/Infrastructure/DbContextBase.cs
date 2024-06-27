@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -68,8 +67,7 @@ namespace Sqlist.NET.Infrastructure
         /// <exception cref="ObjectDisposedException" />
         protected void ThrowIfDisposed()
         {
-            if (_disposed)
-                throw new ObjectDisposedException(GetType().Name);
+            ObjectDisposedException.ThrowIf(_disposed, this);
         }
 
         /// <inheritdoc />

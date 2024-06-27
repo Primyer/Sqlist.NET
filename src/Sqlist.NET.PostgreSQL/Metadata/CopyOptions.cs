@@ -37,7 +37,7 @@ namespace Sqlist.NET.Metadata
             return sb.ToString();
         }
 
-        private void Append(StringBuilder sb, string name, string? value, bool quote = false)
+        private static void Append(StringBuilder sb, string name, string? value, bool quote = false)
         {
             if (value is null)
                 return;

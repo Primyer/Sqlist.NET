@@ -179,7 +179,7 @@ namespace Sqlist.NET.Infrastructure
             _logger?.LogInformation("Transfer to table '{Table}' is completed.", table);
         }
 
-        private Task CreateStagingTableAsync(string table, TransactionRuleDictionary rules)
+        private Task<int> CreateStagingTableAsync(string table, TransactionRuleDictionary rules)
         {
             var sql = Sql().CreateTable(new SqlTable(table)
             {
@@ -198,7 +198,7 @@ namespace Sqlist.NET.Infrastructure
             return Query().ExecuteAsync(sql);
         }
 
-        private Task DeleteStagingTableAsync(string table)
+        private Task<int> DeleteStagingTableAsync(string table)
         {
             var sql = Sql().DeleteTable(table);
             return Query().ExecuteAsync(sql);

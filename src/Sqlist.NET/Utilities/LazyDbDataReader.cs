@@ -15,7 +15,7 @@ namespace Sqlist.NET.Utilities
         /// </summary>
         public LazyDbDataReader(DbDataReader reader)
         {
-            Check.NotNull(reader, nameof(reader));
+            Check.NotNull(reader);
 
             Reader = Task.FromResult(reader);
         }

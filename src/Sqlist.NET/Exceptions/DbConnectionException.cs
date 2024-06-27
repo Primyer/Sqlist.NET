@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.Serialization;
 
 namespace Sqlist.NET
 {
@@ -10,10 +9,6 @@ namespace Sqlist.NET
         }
 
         public DbConnectionException(string message) : base(message)
-        {
-        }
-
-        public DbConnectionException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
 

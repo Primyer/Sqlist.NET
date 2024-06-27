@@ -30,7 +30,7 @@ namespace Sqlist.NET.Infrastructure
         /// <param name="initTransaction">The flag indicating whether this query should initialize a transaction.</param>
         internal DbQuery(DbContextBase db, bool initTransaction = false) : base(db.Options)
         {
-            Check.NotNull(db, nameof(db));
+            Check.NotNull(db);
 
             _db = db;
             _initTransaction = initTransaction;

@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-
-using Sqlist.NET.Metadata;
+﻿using Sqlist.NET.Metadata;
 using Sqlist.NET.Sql;
 using Sqlist.NET.Utilities;
 
@@ -11,18 +9,11 @@ namespace Sqlist.NET.Infrastructure
     /// <summary>
     ///     Provides the API to configure <see cref="DbOptions"/>.
     /// </summary>
-    public class DbOptionsBuilder
+    /// <remarks>
+    ///     Initializes a new instance of the <see cref="DbOptionsBuilder"/> class.
+    /// </remarks>
+    public class DbOptionsBuilder(DbOptions options)
     {
-        private readonly DbOptions _options;
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="DbOptionsBuilder"/> class.
-        /// </summary>
-        public DbOptionsBuilder(DbOptions options)
-        {
-            _options = options;
-        }
-
         public bool CaseSensitiveNaming { get; private set; }
 
         /// <summary>
@@ -32,7 +23,7 @@ namespace Sqlist.NET.Infrastructure
         public void SetConnectionString(string connectionString)
         {
             Check.NotNull(connectionString, nameof(connectionString));
-            _options.ConnectionString = connectionString;
+            options.ConnectionString = connectionString;
         }
 
         /// <summary>
@@ -46,7 +37,7 @@ namespace Sqlist.NET.Infrastructure
         {
             Check.NotNull(version, nameof(version));
 
-            _options.DbVersion = version;
+            options.DbVersion = version;
         }
 
         /// <summary>
@@ -54,7 +45,7 @@ namespace Sqlist.NET.Infrastructure
         /// </summary>
         public void EnableSensitiveLogging()
         {
-            _options.EnableSensitiveLogging = true;
+            options.EnableSensitiveLogging = true;
         }
 
         /// <summary>
@@ -62,7 +53,7 @@ namespace Sqlist.NET.Infrastructure
         /// </summary>
         public void EnableAnalysis()
         {
-            _options.EnableAnalysis = true;
+            options.EnableAnalysis = true;
         }
 
         /// <summary>
@@ -71,7 +62,7 @@ namespace Sqlist.NET.Infrastructure
         /// <param name="orientation">The mapping orientation to set.</param>
         public void SetMappingOrientation(MappingOrientation orientation)
         {
-            _options.MappingOrientation = orientation;
+            options.MappingOrientation = orientation;
         }
 
         /// <summary>
@@ -83,7 +74,7 @@ namespace Sqlist.NET.Infrastructure
             Check.NotNull(customEncloser, nameof(customEncloser));
 
             CaseSensitiveNaming = true;
-            _options.DelimitedEncloser = customEncloser;
+            options.DelimitedEncloser = customEncloser;
         }
 
         /// <summary>
@@ -92,9 +83,9 @@ namespace Sqlist.NET.Infrastructure
         public void WithCaseInsensitiveNaming()
         {
             CaseSensitiveNaming = false;
-            _options.DelimitedEncloser = null;
+            options.DelimitedEncloser = null;
         }
 
-        public DbOptions GetOptions() => _options;
+        public DbOptions GetOptions() => options;
     }
 }

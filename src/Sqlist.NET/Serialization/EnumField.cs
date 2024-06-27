@@ -1,16 +1,13 @@
-﻿using Sqlist.NET.Metadata;
-
-using System;
+﻿using System;
 
 namespace Sqlist.NET.Serialization;
-internal class EnumField : SerializationField
-{
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="EnumField"/> class.
-    /// </summary>
-    public EnumField(Type type) => Type = type;
 
-    public Type Type { get; }
+/// <summary>
+///     Initializes a new instance of the <see cref="EnumField"/> class.
+/// </summary>
+internal class EnumField(Type type) : SerializationField
+{
+    public Type Type { get; } = type;
 
     public override object? Parse(object obj)
     {

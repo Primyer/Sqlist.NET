@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.Serialization;
 
 namespace Sqlist.NET.Migration.Exceptions
 {
@@ -28,14 +27,6 @@ namespace Sqlist.NET.Migration.Exceptions
         /// </summary>
         /// <inheritdoc />
         public MigrationException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="MigrationException"/> class.
-        /// </summary>
-        /// <inheritdoc />
-        protected MigrationException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

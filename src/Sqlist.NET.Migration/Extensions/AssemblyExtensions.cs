@@ -19,8 +19,7 @@ namespace Sqlist.NET.Migration.Extensions
 
         public static async Task ReadEmbeddedResources(this Assembly assembly, string path, Func<string, string?, Task> asyncAction)
         {
-            if (assembly is null)
-                throw new ArgumentNullException(nameof(assembly));
+            ArgumentNullException.ThrowIfNull(assembly);
 
             var basePath = assembly.GetName().Name + "." + path.Trim('.', ' ');
             var resNames = assembly.GetManifestResourceNames()

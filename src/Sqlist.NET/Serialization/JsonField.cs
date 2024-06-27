@@ -1,23 +1,20 @@
 ﻿using System;
 using System.Text.Json;
 
-namespace Sqlist.NET.Serialization
+namespace Sqlist.NET.Serialization;
+
+/// <summary>
+///     Initializes a new instance of the <see cref="JsonField"/> class.
+/// </summary>
+internal class JsonField(Type type) : SerializationField
 {
-    internal class JsonField : SerializationField
+    public Type Type { get; set; } = type;
+
+    public override object? Parse(object obj)
     {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="JsonField"/> class.
-        /// </summary>
-        public JsonField(Type type) => Type = type;
+        if (obj is string str)
+            return JsonSerializer.Deserialize(str, Type);
 
-        public Type Type { get; set; }
-
-        public override object? Parse(object obj)
-        {
-            if (obj is string str)
-                return JsonSerializer.Deserialize(str, Type);
-
-            throw new InvalidOperationException($"Invalid JSON string.");
-        }
+        throw new InvalidOperationException($"Invalid JSON string.");
     }
 }

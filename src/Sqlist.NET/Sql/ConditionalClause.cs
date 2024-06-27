@@ -5,7 +5,7 @@ namespace Sqlist.NET.Sql
 {
     public class ConditionalClause
     {
-        private readonly StringBuilder _builder = new StringBuilder();
+        private readonly StringBuilder _builder = new();
 
         public ConditionalClause Init(string content)
         {
@@ -237,7 +237,7 @@ namespace Sqlist.NET.Sql
         {
             _builder.Append(' ');
             _builder.Append(@operator);
-            _builder.Append(" ");
+            _builder.Append(' ');
             _builder.Append(content);
 
             return this;
@@ -245,9 +245,9 @@ namespace Sqlist.NET.Sql
 
         private ConditionalClause Inner(Action<ConditionalClause> inner)
         {
-            _builder.Append("(");
+            _builder.Append('(');
             inner.Invoke(this);
-            _builder.Append(")");
+            _builder.Append(')');
 
             return this;
         }
@@ -258,7 +258,7 @@ namespace Sqlist.NET.Sql
             _builder.Append(@operator);
             _builder.Append(" (");
             inner.Invoke(this);
-            _builder.Append(")");
+            _builder.Append(')');
 
             return this;
         }

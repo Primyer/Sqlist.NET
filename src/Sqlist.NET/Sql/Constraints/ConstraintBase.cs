@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System;
+﻿using Sqlist.NET.Utilities;
 
 namespace Sqlist.NET.Sql.Constraints
 {
@@ -11,11 +10,8 @@ namespace Sqlist.NET.Sql.Constraints
         /// <param name="columns">The columns which to be constrainted.</param>
         public ConstraintBase(string[] columns)
         {
-            if (columns is null)
-                throw new ArgumentNullException(nameof(columns));
-
-            if (!columns.Any())
-                throw new ArgumentException(nameof(columns) + " cannot be empty.");
+            Check.NotNull(columns);
+            Check.NotEmpty(columns);
 
             Columns = columns;
         }

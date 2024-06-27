@@ -282,7 +282,7 @@ namespace Sqlist.NET
 
         private static string NormalizeType(string type)
         {
-            var index = type.IndexOfAny(new[] { '(', '[' });
+            var index = type.IndexOfAny(['(', '[']);
             if (index != -1)
                 return !type.StartsWith("char") || !CharTypeRegex().IsMatch(type) ? type[..(index)].Trim() : "varchar";
             else

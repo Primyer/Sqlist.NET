@@ -17,8 +17,8 @@ namespace Sqlist.NET.Migration
 
         static readonly KeyValuePair<string, DataTransactionRule> DefaultRecord = default;
 
-        readonly List<string> _orderList = new();
-        readonly Dictionary<string, TransactionRuleDictionary> _map = new();
+        readonly List<string> _orderList = [];
+        readonly Dictionary<string, TransactionRuleDictionary> _map = [];
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="DataTransactionMap"/> class.
@@ -40,7 +40,7 @@ namespace Sqlist.NET.Migration
                 Merge(phase, currentVersion);
 
                 var transfer = phase.Guidelines.Transfer;
-                if (transfer.Any() && currentVersion < phase.Version && phase.Version < latest)
+                if (transfer.Count != 0 && currentVersion < phase.Version && phase.Version < latest)
                 {
                     foreach (var (table, definition) in transfer)
                         TransferDefinitions[table] = definition;
@@ -53,7 +53,7 @@ namespace Sqlist.NET.Migration
         /// <summary>
         ///     Gets or sets the lists of SQL scripts to be executed.
         /// </summary>
-        public Dictionary<string, DataTransferDefinition> TransferDefinitions { get; set; } = new();
+        public Dictionary<string, DataTransferDefinition> TransferDefinitions { get; set; } = [];
 
         public int Count => _map.Count;
 
@@ -88,12 +88,12 @@ namespace Sqlist.NET.Migration
 
         public void MergeCreate(Dictionary<string, ColumnsDefinition> create, bool alreadyPerformed)
         {
-            if (!(create?.Any() ?? false))
+            if (create is null || create.Count == 0)
                 return;
 
             foreach (var (table, collection) in create)
             {
-                if (!_map.ContainsKey(table))
+                if (!_map.TryGetValue(table, out TransactionRuleDictionary? rules))
                 {
                     _map[table] = new TransactionRuleDictionary { Condition = collection.Condition };
 
@@ -113,10 +113,10 @@ namespace Sqlist.NET.Migration
                 else
                 {
                     if (collection.Condition?.Trim() == "")
-                        _map[table].Condition = null;
+                        rules.Condition = null;
                     
                     else if (!string.IsNullOrWhiteSpace(collection.Condition))
-                        _map[table].Condition = collection.Condition;
+                        rules.Condition = collection.Condition;
                 }
 
                 foreach (var (name, definition) in collection.Columns)
@@ -143,7 +143,7 @@ namespace Sqlist.NET.Migration
 
         public void MergeUpdate(DataTransactionMap update, bool alreadyPerformed)
         {
-            if (!(update?.Any() ?? false))
+            if (update is null || update.Count == 0)
                 return;
 
             foreach (var (table, rules) in update)
@@ -206,14 +206,14 @@ namespace Sqlist.NET.Migration
 
         public void MergeDelete(Dictionary<string, string[]> delete)
         {
-            if (!(delete?.Any() ?? false))
+            if (delete is null || delete.Count == 0)
                 return;
 
             foreach (var (table, columns) in delete)
             {
                 EnsureTableExists("delete", table);
 
-                if (columns?.Any() ?? false)
+                if (columns is not null && columns.Length != 0)
                 {
                     foreach (var column in columns)
                     {
@@ -263,7 +263,7 @@ namespace Sqlist.NET.Migration
                 sb.AppendLine();
             }
 
-            if (TransferDefinitions.Any())
+            if (TransferDefinitions.Count != 0)
             {
                 sb.AppendLine("\n\n>> TRANSFER DEFINITIONS:\n");
 
@@ -371,11 +371,11 @@ namespace Sqlist.NET.Migration
                 _dictionary = dictionary;
             }
 
-            public KeyValuePair<string, TransactionRuleDictionary> Current => _current;
+            public readonly KeyValuePair<string, TransactionRuleDictionary> Current => _current;
 
-            object IEnumerator.Current => _current;
+            readonly object IEnumerator.Current => _current;
 
-            public void Dispose()
+            public readonly void Dispose()
             {
             }
 
@@ -390,7 +390,7 @@ namespace Sqlist.NET.Migration
                 return true;
             }
 
-            void IEnumerator.Reset()
+            readonly void IEnumerator.Reset()
             {
             }
         }

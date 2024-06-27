@@ -10,24 +10,15 @@ using System.Threading.Tasks;
 
 namespace Sqlist.NET.Migration.Data
 {
-    public class DbManager
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="PostgreDbManager"/> class.
+    /// </summary>
+    public class DbManager(DbContextBase db, MigrationOptions options)
     {
-        private readonly DbContextBase _db;
-        private readonly MigrationOptions _options;
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="PostgreDbManager"/> class.
-        /// </summary>
-        public DbManager(DbContextBase db, MigrationOptions options)
-        {
-            _db = db ?? throw new ArgumentNullException(nameof(db));
-            _options = options ?? throw new ArgumentNullException(nameof(options));
-        }
-
         public async Task MigrateDataFromAsync(string dbname, DataTransactionMap dataMap)
         {
             var cancellationToken = default(CancellationToken);
-            await using var dataSource = _db.BuildDataSource(_db.ChangeDatabase(dbname));
+            await using var dataSource = db.BuildDataSource(db.ChangeDatabase(dbname));
 
             foreach (var (table, rules) in dataMap)
             {
@@ -37,7 +28,7 @@ namespace Sqlist.NET.Migration.Data
                     continue;
 
                 await using var cnn = await dataSource.OpenConnectionAsync(cancellationToken);
-                await _db.CopyFromAsync(cnn, table, rules, cancellationToken);
+                await db.CopyFromAsync(cnn, table, rules, cancellationToken);
             }
 
             foreach (var (table, definition) in dataMap.TransferDefinitions)
@@ -50,37 +41,37 @@ namespace Sqlist.NET.Migration.Data
                 cmd.CommandText = definition.Script;
 
                 await using var rdr = await cmd.ExecuteReaderAsync();
-                await _db.CopyFromAsync(rdr, table, definition.Columns.ToList(), cancellationToken);
+                await db.CopyFromAsync(rdr, table, [.. definition.Columns], cancellationToken);
             }
         }
 
         public Task CreateDatabaseAsync(string database)
         {
-            var sql = _db.UncasedSql().CreateDatabase(database);
-            var qry = _db.Query();
+            var sql = db.UncasedSql().CreateDatabase(database);
+            var qry = db.Query();
 
             return qry.ExecuteAsync(sql);
         }
 
         public Task DeleteDatabaseAsync(string database)
         {
-            var sql = _db.UncasedSql().DeleteDatabase(database);
-            var qry = _db.Query();
+            var sql = db.UncasedSql().DeleteDatabase(database);
+            var qry = db.Query();
 
             return qry.ExecuteAsync(sql);
         }
 
         public Task RenameDatabaseAsync(string currentName, string newName)
         {
-            var sql = _db.UncasedSql().RenameDatabase(currentName, newName);
-            var qry = _db.Query();
+            var sql = db.UncasedSql().RenameDatabase(currentName, newName);
+            var qry = db.Query();
 
             return qry.ExecuteAsync(sql);
         }
 
         public Task CreateSchemaTableAsync()
         {
-            var table = new SqlTable(_options.SchemaTableSchema, _options.SchemaTable!)
+            var table = new SqlTable(options.SchemaTableSchema, options.SchemaTable!)
             {
                 Columns =
                 {
@@ -92,59 +83,59 @@ namespace Sqlist.NET.Migration.Data
                 }
             };
 
-            var sql = _db.UncasedSql().CreateTable(table);
-            var qry = _db.Query();
+            var sql = db.UncasedSql().CreateTable(table);
+            var qry = db.Query();
 
             return qry.ExecuteAsync(sql);
         }
 
         public virtual Task<bool> DoesSchemaTableExistAsync()
         {
-            var sql = _db.UncasedSql("information_schema.tables");
+            var sql = db.UncasedSql("information_schema.tables");
 
             sql.RegisterFields("true");
-            sql.Where($"table_name = '{_options.SchemaTable}'");
+            sql.Where($"table_name = '{options.SchemaTable}'");
 
-            if (!string.IsNullOrEmpty(_options.SchemaTableSchema))
-                sql.AppendAnd($"table_schema = '{_options.SchemaTableSchema}'");
+            if (!string.IsNullOrEmpty(options.SchemaTableSchema))
+                sql.AppendAnd($"table_schema = '{options.SchemaTableSchema}'");
 
             var stmt = sql.ToSelect();
-            var qry = _db.Query();
+            var qry = db.Query();
 
             return qry.FirstOrDefaultAsync<bool>(stmt);
         }
 
         public virtual Task<SchemaPhase> GetLastSchemaPhaseAsync()
         {
-            var sql = new SqlBuilder(null, _options.SchemaTableSchema, _options.SchemaTable!);
+            var sql = new SqlBuilder(null, options.SchemaTableSchema, options.SchemaTable!);
             sql.OrderBy("version desc");
 
             var stmt = sql.ToSelect();
-            var qry = _db.Query();
+            var qry = db.Query();
 
             return qry.FirstOrDefaultAsync<SchemaPhase>(stmt);
         }
 
         public virtual Task<IEnumerable<SchemaPhase>> GetSchemaPhasesAsync()
         {
-            var sql = new SqlBuilder(null, _options.SchemaTableSchema, _options.SchemaTable!);
+            var sql = new SqlBuilder(null, options.SchemaTableSchema, options.SchemaTable!);
             sql.OrderBy("version");
 
             var stmt = sql.ToSelect();
-            var qry = _db.Query();
+            var qry = db.Query();
 
             return qry.RetrieveAsync<SchemaPhase>(stmt);
         }
 
         public virtual Task InsertSchemaPhaseAsync(SchemaPhase phase)
         {
-            var sql = new SqlBuilder(null, _options.SchemaTableSchema, _options.SchemaTable!);
+            var sql = new SqlBuilder(null, options.SchemaTableSchema, options.SchemaTable!);
 
-            sql.RegisterFields(new[] { "version", "title", "description", "summary", "applied" });
-            sql.RegisterValues(new[] { "@Version", "@Title", "@Description", "@Summary", "@Applied" });
+            sql.RegisterFields(["version", "title", "description", "summary", "applied"]);
+            sql.RegisterValues(["@Version", "@Title", "@Description", "@Summary", "@Applied"]);
 
             var stmt = sql.ToInsert();
-            var qry = _db.Query();
+            var qry = db.Query();
 
             return qry.ExecuteAsync(stmt, new
             {

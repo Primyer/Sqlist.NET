@@ -8,7 +8,7 @@ namespace Sqlist.NET.Migration.Deserialization.Collections
 
     public class ColumnsDefinition
     {
-        public List<KeyValuePair<string, ColumnDefinition>> Columns { get; set; } = new();
+        public List<KeyValuePair<string, ColumnDefinition>> Columns { get; set; } = [];
         public string? Condition { get; set; }
         public string? Before { get; set; }
     }

@@ -1,15 +1,9 @@
 ﻿namespace Sqlist.NET.Sql.Partial
 {
-    public readonly struct Reference
+    public readonly struct Reference(string table, params string[] columns)
     {
-        public Reference(string table, params string[] columns)
-        {
-            Table = table;
-            Columns = columns;
-        }
+        public string? Table { get; } = table;
 
-        public string? Table { get; }
-
-        public string[] Columns { get; }
+        public string[] Columns { get; } = columns;
     }
 }

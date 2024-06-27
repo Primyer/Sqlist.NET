@@ -4,17 +4,12 @@ using System;
 
 namespace Sqlist.NET.Infrastructure
 {
-    public class NpgsqlOptionsBuilder : DbOptionsBuilder
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="NpgsqlOptionsBuilder"/> class.
+    /// </summary>
+    public class NpgsqlOptionsBuilder(NpgsqlOptions options) : DbOptionsBuilder(options)
     {
-        private readonly NpgsqlOptions _options;
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="NpgsqlOptionsBuilder"/> class.
-        /// </summary>
-        public NpgsqlOptionsBuilder(NpgsqlOptions options) : base(options)
-        {
-            _options = options ?? throw new ArgumentNullException(nameof(options));
-        }
+        private readonly NpgsqlOptions _options = options ?? throw new ArgumentNullException(nameof(options));
 
         /// <summary>
         ///     Configures the <see cref="NpgsqlDataSourceBuilder"/> that is to be used while initiating <see cref="NpgsqlDataSource"/>s.

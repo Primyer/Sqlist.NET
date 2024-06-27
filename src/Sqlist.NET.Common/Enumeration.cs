@@ -1,19 +1,13 @@
 ﻿using System.Reflection;
 
 namespace Sqlist.NET;
-public abstract class Enumeration : IComparable
+/// <summary>
+///     Initializes a new instance of the <see cref="Enumerable"/> class.
+/// </summary>
+public abstract class Enumeration(int value, string displayName) : IComparable
 {
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="Enumerable"/> class.
-    /// </summary>
-    protected Enumeration(int value, string displayName)
-    {
-        Value = value;
-        DisplayName = displayName;
-    }
-
-    public int Value { get; }
-    public string DisplayName { get; }
+    public int Value { get; } = value;
+    public string DisplayName { get; } = displayName;
 
     public static bool operator >(Enumeration first, Enumeration other)
     {

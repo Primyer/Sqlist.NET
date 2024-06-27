@@ -7,7 +7,7 @@ using Sqlist.NET.Utilities;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Data;
+using System.Data.Common;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -76,7 +76,7 @@ namespace Sqlist.NET.Serialization
             return data;
         }
 
-        private static SerializationField[] GetObjectOrientedNames<T>(IDataReader reader)
+        private static SerializationField[] GetObjectOrientedNames<T>(DbDataReader reader)
         {
             var fields = new SerializationField[reader.FieldCount];
 
@@ -98,7 +98,7 @@ namespace Sqlist.NET.Serialization
             return fields;
         }
 
-        private static SerializationField[] GetQueryOrientedNames<T>(IDataReader reader)
+        private static SerializationField[] GetQueryOrientedNames<T>(DbDataReader reader)
         {
             var props = typeof(T).GetProperties();
 

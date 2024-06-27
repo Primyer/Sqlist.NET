@@ -55,7 +55,7 @@ namespace Sqlist.NET.Sql
         /// <param name="table">The table to join.</param>
         public void CrossJoin(string table)
         {
-            Join($"CROSS JOIN " + (table.IndexOf(' ') != -1 ? Encloser.Replace(table) : Encloser.Wrap(table)));
+            Join($"CROSS JOIN " + (table.Contains(' ') ? Encloser.Replace(table) : Encloser.Wrap(table)));
         }
 
         /// <summary>

@@ -21,7 +21,7 @@ internal class ColumnsDefinitionNodeDeserializer : INodeDeserializer
             ? (DefinitionCollection)nestedObjectDeserializer(reader, typeof(DefinitionCollection))!
             : new()
             {
-                Columns = (List<KeyValuePair<string, ColumnDefinition>>?)nestedObjectDeserializer(reader, typeof(IEnumerable<KeyValuePair<string, ColumnDefinition>>)) ?? new()
+                Columns = (List<KeyValuePair<string, ColumnDefinition>>?)nestedObjectDeserializer(reader, typeof(IEnumerable<KeyValuePair<string, ColumnDefinition>>)) ?? []
             };
 
         return true;

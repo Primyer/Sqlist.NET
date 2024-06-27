@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Sqlist.NET.Abstractions
@@ -24,7 +23,7 @@ namespace Sqlist.NET.Abstractions
         /// </summary>
         public QueryStore(DbOptions options)
         {
-            Check.NotNull(options, nameof(options));
+            Check.NotNull(options);
             _options = options;
         }
 

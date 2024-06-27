@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<Description>A micro ORM with highly efficient API.</Description>
 		<Copyright>(c) 2024, Primyer</Copyright>
 		<Authors>Primyer</Authors>

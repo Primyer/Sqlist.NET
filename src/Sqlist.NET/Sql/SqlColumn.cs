@@ -1,17 +1,12 @@
 ﻿namespace Sqlist.NET.Sql
 {
-    public class SqlColumn
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="SqlColumn"/> class.
+    /// </summary>
+    /// <param name="name">The name of the column.</param>
+    /// <param name="type">The type of the column.</param>
+    public class SqlColumn(string name, string type)
     {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="SqlColumn"/> class.
-        /// </summary>
-        /// <param name="name">The name of the column.</param>
-        /// <param name="type">The type of the column.</param>
-        public SqlColumn(string name, string type)
-        {
-            Name = name;
-            Type = type;
-        }
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="SqlColumn"/> class.
@@ -39,12 +34,12 @@
         /// <summary>
         ///     Gets or sets the name of the column.
         /// </summary>
-        public string? Name { get; set; }
+        public string? Name { get; set; } = name;
 
         /// <summary>
         ///     Gets or sets the type of the column.
         /// </summary>
-        public string? Type { get; set; }
+        public string? Type { get; set; } = type;
 
         /// <summary>
         ///     Gets or sets the default value of the column.
