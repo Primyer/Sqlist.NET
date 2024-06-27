@@ -1,11 +1,9 @@
-﻿namespace Sqlist.NET.Sql
+﻿namespace Sqlist.NET.Sql;
+public sealed class DummyEncloser : Encloser
 {
-    public sealed class DummyEncloser : Encloser
+    public override string? Wrap(string? val) => val;
+    public override string? Replace(string? val)
     {
-        public override string? Wrap(string? val) => val;
-        public override string? Replace(string? val)
-        {
-            return val?.Replace("`", "");
-        }
+        return val?.Replace("`", "");
     }
 }

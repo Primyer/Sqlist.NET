@@ -1,45 +1,41 @@
-﻿using System;
-using System.Data.Common;
-using System.Threading.Tasks;
+﻿using System.Data.Common;
 
-namespace Sqlist.NET.Utilities
+namespace Sqlist.NET.Utilities;
+public class LazyDbDataReader
 {
-    public class LazyDbDataReader
+    public delegate void FetchEvent();
+
+    public event FetchEvent? Fetched;
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="LazyDbDataReader"/> class.
+    /// </summary>
+    public LazyDbDataReader(DbDataReader reader)
     {
-        public delegate void FetchEvent();
+        Check.NotNull(reader);
 
-        public event FetchEvent? Fetched;
+        Reader = Task.FromResult(reader);
+    }
 
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="LazyDbDataReader"/> class.
-        /// </summary>
-        public LazyDbDataReader(DbDataReader reader)
-        {
-            Check.NotNull(reader);
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="LazyDbDataReader"/> class.
+    /// </summary>
+    public LazyDbDataReader(Task<DbDataReader> lazyReader)
+    {
+        Check.NotNull(lazyReader, nameof(lazyReader));
 
-            Reader = Task.FromResult(reader);
-        }
+        Reader = lazyReader;
+    }
 
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="LazyDbDataReader"/> class.
-        /// </summary>
-        public LazyDbDataReader(Task<DbDataReader> lazyReader)
-        {
-            Check.NotNull(lazyReader, nameof(lazyReader));
+    public Task<DbDataReader> Reader { get; }
 
-            Reader = lazyReader;
-        }
+    public async Task IterateAsync(Action<DbDataReader> action)
+    {
+        using var reader = await Reader;
 
-        public Task<DbDataReader> Reader { get; }
+        while (await reader.ReadAsync())
+            action.Invoke(reader);
 
-        public async Task IterateAsync(Action<DbDataReader> action)
-        {
-            using var reader = await Reader;
-
-            while (await reader.ReadAsync())
-                action.Invoke(reader);
-
-            Fetched?.Invoke();
-        }
+        Fetched?.Invoke();
     }
 }

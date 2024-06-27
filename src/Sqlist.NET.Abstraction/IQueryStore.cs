@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
+﻿using System.Data;
 using System.Data.Common;
-using System.Threading.Tasks;
 
-namespace Sqlist.NET.Abstractions
+namespace Sqlist.NET
 {
     /// <summary>
     ///     Provides the API to query against a data source.

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Sqlist.NET.Serialization;
+﻿namespace Sqlist.NET.Serialization;
 
 /// <summary>
 ///     Initializes a new instance of the <see cref="EnumField"/> class.

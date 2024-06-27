@@ -9,6 +9,7 @@
 		<NeutralLanguage>en-GB</NeutralLanguage>
 		<Configurations>Debug;Release</Configurations>
 		<Platforms>AnyCPU</Platforms>
+		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<RepositoryUrl>https://github.com/Primyer/Sqlist.NET</RepositoryUrl>
 		<PackageTags>orm;sql;micro-orm</PackageTags>
@@ -40,7 +41,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Sqlist.NET.Common\Sqlist.NET.Common.csproj" />
+	  <ProjectReference Include="..\Sqlist.NET.Abstraction\Sqlist.NET.Abstraction.csproj" />
 	</ItemGroup>
 
 </Project>

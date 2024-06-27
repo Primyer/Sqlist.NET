@@ -5,30 +5,27 @@ using Microsoft.Extensions.Options;
 using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Infrastructure.Internal;
 
-using System;
+namespace Sqlist.NET.Extensions;
 
-namespace Sqlist.NET.Extensions
+/// <summary>
+///     Provides the extension API to configure Sqlist services.
+/// </summary>
+public static class ServiceCollectionExtensions
 {
     /// <summary>
-    ///     Provides the extension API to configure Sqlist services.
+    ///     Adds the Sqlist services to the context.
     /// </summary>
-    public static class ServiceCollectionExtensions
+    /// <param name="services">The service collection to add to.</param>
+    /// <param name="configureOptions">The configuration action to set up the Sqlist options.</param>
+    /// <returns>The <see cref="SqlistBuilder"/>.</returns>
+    public static SqlistBuilder AddSqlist(this IServiceCollection services, Action<DbOptionsBuilder>? configureOptions = null)
     {
-        /// <summary>
-        ///     Adds the Sqlist services to the context.
-        /// </summary>
-        /// <param name="services">The service collection to add to.</param>
-        /// <param name="configureOptions">The configuration action to set up the Sqlist options.</param>
-        /// <returns>The <see cref="SqlistBuilder"/>.</returns>
-        public static SqlistBuilder AddSqlist(this IServiceCollection services, Action<DbOptionsBuilder>? configureOptions = null)
-        {
-            var configure = new ConfigureNamedOptions<DbOptions>(null, options => configureOptions?.Invoke(new DbOptionsBuilder(options)));
+        var configure = new ConfigureNamedOptions<DbOptions>(null, options => configureOptions?.Invoke(new DbOptionsBuilder(options)));
 
-            services.AddOptions();
-            services.TryAddSingleton<IConfigureOptions<DbOptions>>(configure);
-            services.TryAddScoped<TransactionManager>();
+        services.AddOptions();
+        services.TryAddSingleton<IConfigureOptions<DbOptions>>(configure);
+        services.TryAddScoped<TransactionManager>();
 
-            return new SqlistBuilder(services);
-        }
+        return new SqlistBuilder(services);
     }
 }

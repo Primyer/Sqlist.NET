@@ -1,11 +1,9 @@
-﻿namespace Sqlist.NET.Sql.Metadata
+﻿namespace Sqlist.NET.Sql.Metadata;
+public enum ReferencialAction
 {
-    public enum ReferencialAction
-    {
-        NoAction,
-        Restrict,
-        Cascade,
-        SetNull,
-        SetDefault
-    }
+    NoAction,
+    Restrict,
+    Cascade,
+    SetNull,
+    SetDefault
 }
