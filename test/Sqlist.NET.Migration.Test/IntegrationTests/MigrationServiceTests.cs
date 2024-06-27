@@ -47,25 +47,6 @@ public class MigrationServiceTests : IClassFixture<AppMigrationService>
     }
 
     [Fact]
-    public async Task RandomTest()
-    {
-        try
-        {
-            _service.Options!.ScriptsPath = "Resources.Scripts.v3";
-
-            var info = await _service.InitializeAsync(
-                new(3, 0, 0),
-                new(1, 0, 0));
-
-            await _service.Db.InvokeConnectionAsync();
-            await _service.MigrateDataAsync();
-        }
-        finally
-        {
-        }
-    }
-
-    [Fact]
     public async Task MigrateDataAsync_ShouldSucceed()
     {
         try

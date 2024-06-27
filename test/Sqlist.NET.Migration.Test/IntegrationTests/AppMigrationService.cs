@@ -32,7 +32,7 @@ public class AppMigrationService : MigrationService
     {
         var options = new NpgsqlOptions()
         {
-            ConnectionString = $"Server=localhost; Port=5432; User Id=postgres; Database={Consts.TestDatabaseName}; Password=1974563; Include Error Details=true;",
+            ConnectionString = $"Server=localhost; Port=5432; User Id=postgres; Database={Consts.TestDatabaseName}; Password=1974563; Include Error Detail=true;",
             ConfigureDataSource = builder =>
             {
                 builder.MapEnum<UserStatus>("user_status", new NpgsqlNullNameTranslator());

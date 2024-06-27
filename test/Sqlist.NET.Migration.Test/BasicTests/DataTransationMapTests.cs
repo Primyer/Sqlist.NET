@@ -110,6 +110,7 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
         var phase1 = _deserializer.DeserializePhase(data);
         var phase2 = new MigrationPhase()
         {
+            Version = new(2, 0, 0),
             Guidelines = new()
             {
                 Delete = { ["Users"] = new[] { "Id" } }
