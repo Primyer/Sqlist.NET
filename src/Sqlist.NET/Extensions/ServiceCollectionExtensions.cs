@@ -22,9 +22,8 @@ public static class ServiceCollectionExtensions
     {
         var configure = new ConfigureNamedOptions<DbOptions>(null, options => configureOptions?.Invoke(new DbOptionsBuilder(options)));
 
-        services.AddOptions();
         services.TryAddSingleton<IConfigureOptions<DbOptions>>(configure);
-        services.TryAddScoped<TransactionManager>();
+        services.TryAddScoped<ITransactionManager, TransactionManager>();
 
         return new SqlistBuilder(services);
     }

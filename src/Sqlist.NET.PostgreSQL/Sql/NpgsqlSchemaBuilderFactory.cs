@@ -1,0 +1,16 @@
+﻿using Sqlist.NET.Infrastructure;
+
+namespace Sqlist.NET.Sql;
+
+/// <summary>
+///     Initializes a new instance of the <see cref="NpgsqlSchemaBuilderFactory"/> class.
+/// </summary>
+/// <param name="options">The Sqlist configuration options.</param>
+internal class NpgsqlSchemaBuilderFactory(DbOptions options) : ISchemaBuilderFactory
+{
+    public ISchemaBuilder Create()
+    {
+        var encloser = options.DelimitedEncloser ?? new DummyEncloser();
+        return new NpgsqlSchemaBuilder(encloser);
+    }
+}

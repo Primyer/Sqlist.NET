@@ -29,8 +29,14 @@ namespace Sqlist.NET.Extensions
                 options.DelimitedEncloser ??= new NpgsqlEncloser();
             });
 
-            builder.Services.TryAddSingleton<IOptions<DbOptions>>(sp => sp.GetRequiredService<IOptions<NpgsqlOptions>>());
             builder.WithContext<DbContext>();
+
+            builder.Services.TryAddSingleton<IOptions<DbOptions>>(sp => sp.GetRequiredService<IOptions<NpgsqlOptions>>());
+            builder.Services.TryAddSingleton<ITypeMapper, NpgsqlTypeMapper>();
+            builder.Services.TryAddSingleton<ISqlBuilderFactory, NpgsqlBuilderFactory>();
+            builder.Services.TryAddSingleton<ISchemaBuilderFactory, NpgsqlSchemaBuilderFactory>();
+
+            builder.Services.TryAddScoped<IDataTransfer>(sp => sp.GetRequiredService<DbContext>());
 
             return builder;
         }

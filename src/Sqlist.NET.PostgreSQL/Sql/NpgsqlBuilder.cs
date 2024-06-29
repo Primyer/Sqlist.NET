@@ -202,18 +202,5 @@ namespace Sqlist.NET.Sql
 
             return result.ToString();
         }
-
-        /// <inheritdoc />
-        public override string RenameDatabase(string currentName, string newName)
-        {
-            var builder = new StringBuilder("ALTER DATABASE ");
-
-            builder.Append(Encloser.Wrap(currentName));
-            builder.Append(" RENAME TO ");
-            builder.Append(Encloser.Wrap(newName));
-            builder.Append(';');
-
-            return builder.ToString();
-        }
     }
 }

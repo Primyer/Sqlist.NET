@@ -6,65 +6,47 @@ namespace Sqlist.NET;
 /// <summary>
 ///     Provides a high-level access to the transaction API.
 /// </summary>
-public sealed class TransactionManager
+public sealed class TransactionManager : ITransactionManager
 {
-    private readonly DbContextBase _db;
+    private readonly IDbContext _db;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="TransactionManager"/> class.
     /// </summary>
     /// <param name="db">The <see cref="DbContextBase"/> for the transaction API.</param>
-    public TransactionManager(DbContextBase db)
+    public TransactionManager(IDbContext db)
     {
-        Check.NotNull(db, nameof(db));
+        Check.NotNull(db);
         _db = db;
     }
 
-    /// <summary>
-    ///     Starts a database transaction.
-    /// </summary>
     public void Begin()
     {
         BeginAsync().Wait();
     }
 
-    /// <summary>
-    ///     Starts a database transaction.
-    /// </summary>
-    public Task BeginAsync()
+    public Task BeginAsync(CancellationToken cancellationToken = default)
     {
-        return _db.BeginTransactionAsync();
+        return _db.BeginTransactionAsync(cancellationToken);
     }
 
-    /// <summary>
-    ///     Commits a database transaction.
-    /// </summary>
     public void Commit()
     {
         CommitAsync().Wait();
     }
 
-    /// <summary>
-    ///     Commits a database transaction.
-    /// </summary>
-    public async Task CommitAsync()
+    public async Task CommitAsync(CancellationToken cancellationToken = default)
     {
-        await _db.CommitTransactionAsync();
+        await _db.CommitTransactionAsync(cancellationToken);
     }
 
-    /// <summary>
-    ///     Rolls back a transaction from a pending state.
-    /// </summary>
     public void Rollback()
     {
         RollbackAsync().Wait();
     }
 
-    /// <summary>
-    ///     Rolls back a transaction from a pending state.
-    /// </summary>
-    public async Task RollbackAsync()
+    public async Task RollbackAsync(CancellationToken cancellationToken = default)
     {
-        await _db.RollbackTransactionAsync();
+        await _db.RollbackTransactionAsync(cancellationToken);
     }
 }

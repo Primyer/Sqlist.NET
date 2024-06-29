@@ -18,10 +18,10 @@ public readonly struct SqlistBuilder
 
     public IServiceCollection Services { get; }
 
-    public void WithContext<T>() where T : DbContextBase
+    public void WithContext<T>() where T : class, IDbContext
     {
         Services.AddScoped<T>();
-        Services.AddScoped<DbContextBase, T>(sp => sp.GetRequiredService<T>());
+        Services.AddScoped<IDbContext, T>(sp => sp.GetRequiredService<T>());
     }
 
     public void WithDelimitedEncloser(Encloser encloser)

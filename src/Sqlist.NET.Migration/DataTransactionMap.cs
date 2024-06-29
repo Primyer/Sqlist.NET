@@ -114,7 +114,7 @@ namespace Sqlist.NET.Migration
                 {
                     if (collection.Condition?.Trim() == "")
                         rules.Condition = null;
-                    
+
                     else if (!string.IsNullOrWhiteSpace(collection.Condition))
                         rules.Condition = collection.Condition;
                 }

@@ -9,7 +9,7 @@ namespace Sqlist.NET;
 /// <summary>
 ///     Implementes the <see cref="IQueryStore"/> API.
 /// </summary>
-public abstract class QueryStore : IQueryStore
+public abstract class QueryStore : IQueryStore, ICommandProvider
 {
     private readonly DbOptions _options;
 
@@ -26,20 +26,20 @@ public abstract class QueryStore : IQueryStore
     ///     Gets the database connection.
     /// </summary>
     /// <returns>The database connection.</returns>
-    protected abstract ValueTask<DbConnection> GetConnectionAsync();
+    protected abstract ValueTask<DbConnection> GetConnectionAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     Creates and returns a <see cref="Command"/> object.
     /// </summary>
     /// <returns>The <see cref="Command"/> object.</returns>
-    public abstract Command CreateCommand();
+    public abstract ICommand CreateCommand();
 
     /// <summary>
     ///     Creates and returns a <see cref="Command"/> object.
     /// </summary>
     /// <param name="connection">A custom connection, which the command is to be executed over.</param>
     /// <returns>The <see cref="Command"/> object.</returns>
-    public abstract Command CreateCommand(DbConnection connection);
+    public abstract ICommand CreateCommand(DbConnection connection);
 
     /// <summary>
     ///     Creates and returns a <see cref="Command"/> object.
@@ -49,7 +49,7 @@ public abstract class QueryStore : IQueryStore
     /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
     /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
     /// <returns>The <see cref="Command"/> object.</returns>
-    public abstract Command CreateCommand(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
+    public abstract ICommand CreateCommand(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
 
     /// <summary>
     ///     Returns an <see cref="Action"/> to be called when the a database command is completed.
@@ -65,10 +65,10 @@ public abstract class QueryStore : IQueryStore
         return ExecuteAsync(sql, prms, timeout, type).Result;
     }
 
-    public virtual async Task<int> ExecuteAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+    public virtual async Task<int> ExecuteAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null, CancellationToken cancellationToken = default)
     {
-        var cmd = await CreateCommandAsync(sql, prms, timeout, type);
-        var task = cmd.ExecuteNonQueryAsync();
+        var cmd = await CreateCommandAsync(sql, prms, timeout, type, cancellationToken);
+        var task = cmd.ExecuteNonQueryAsync(cancellationToken);
 
         task.GetAwaiter().OnCompleted(OnCommandCompleted());
 
@@ -80,10 +80,10 @@ public abstract class QueryStore : IQueryStore
         return RetrieveAsync(sql, prms, altr, timeout, type).Result;
     }
 
-    public virtual async Task<IEnumerable<T>> RetrieveAsync<T>(string sql, object? prms = null, Action<T>? altr = null, int? timeout = null, CommandType? type = null)
+    public virtual async Task<IEnumerable<T>> RetrieveAsync<T>(string sql, object? prms = null, Action<T>? altr = null, int? timeout = null, CommandType? type = null, CancellationToken cancellationToken = default)
     {
-        var cmd = await CreateCommandAsync(sql, prms, timeout, type);
-        var rdr = cmd.PrepareReader();
+        var cmd = await CreateCommandAsync(sql, prms, timeout, type, cancellationToken);
+        var rdr = cmd.PrepareReader(cancellationToken: cancellationToken);
 
         var action = OnCommandCompleted();
         rdr.Fetched += () => action();
@@ -95,10 +95,10 @@ public abstract class QueryStore : IQueryStore
             : await DataSerializer.Object(rdr, _options.MappingOrientation, altr);
     }
 
-    public async Task<IEnumerable<T>> RetrieveJsonAsync<T>(string sql, object? prms = null, Action<T>? altr = null, int? timeout = null, CommandType? type = null)
+    public async Task<IEnumerable<T>> RetrieveJsonAsync<T>(string sql, object? prms = null, Action<T>? altr = null, int? timeout = null, CommandType? type = null, CancellationToken cancellationToken = default)
     {
-        var cmd = await CreateCommandAsync(sql, prms, timeout, type);
-        var rdr = cmd.PrepareReader();
+        var cmd = await CreateCommandAsync(sql, prms, timeout, type, cancellationToken);
+        var rdr = cmd.PrepareReader(cancellationToken: cancellationToken);
 
         var action = OnCommandCompleted();
         rdr.Fetched += () => action();
@@ -111,9 +111,9 @@ public abstract class QueryStore : IQueryStore
         return RetrieveJsonAsync(sql, prms, altr, timeout, type).Result;
     }
 
-    public async Task<T?> JsonAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+    public async Task<T?> JsonAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null, CancellationToken cancellationToken = default)
     {
-        var result = await RetrieveJsonAsync<T>(sql, prms, null, timeout, type);
+        var result = await RetrieveJsonAsync<T>(sql, prms, null, timeout, type, cancellationToken);
         return result.FirstOrDefault();
     }
 
@@ -127,9 +127,9 @@ public abstract class QueryStore : IQueryStore
         return FirstOrDefaultAsync<T>(sql, prms, timeout, type).Result;
     }
 
-    public virtual async Task<T> FirstOrDefaultAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+    public virtual async Task<T> FirstOrDefaultAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null, CancellationToken cancellationToken = default)
     {
-        var result = await RetrieveAsync<T>(sql, prms, null, timeout, type);
+        var result = await RetrieveAsync<T>(sql, prms, null, timeout, type, cancellationToken);
         if (!result.Any())
             return default!;
 
@@ -141,16 +141,16 @@ public abstract class QueryStore : IQueryStore
         return SingleOrDefaultAsync<T>(sql, prms, timeout, type).Result;
     }
 
-    public virtual async Task<T?> SingleOrDefaultAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+    public virtual async Task<T?> SingleOrDefaultAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null, CancellationToken cancellationToken = default)
     {
-        var result = await RetrieveAsync<T>(sql, prms, null, timeout, type);
+        var result = await RetrieveAsync<T>(sql, prms, null, timeout, type, cancellationToken);
         return result.SingleOrDefault();
     }
 
-    public virtual async Task<object?> ExecuteScalarAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+    public virtual async Task<object?> ExecuteScalarAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null, CancellationToken cancellationToken = default)
     {
-        var cmd = await CreateCommandAsync(sql, prms, timeout, type);
-        var task = cmd.ExecuteScalarAsync();
+        var cmd = await CreateCommandAsync(sql, prms, timeout, type, cancellationToken);
+        var task = cmd.ExecuteScalarAsync(cancellationToken);
 
         task.GetAwaiter().OnCompleted(OnCommandCompleted());
 
@@ -162,10 +162,10 @@ public abstract class QueryStore : IQueryStore
         return ExecuteScalarAsync(sql, prms, timeout, type).Result;
     }
 
-    public virtual async Task<DbDataReader> ExecuteReaderAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+    public virtual async Task<DbDataReader> ExecuteReaderAsync(string sql, object? prms = null, int? timeout = null, CommandType? type = null, CancellationToken cancellationToken = default)
     {
-        var cmd = await CreateCommandAsync(sql, prms, timeout, type);
-        return await cmd.ExecuteReaderAsync();
+        var cmd = await CreateCommandAsync(sql, prms, timeout, type, cancellationToken);
+        return await cmd.ExecuteReaderAsync(cancellationToken: cancellationToken);
     }
 
     public virtual DbDataReader ExecuteReader(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
@@ -173,9 +173,9 @@ public abstract class QueryStore : IQueryStore
         return ExecuteReaderAsync(sql, prms, timeout, type).Result;
     }
 
-    private async Task<Command> CreateCommandAsync(string sql, object? prms, int? timeout, CommandType? type)
+    private async Task<ICommand> CreateCommandAsync(string sql, object? prms, int? timeout, CommandType? type, CancellationToken cancellationToken = default)
     {
-        var cnn = await GetConnectionAsync();
+        var cnn = await GetConnectionAsync(cancellationToken);
         var cmd = CreateCommand(cnn);
 
         cmd.Statement = sql;

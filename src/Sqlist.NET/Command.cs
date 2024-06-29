@@ -5,17 +5,13 @@ using System.Data;
 using System.Data.Common;
 
 namespace Sqlist.NET;
-public class Command : IDisposable, IAsyncDisposable
+public class Command : ICommand
 {
     private readonly DbContextBase _db;
     private readonly DbCommand _cmd;
     private readonly DbConnection _conn;
     private object? _prms;
 
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="Command"/> class.
-    /// </summary>
-    /// <param name="db">The <see cref="DbContextBase"/> implementation.</param>
     internal Command(DbContextBase db)
     {
         Check.NotNull(db, nameof(db));
@@ -25,11 +21,6 @@ public class Command : IDisposable, IAsyncDisposable
         _conn = _db.Connection;
     }
 
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="Command"/> class.
-    /// </summary>
-    /// <param name="db">The <see cref="DbContextBase"/> implementation.</param>
-    /// <param name="connection">A custom connection, which the command is to be executed over.</param>
     internal Command(DbContextBase db, DbConnection connection)
     {
         Check.NotNull(db, nameof(db));
@@ -39,14 +30,6 @@ public class Command : IDisposable, IAsyncDisposable
         _conn = connection;
     }
 
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="Command"/> class.
-    /// </summary>
-    /// <param name="db">The <see cref="DbContextBase"/> implementation.</param>
-    /// <param name="sql">The SQL statement to run against the data source.</param>
-    /// <param name="prms">The parameters associated with the given statement.</param>
-    /// <param name="timeout">The wait time before terminating the attempt to execute a command and generating an error.</param>
-    /// <param name="type">The type that indicates how SQL statement is interpreted.</param>
     internal Command(DbContextBase db, string sql, object? prms = null, int? timeout = null, CommandType? type = null) : this(db)
     {
         Statement = sql;
@@ -55,14 +38,8 @@ public class Command : IDisposable, IAsyncDisposable
         Type = type;
     }
 
-    /// <summary>
-    ///     Gets the underlying <see cref="DbCommand"/>.
-    /// </summary>
     public DbCommand Underlying => _cmd;
 
-    /// <summary>
-    ///     Gets or sets the SQL statement to run against the data source.
-    /// </summary>
     public string Statement
     {
         get => _cmd.CommandText;
@@ -72,13 +49,10 @@ public class Command : IDisposable, IAsyncDisposable
         }
     }
 
-    /// <summary>
-    ///     Gets or sets the parameters associated with the given configured statement.
-    /// </summary>
     public object? Parameters
     {
         get => _prms;
-        internal set
+        set
         {
             if (value is BulkParameters prms)
                 ConfigureBulkParameters(_cmd, prms);
@@ -89,9 +63,6 @@ public class Command : IDisposable, IAsyncDisposable
         }
     }
 
-    /// <summary>
-    ///     Gets or sets the wait time before terminating the attempt to execute a command and generating an error.
-    /// </summary>
     public int? Timeout
     {
         get => _cmd.CommandTimeout;
@@ -102,9 +73,6 @@ public class Command : IDisposable, IAsyncDisposable
         }
     }
 
-    /// <summary>
-    ///     Gets or sets the type that indicates how SQL statement is interpreted.
-    /// </summary>
     public CommandType? Type
     {
         get => _cmd.CommandType;
@@ -114,38 +82,24 @@ public class Command : IDisposable, IAsyncDisposable
         }
     }
 
-    /// <inheritdoc cref="DbCommand.ExecuteNonQueryAsync(CancellationToken)"/>
     public virtual Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = default)
     {
         EnsureConnectionOpen();
         return _cmd.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    /// <inheritdoc cref="DbCommand.ExecuteScalarAsync(CancellationToken)"/>
     public virtual Task<object?> ExecuteScalarAsync(CancellationToken cancellationToken = default)
     {
         EnsureConnectionOpen();
         return _cmd.ExecuteScalarAsync(cancellationToken);
     }
 
-    /// <summary>
-    ///     Prepares <see cref="DbDataReader"/> by returning a <see cref="LazyDbDataReader"/> that delays enumeration.
-    /// </summary>
-    /// <param name="commandBehavior">One of the <see cref="CommandBehavior"/> values.</param>
-    /// <param name="cancellationToken">The token to monitor for cancellation request.</param>
-    /// <returns>The <see cref="LazyDbDataReader"/> object tahat delays enumertions.</returns>
-    public virtual LazyDbDataReader PrepareReader(CommandBehavior commandBehavior = default, CancellationToken cancellationToken = default)
+    public virtual ILazyDataReader PrepareReader(CommandBehavior commandBehavior = default, CancellationToken cancellationToken = default)
     {
         var readerTask = ExecuteReaderAsync(commandBehavior, cancellationToken);
         return new LazyDbDataReader(readerTask);
     }
 
-    /// <summary>Invokes <see cref="DbDataReader"/>.</summary>
-    /// <param name="commandBehavior">One of the <see cref="CommandBehavior"/> values.</param>
-    /// <param name="cancellationToken">The token to monitor for cancellation request.</param>
-    /// <returns>
-    ///     The <see cref="Task"/> that represent the asynchronous operation, containing the invoked <see cref="DbDataReader"/>.
-    /// </returns>
     public virtual Task<DbDataReader> ExecuteReaderAsync(CommandBehavior commandBehavior = default, CancellationToken cancellationToken = default)
     {
         EnsureConnectionOpen();

@@ -1,23 +1,23 @@
 ﻿using System.Text;
 
 namespace Sqlist.NET.Sql;
-public class ConditionalClause
+public class ConditionalClause : IConditionalClause
 {
     private readonly StringBuilder _builder = new();
 
-    public ConditionalClause Init(string content)
+    public IConditionalClause Init(string content)
     {
         _builder.Append(content);
         return this;
     }
 
-    public ConditionalClause Init(Action<ConditionalClause> inner)
+    public IConditionalClause Init(Action<IConditionalClause> inner)
     {
         Inner(inner);
         return this;
     }
 
-    public ConditionalClause Not(string content)
+    public IConditionalClause Not(string content)
     {
         _builder.Append("NOT ");
         _builder.Append(content);
@@ -25,33 +25,33 @@ public class ConditionalClause
         return this;
     }
 
-    public ConditionalClause Not(Action<ConditionalClause> inner)
+    public IConditionalClause Not(Action<IConditionalClause> inner)
     {
         Inner("NOT ", inner);
         return this;
     }
 
     #region AND
-    public ConditionalClause And(string content) => Content("AND", content);
-    public ConditionalClause And(Action<ConditionalClause> inner) => Inner("AND", inner);
+    public IConditionalClause And(string content) => Content("AND", content);
+    public IConditionalClause And(Action<IConditionalClause> inner) => Inner("AND", inner);
     #endregion
 
     #region OR
-    public ConditionalClause Or(string content) => Content("OR", content);
-    public ConditionalClause Or(Action<ConditionalClause> inner) => Inner("OR", inner);
+    public IConditionalClause Or(string content) => Content("OR", content);
+    public IConditionalClause Or(Action<IConditionalClause> inner) => Inner("OR", inner);
     #endregion
 
     #region AND NOT
-    public ConditionalClause AndNot(string content) => Content("AND NOT", content);
-    public ConditionalClause AndNot(Action<ConditionalClause> inner) => Inner("AND NOT", inner);
+    public IConditionalClause AndNot(string content) => Content("AND NOT", content);
+    public IConditionalClause AndNot(Action<IConditionalClause> inner) => Inner("AND NOT", inner);
     #endregion
 
     #region OR NOT
-    public ConditionalClause OrNot(string content) => Content("OR NOT", content);
-    public ConditionalClause OrNot(Action<ConditionalClause> inner) => Inner("OR NOT", inner);
+    public IConditionalClause OrNot(string content) => Content("OR NOT", content);
+    public IConditionalClause OrNot(Action<IConditionalClause> inner) => Inner("OR NOT", inner);
     #endregion
 
-    public ConditionalClause IsNull(string content)
+    public IConditionalClause IsNull(string content)
     {
         _builder.Append(content);
         _builder.Append(" IS NULL");
@@ -59,19 +59,19 @@ public class ConditionalClause
         return this;
     }
 
-    public ConditionalClause AndIsNull(string content)
+    public IConditionalClause AndIsNull(string content)
     {
         _builder.Append(" AND ");
         return IsNull(content);
     }
 
-    public ConditionalClause OrIsNull(string content)
+    public IConditionalClause OrIsNull(string content)
     {
         _builder.Append(" OR ");
         return IsNull(content);
     }
 
-    public ConditionalClause NotNull(string content)
+    public IConditionalClause NotNull(string content)
     {
         _builder.Append(content);
         _builder.Append(" IS NOT NULL");
@@ -79,13 +79,13 @@ public class ConditionalClause
         return this;
     }
 
-    public ConditionalClause AndNotNull(string content)
+    public IConditionalClause AndNotNull(string content)
     {
         _builder.Append(" AND ");
         return NotNull(content);
     }
 
-    public ConditionalClause OrNotNull(string content)
+    public IConditionalClause OrNotNull(string content)
     {
         _builder.Append(" OR ");
         return NotNull(content);
@@ -93,7 +93,7 @@ public class ConditionalClause
 
     #region IN
 
-    public ConditionalClause In(string content)
+    public IConditionalClause In(string content)
     {
         _builder.Append("IN (");
         _builder.Append(content);
@@ -102,7 +102,7 @@ public class ConditionalClause
         return this;
     }
 
-    public ConditionalClause In(Action<ConditionalClause> inner)
+    public IConditionalClause In(Action<IConditionalClause> inner)
     {
         _builder.Append("IN (");
         inner.Invoke(this);
@@ -111,7 +111,7 @@ public class ConditionalClause
         return this;
     }
 
-    public ConditionalClause In(Action<SqlBuilder> select)
+    public IConditionalClause In(Action<ISqlBuilder> select)
     {
         var sql = new SqlBuilder();
         select.Invoke(sql);
@@ -123,19 +123,19 @@ public class ConditionalClause
 
     #region NOT IN
 
-    public ConditionalClause NotIn(string content)
+    public IConditionalClause NotIn(string content)
     {
         _builder.Append(" NOT ");
         return In(content);
     }
 
-    public ConditionalClause NotIn(Action<ConditionalClause> inner)
+    public IConditionalClause NotIn(Action<IConditionalClause> inner)
     {
         _builder.Append(" NOT ");
         return In(inner);
     }
 
-    public ConditionalClause NotIn(Action<SqlBuilder> select)
+    public IConditionalClause NotIn(Action<ISqlBuilder> select)
     {
         _builder.Append(" NOT ");
         return In(select);
@@ -145,19 +145,19 @@ public class ConditionalClause
 
     #region AND IN
 
-    public ConditionalClause AndIn(string content)
+    public IConditionalClause AndIn(string content)
     {
         _builder.Append(" AND ");
         return In(content);
     }
 
-    public ConditionalClause AndIn(Action<ConditionalClause> inner)
+    public IConditionalClause AndIn(Action<IConditionalClause> inner)
     {
         _builder.Append(" AND ");
         return In(inner);
     }
 
-    public ConditionalClause AndIn(Action<SqlBuilder> select)
+    public IConditionalClause AndIn(Action<ISqlBuilder> select)
     {
         _builder.Append(" AND ");
         return In(select);
@@ -167,19 +167,19 @@ public class ConditionalClause
 
     #region OR IN
 
-    public ConditionalClause OrIn(string content)
+    public IConditionalClause OrIn(string content)
     {
         _builder.Append(" OR ");
         return In(content);
     }
 
-    public ConditionalClause OrIn(Action<ConditionalClause> inner)
+    public IConditionalClause OrIn(Action<IConditionalClause> inner)
     {
         _builder.Append(" OR ");
         return In(inner);
     }
 
-    public ConditionalClause OrIn(Action<SqlBuilder> select)
+    public IConditionalClause OrIn(Action<ISqlBuilder> select)
     {
         _builder.Append(" OR ");
         return In(select);
@@ -189,19 +189,19 @@ public class ConditionalClause
 
     #region AND NOT IN
 
-    public ConditionalClause AndNotIn(string content)
+    public IConditionalClause AndNotIn(string content)
     {
         _builder.Append(" AND NOT ");
         return In(content);
     }
 
-    public ConditionalClause AndNotIn(Action<ConditionalClause> inner)
+    public IConditionalClause AndNotIn(Action<IConditionalClause> inner)
     {
         _builder.Append(" AND NOT ");
         return In(inner);
     }
 
-    public ConditionalClause AndNotIn(Action<SqlBuilder> select)
+    public IConditionalClause AndNotIn(Action<ISqlBuilder> select)
     {
         _builder.Append(" AND NOT ");
         return In(select);
@@ -211,19 +211,19 @@ public class ConditionalClause
 
     #region OR NOT IN
 
-    public ConditionalClause OrNotIn(string content)
+    public IConditionalClause OrNotIn(string content)
     {
         _builder.Append(" OR NOT ");
         return In(content);
     }
 
-    public ConditionalClause OrNotIn(Action<ConditionalClause> inner)
+    public IConditionalClause OrNotIn(Action<IConditionalClause> inner)
     {
         _builder.Append(" OR NOT ");
         return In(inner);
     }
 
-    public ConditionalClause OrNotIn(Action<SqlBuilder> select)
+    public IConditionalClause OrNotIn(Action<ISqlBuilder> select)
     {
         _builder.Append(" OR NOT ");
         return In(select);
@@ -241,7 +241,7 @@ public class ConditionalClause
         return this;
     }
 
-    private ConditionalClause Inner(Action<ConditionalClause> inner)
+    private ConditionalClause Inner(Action<IConditionalClause> inner)
     {
         _builder.Append('(');
         inner.Invoke(this);
@@ -250,7 +250,7 @@ public class ConditionalClause
         return this;
     }
 
-    private ConditionalClause Inner(string @operator, Action<ConditionalClause> inner)
+    private ConditionalClause Inner(string @operator, Action<IConditionalClause> inner)
     {
         _builder.Append(' ');
         _builder.Append(@operator);

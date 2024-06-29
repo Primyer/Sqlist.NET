@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Sqlist.NET.Infrastructure.Internal;
-using Sqlist.NET.Migration.Data;
 using Sqlist.NET.Migration.Infrastructure;
 
 using System;
@@ -25,8 +24,8 @@ namespace Sqlist.NET.Migration.Extensions
                 configureOptions(builder);
             });
 
-            builder.Services.TryAddScoped<DbManager>();
-            builder.Services.TryAddTransient<MigrationService>();
+            builder.Services.TryAddScoped<MigrationService>();
+            builder.Services.TryAddTransient<MigrationContext>();
 
             return builder;
         }

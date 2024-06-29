@@ -12,7 +12,7 @@ using System.Text.Json;
 namespace Sqlist.NET.Serialization;
 internal static class DataSerializer
 {
-    public static async Task<IEnumerable<T>> Json<T>(LazyDbDataReader lazyReader)
+    public static async Task<IEnumerable<T>> Json<T>(ILazyDataReader lazyReader)
     {
         var data = new List<T>();
 
@@ -24,7 +24,7 @@ internal static class DataSerializer
         return data;
     }
 
-    public static async Task<IEnumerable<T>> Primitive<T>(LazyDbDataReader lazyReader)
+    public static async Task<IEnumerable<T>> Primitive<T>(ILazyDataReader lazyReader)
     {
         var type = typeof(T);
         var data = new List<T>();
@@ -37,7 +37,7 @@ internal static class DataSerializer
         return data;
     }
 
-    public static async Task<IEnumerable<T>> Object<T>(LazyDbDataReader lazyReader, MappingOrientation orientation, Action<T>? altr)
+    public static async Task<IEnumerable<T>> Object<T>(ILazyDataReader lazyReader, MappingOrientation orientation, Action<T>? altr)
     {
         var acsr = TypeAccessor.Create(typeof(T));
         var data = new List<T>();

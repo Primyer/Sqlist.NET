@@ -1,10 +1,8 @@
 ﻿using System.Data.Common;
 
 namespace Sqlist.NET.Utilities;
-public class LazyDbDataReader
+public class LazyDbDataReader : ILazyDataReader
 {
-    public delegate void FetchEvent();
-
     public event FetchEvent? Fetched;
 
     /// <summary>
@@ -29,11 +27,11 @@ public class LazyDbDataReader
 
     public Task<DbDataReader> Reader { get; }
 
-    public async Task IterateAsync(Action<DbDataReader> action)
+    public async Task IterateAsync(Action<DbDataReader> action, CancellationToken cancellationToken = default)
     {
         using var reader = await Reader;
 
-        while (await reader.ReadAsync())
+        while (await reader.ReadAsync(cancellationToken))
             action.Invoke(reader);
 
         Fetched?.Invoke();
