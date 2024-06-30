@@ -1,6 +1,9 @@
 ﻿namespace Sqlist.NET.Migration.Tests.Properties;
-internal static class Consts
+public static class Consts
 {
+    public const string ScriptsRscPath = "Resources.Scripts";
+    public const string RoadmapRscPath = "Resources.Roadmap";
+
     public const string TestDatabaseName = "sqlist_net_test";
 
     public const string ER_Resources = "Sqlist.NET.Migration.Tests.Resources.";
