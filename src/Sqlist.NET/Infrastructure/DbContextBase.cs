@@ -75,7 +75,7 @@ public abstract class DbContextBase : QueryStore, IDbContext
             _conn = await OpenConnectionAsync(cancellationToken);
     }
 
-    protected override ValueTask<DbConnection> GetConnectionAsync(CancellationToken cancellationToken = default)
+    internal protected override ValueTask<DbConnection> GetConnectionAsync(CancellationToken cancellationToken = default)
     {
         return OpenConnectionAsync(cancellationToken);
     }

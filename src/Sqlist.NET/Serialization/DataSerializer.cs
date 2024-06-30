@@ -2,6 +2,7 @@
 
 using Sqlist.NET.Annotations;
 using Sqlist.NET.Metadata;
+using Sqlist.NET.Properties;
 using Sqlist.NET.Utilities;
 
 using System.ComponentModel.DataAnnotations.Schema;
@@ -71,8 +72,11 @@ internal static class DataSerializer
         return data;
     }
 
-    private static SerializationField[] GetObjectOrientedNames<T>(DbDataReader reader)
+    internal static SerializationField[] GetObjectOrientedNames<T>(DbDataReader reader)
     {
+        if (reader.FieldCount == 0)
+            return [];
+
         var fields = new SerializationField[reader.FieldCount];
 
         var count = 0;
@@ -88,12 +92,12 @@ internal static class DataSerializer
         }
 
         if (count != fields.Length)
-            throw new InvalidOperationException("The result fields don't match the object properties.");
+            throw new InvalidOperationException(Resources.InvalidObjectOrientedProperties);
 
         return fields;
     }
 
-    private static SerializationField[] GetQueryOrientedNames<T>(DbDataReader reader)
+    internal static SerializationField[] GetQueryOrientedNames<T>(DbDataReader reader)
     {
         var props = typeof(T).GetProperties();
 
@@ -125,13 +129,13 @@ internal static class DataSerializer
                 fields[i] = serFields[indx];
                 count++;
             }
-            else throw new InvalidOperationException($"The object properties don't match the result fields. '{name}' is missing in '{typeof(T).FullName}'.");
+            else throw new InvalidOperationException(string.Format(Resources.InvalidQueryOrientedProperties, name, typeof(T).FullName));
         }
 
         return fields;
     }
 
-    private static SerializationField Serialize(PropertyInfo property)
+    internal static SerializationField Serialize(PropertyInfo property)
     {
         var jsonAttr = property.GetCustomAttribute<JsonAttribute>();
         var enumAttr = property.GetCustomAttribute<EnumerationAttribute>();

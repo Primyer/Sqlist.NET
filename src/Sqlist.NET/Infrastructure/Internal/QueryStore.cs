@@ -1,11 +1,13 @@
-﻿using Sqlist.NET.Infrastructure;
-using Sqlist.NET.Serialization;
+﻿using Sqlist.NET.Serialization;
 using Sqlist.NET.Utilities;
 
 using System.Data;
 using System.Data.Common;
 
-namespace Sqlist.NET;
+namespace Sqlist.NET.Infrastructure;
+
+public delegate void CommandCompletedEvent();
+
 /// <summary>
 ///     Implementes the <see cref="IQueryStore"/> API.
 /// </summary>
@@ -26,7 +28,7 @@ public abstract class QueryStore : IQueryStore, ICommandProvider
     ///     Gets the database connection.
     /// </summary>
     /// <returns>The database connection.</returns>
-    protected abstract ValueTask<DbConnection> GetConnectionAsync(CancellationToken cancellationToken = default);
+    internal protected abstract ValueTask<DbConnection> GetConnectionAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     Creates and returns a <see cref="Command"/> object.
@@ -52,15 +54,22 @@ public abstract class QueryStore : IQueryStore, ICommandProvider
     public abstract ICommand CreateCommand(string sql, object? prms = null, int? timeout = null, CommandType? type = null);
 
     /// <summary>
-    ///     Returns an <see cref="Action"/> to be called when the a database command is completed.
+    ///     Gets or sets the <see cref="CommandCompletedEvent"/> to be invoked when the a database command is completed.
     /// </summary>
-    /// <returns>An <see cref="Action"/> to be called when the a database command is completed.</returns>
-    protected virtual Action OnCommandCompleted()
+    internal protected event CommandCompletedEvent OnCompleted = () => { };
+
+    private TResult NotifyCommandCompleted<TResult>(Task<TResult> task)
     {
-        return () => { };
+        NotifyCommandCompleted();
+        return task.Result;
     }
 
-    public virtual int Execute(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+    private void NotifyCommandCompleted()
+    {
+        OnCompleted.Invoke();
+    }
+
+    public int Execute(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
     {
         return ExecuteAsync(sql, prms, timeout, type).Result;
     }
@@ -70,12 +79,10 @@ public abstract class QueryStore : IQueryStore, ICommandProvider
         var cmd = await CreateCommandAsync(sql, prms, timeout, type, cancellationToken);
         var task = cmd.ExecuteNonQueryAsync(cancellationToken);
 
-        task.GetAwaiter().OnCompleted(OnCommandCompleted());
-
-        return await task;
+        return await task.ContinueWith(NotifyCommandCompleted);
     }
 
-    public virtual IEnumerable<T> Retrieve<T>(string sql, object? prms = null, Action<T>? altr = null, int? timeout = null, CommandType? type = null)
+    public IEnumerable<T> Retrieve<T>(string sql, object? prms = null, Action<T>? altr = null, int? timeout = null, CommandType? type = null)
     {
         return RetrieveAsync(sql, prms, altr, timeout, type).Result;
     }
@@ -85,8 +92,7 @@ public abstract class QueryStore : IQueryStore, ICommandProvider
         var cmd = await CreateCommandAsync(sql, prms, timeout, type, cancellationToken);
         var rdr = cmd.PrepareReader(cancellationToken: cancellationToken);
 
-        var action = OnCommandCompleted();
-        rdr.Fetched += () => action();
+        rdr.Fetched += NotifyCommandCompleted;
 
         var objType = typeof(T);
 
@@ -95,13 +101,12 @@ public abstract class QueryStore : IQueryStore, ICommandProvider
             : await DataSerializer.Object(rdr, _options.MappingOrientation, altr);
     }
 
-    public async Task<IEnumerable<T>> RetrieveJsonAsync<T>(string sql, object? prms = null, Action<T>? altr = null, int? timeout = null, CommandType? type = null, CancellationToken cancellationToken = default)
+    public virtual async Task<IEnumerable<T>> RetrieveJsonAsync<T>(string sql, object? prms = null, Action<T>? altr = null, int? timeout = null, CommandType? type = null, CancellationToken cancellationToken = default)
     {
         var cmd = await CreateCommandAsync(sql, prms, timeout, type, cancellationToken);
         var rdr = cmd.PrepareReader(cancellationToken: cancellationToken);
 
-        var action = OnCommandCompleted();
-        rdr.Fetched += () => action();
+        rdr.Fetched += NotifyCommandCompleted;
 
         return await DataSerializer.Json<T>(rdr);
     }
@@ -111,7 +116,7 @@ public abstract class QueryStore : IQueryStore, ICommandProvider
         return RetrieveJsonAsync(sql, prms, altr, timeout, type).Result;
     }
 
-    public async Task<T?> JsonAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null, CancellationToken cancellationToken = default)
+    public virtual async Task<T?> JsonAsync<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null, CancellationToken cancellationToken = default)
     {
         var result = await RetrieveJsonAsync<T>(sql, prms, null, timeout, type, cancellationToken);
         return result.FirstOrDefault();
@@ -122,7 +127,7 @@ public abstract class QueryStore : IQueryStore, ICommandProvider
         return JsonAsync<T>(sql, prms, timeout, type).Result;
     }
 
-    public virtual T FirstOrDefault<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+    public T FirstOrDefault<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
     {
         return FirstOrDefaultAsync<T>(sql, prms, timeout, type).Result;
     }
@@ -136,7 +141,7 @@ public abstract class QueryStore : IQueryStore, ICommandProvider
         return result.First();
     }
 
-    public virtual T? SingleOrDefault<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+    public T? SingleOrDefault<T>(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
     {
         return SingleOrDefaultAsync<T>(sql, prms, timeout, type).Result;
     }
@@ -152,12 +157,10 @@ public abstract class QueryStore : IQueryStore, ICommandProvider
         var cmd = await CreateCommandAsync(sql, prms, timeout, type, cancellationToken);
         var task = cmd.ExecuteScalarAsync(cancellationToken);
 
-        task.GetAwaiter().OnCompleted(OnCommandCompleted());
-
-        return await task;
+        return await task.ContinueWith(NotifyCommandCompleted);
     }
 
-    public virtual object? ExecuteScalar(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+    public object? ExecuteScalar(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
     {
         return ExecuteScalarAsync(sql, prms, timeout, type).Result;
     }
@@ -168,7 +171,7 @@ public abstract class QueryStore : IQueryStore, ICommandProvider
         return await cmd.ExecuteReaderAsync(cancellationToken: cancellationToken);
     }
 
-    public virtual DbDataReader ExecuteReader(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
+    public DbDataReader ExecuteReader(string sql, object? prms = null, int? timeout = null, CommandType? type = null)
     {
         return ExecuteReaderAsync(sql, prms, timeout, type).Result;
     }

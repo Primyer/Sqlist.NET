@@ -5,7 +5,7 @@ internal static class Check
 {
     public static void Instantiable(Type type)
     {
-        if (type.IsClass || type.IsAbstract)
+        if (!type.IsClass || type.IsAbstract)
             throw new InvalidOperationException($"The type {type.Name} must be an instantiable class.");
     }
 

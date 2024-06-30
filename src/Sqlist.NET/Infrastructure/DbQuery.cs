@@ -45,7 +45,7 @@ public class DbQuery : QueryStore
     public bool TerminateConnection { get; set; }
 
     /// <inheritdoc />
-    protected override async ValueTask<DbConnection> GetConnectionAsync(CancellationToken cancellationToken = default)
+    internal protected override async ValueTask<DbConnection> GetConnectionAsync(CancellationToken cancellationToken = default)
     {
         await _db.InvokeConnectionAsync(cancellationToken: cancellationToken);
 

@@ -106,7 +106,7 @@ public class Command : ICommand
         return _cmd.ExecuteReaderAsync(commandBehavior, cancellationToken);
     }
 
-    public void ConfigureBulkParameters(DbCommand cmd, BulkParameters prms)
+    internal void ConfigureBulkParameters(DbCommand cmd, BulkParameters prms)
     {
         var (i, j) = (0, 0);
 
@@ -135,7 +135,7 @@ public class Command : ICommand
         }
     }
 
-    public void ConfigureParameters(DbCommand cmd, object? prms)
+    internal void ConfigureParameters(DbCommand cmd, object? prms)
     {
         if (prms is null)
             return;
@@ -163,7 +163,7 @@ public class Command : ICommand
         });
     }
 
-    private static void IterateParamters(object prms, Action<string, object?> predicate)
+    internal static void IterateParamters(object prms, Action<string, object?> predicate)
     {
         if (prms is IDictionary<string, object> dict)
         {
