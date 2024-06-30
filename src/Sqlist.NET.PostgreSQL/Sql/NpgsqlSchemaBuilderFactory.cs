@@ -1,4 +1,6 @@
-﻿using Sqlist.NET.Infrastructure;
+﻿using Microsoft.Extensions.Options;
+
+using Sqlist.NET.Infrastructure;
 
 namespace Sqlist.NET.Sql;
 
@@ -6,11 +8,11 @@ namespace Sqlist.NET.Sql;
 ///     Initializes a new instance of the <see cref="NpgsqlSchemaBuilderFactory"/> class.
 /// </summary>
 /// <param name="options">The Sqlist configuration options.</param>
-internal class NpgsqlSchemaBuilderFactory(DbOptions options) : ISchemaBuilderFactory
+internal class NpgsqlSchemaBuilderFactory(IOptions<DbOptions> options) : ISchemaBuilderFactory
 {
     public ISchemaBuilder Create()
     {
-        var encloser = options.DelimitedEncloser ?? new DummyEncloser();
+        var encloser = options.Value.DelimitedEncloser ?? new DummyEncloser();
         return new NpgsqlSchemaBuilder(encloser);
     }
 }

@@ -31,12 +31,11 @@ namespace Sqlist.NET.Extensions
 
             builder.WithContext<DbContext>();
 
+            builder.Services.TryAddScoped<IDataTransfer, NpgsqlDataTransfer>();
+
             builder.Services.TryAddSingleton<IOptions<DbOptions>>(sp => sp.GetRequiredService<IOptions<NpgsqlOptions>>());
-            builder.Services.TryAddSingleton<ITypeMapper, NpgsqlTypeMapper>();
             builder.Services.TryAddSingleton<ISqlBuilderFactory, NpgsqlBuilderFactory>();
             builder.Services.TryAddSingleton<ISchemaBuilderFactory, NpgsqlSchemaBuilderFactory>();
-
-            builder.Services.TryAddScoped<IDataTransfer>(sp => sp.GetRequiredService<DbContext>());
 
             return builder;
         }
