@@ -4,7 +4,7 @@ using Sqlist.NET.Migration.Tests.Utilities;
 
 using System.Runtime.Serialization;
 
-namespace Sqlist.NET.Migration.Tests.BasicTests;
+namespace Sqlist.NET.Migration.Tests;
 public class MigrationDeserializerTests
 {
     private readonly MigrationDeserializer _deserializer;
@@ -71,7 +71,7 @@ public class MigrationDeserializerTests
 
         Assert.NotNull(phase.Title);
         Assert.NotEmpty(phase.Title);
-        
+
         Assert.NotNull(phase.Guidelines);
         Assert.NotEmpty(phase.Guidelines.Create);
         Assert.NotEmpty(phase.Guidelines.Create.First().Value.Columns);

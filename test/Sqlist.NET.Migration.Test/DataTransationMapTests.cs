@@ -1,23 +1,22 @@
-﻿using Sqlist.NET.Data;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+using Moq;
+
+using Sqlist.NET.Data;
+using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Migration.Deserialization;
-using Sqlist.NET.Migration.Tests.IntegrationTests;
+using Sqlist.NET.Migration.Infrastructure;
 using Sqlist.NET.Migration.Tests.Properties;
 using Sqlist.NET.Migration.Tests.Utilities;
 
-namespace Sqlist.NET.Migration.Tests.BasicTests;
-public class DataTransationMapTests : IClassFixture<AppMigrationService>
+namespace Sqlist.NET.Migration.Tests;
+/// <summary>
+///     Initializes a new instance of the <see cref="DataTransationMapTests"/> class.
+/// </summary>
+public class DataTransationMapTests
 {
-    private readonly AppMigrationService _service;
-    private readonly MigrationDeserializer _deserializer;
-
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="DataTransationMapTests"/> class.
-    /// </summary>
-    public DataTransationMapTests(AppMigrationService service)
-    {
-        _service = service;
-        _deserializer = new MigrationDeserializer();
-    }
+    private readonly MigrationDeserializer _deserializer = new();
 
     [Fact]
     public void Merge_UpdateOfUndefinedTable_ShouldFail()
@@ -26,7 +25,7 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
         {
             Guidelines = new()
             {
-                Update = { ["UndefinedTable"] = new() }
+                Update = { ["UndefinedTable"] = [] }
             }
         };
 
@@ -38,7 +37,7 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
     {
         var dataMap = new DataTransactionMap
         {
-            ["SomeTable"] = new()
+            ["SomeTable"] = []
         };
 
         var guidelines = new PhaseGuidelines()
@@ -76,7 +75,7 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
         {
             Guidelines = new()
             {
-                Delete = { ["UndefinedTable"] = Array.Empty<string>() }
+                Delete = { ["UndefinedTable"] = [] }
             }
         };
 
@@ -88,14 +87,14 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
     {
         var dataMap = new DataTransactionMap
         {
-            ["SomeTable"] = new()
+            ["SomeTable"] = []
         };
 
         var phase = new MigrationPhase
         {
             Guidelines = new()
             {
-                Delete = { ["SomeTable"] = new[] { "UndefinedColumn" } }
+                Delete = { ["SomeTable"] = ["UndefinedColumn"] }
             }
         };
 
@@ -113,7 +112,7 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
             Version = new(2, 0, 0),
             Guidelines = new()
             {
-                Delete = { ["Users"] = new[] { "Id" } }
+                Delete = { ["Users"] = ["Id"] }
             }
         };
 
@@ -141,7 +140,7 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
         {
             Guidelines = new()
             {
-                Delete = { ["Users"] = Array.Empty<string>() }
+                Delete = { ["Users"] = [] }
             }
         };
 
@@ -164,9 +163,29 @@ public class DataTransationMapTests : IClassFixture<AppMigrationService>
     [Fact]
     public void Merge_ShouldSucceed()
     {
-        var roadMap = _service.GetMigrationRoadMap();
+        // Arrange
+        var mockOptions = new Mock<IOptions<MigrationOptions>>();
+
+        mockOptions.Setup(x => x.Value).Returns(new MigrationOptions()
+        {
+            RoadmapAssembly = GetType().Assembly,
+            RoadmapPath = Consts.RoadmapRscPath
+        });
+
+        var mockMigrationContext = new Mock<MigrationContext>(
+            new Mock<IDbContext>().Object,
+            new Mock<IMigrationService>().Object,
+            mockOptions.Object,
+            new Mock<ILogger<MigrationContext>>().Object)
+        {
+            CallBase = true
+        };
+
+        // Act
+        var roadMap = mockMigrationContext.Object.GetMigrationRoadMap();
         var dataMap = new DataTransactionMap(roadMap);
 
+        // Assert
         Assert.Equal(4, dataMap.Count);
         Assert.NotNull(dataMap["Users"]["CreateDate"].Value);
         Assert.NotEmpty(dataMap.TransferDefinitions);
