@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
 using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Migration.Data;
 using Sqlist.NET.Migration.Deserialization;
@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 
 namespace Sqlist.NET.Migration
 {
-    public class MigrationContext(DbContextBase db, MigrationService migrationService, IOptions<MigrationOptions> options, ILogger<MigrationContext>? logger = null)
+    internal class MigrationContext(IDbContext db, IMigrationService migrationService, IOptions<MigrationOptions> options, ILogger<MigrationContext>? logger = null) : IMigrationContext
     {
         private readonly MigrationOptions _options = options.Value;
 

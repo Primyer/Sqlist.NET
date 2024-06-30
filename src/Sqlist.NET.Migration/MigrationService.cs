@@ -1,4 +1,6 @@
-﻿using Sqlist.NET.Infrastructure;
+﻿using Microsoft.Extensions.Options;
+
+using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Migration.Data;
 using Sqlist.NET.Migration.Infrastructure;
 using Sqlist.NET.Sql;
@@ -13,8 +15,15 @@ namespace Sqlist.NET.Migration;
 /// <summary>
 ///     Initializes a new instance of the <see cref="PostgreDbManager"/> class.
 /// </summary>
-public class MigrationService(IDbContext db, ISchemaBuilderFactory schemaFactory, ISqlBuilderFactory sqlFactory, IDataTransfer transfer, MigrationOptions options)
+internal class MigrationService(
+    IDbContext db,
+    ISchemaBuilderFactory schemaFactory,
+    ISqlBuilderFactory sqlFactory,
+    IDataTransfer transfer,
+    IOptions<MigrationOptions> options) : IMigrationService
 {
+    private readonly MigrationOptions _options = options.Value;
+
     public async Task MigrateDataFromAsync(string dbname, DataTransactionMap dataMap)
     {
         var cancellationToken = default(CancellationToken);
@@ -71,7 +80,7 @@ public class MigrationService(IDbContext db, ISchemaBuilderFactory schemaFactory
 
     public Task CreateSchemaTableAsync()
     {
-        var table = new SqlTable(options.SchemaTableSchema, options.SchemaTable!)
+        var table = new SqlTable(_options.SchemaTableSchema, _options.SchemaTable!)
         {
             Columns =
             {
@@ -94,10 +103,10 @@ public class MigrationService(IDbContext db, ISchemaBuilderFactory schemaFactory
         var sql = sqlFactory.Sql("information_schema.tables");
 
         sql.RegisterFields("true");
-        sql.Where($"table_name = '{options.SchemaTable}'");
+        sql.Where($"table_name = '{_options.SchemaTable}'");
 
-        if (!string.IsNullOrEmpty(options.SchemaTableSchema))
-            sql.AppendAnd($"table_schema = '{options.SchemaTableSchema}'");
+        if (!string.IsNullOrEmpty(_options.SchemaTableSchema))
+            sql.AppendAnd($"table_schema = '{_options.SchemaTableSchema}'");
 
         var stmt = sql.ToSelect();
         var qry = db.Query();
@@ -107,7 +116,7 @@ public class MigrationService(IDbContext db, ISchemaBuilderFactory schemaFactory
 
     public virtual Task<SchemaPhase> GetLastSchemaPhaseAsync()
     {
-        var sql = new SqlBuilder(null, options.SchemaTableSchema, options.SchemaTable!);
+        var sql = new SqlBuilder(null, _options.SchemaTableSchema, _options.SchemaTable!);
         sql.OrderBy("version desc");
 
         var stmt = sql.ToSelect();
@@ -118,7 +127,7 @@ public class MigrationService(IDbContext db, ISchemaBuilderFactory schemaFactory
 
     public virtual Task<IEnumerable<SchemaPhase>> GetSchemaPhasesAsync()
     {
-        var sql = new SqlBuilder(null, options.SchemaTableSchema, options.SchemaTable!);
+        var sql = new SqlBuilder(null, _options.SchemaTableSchema, _options.SchemaTable!);
         sql.OrderBy("version");
 
         var stmt = sql.ToSelect();
@@ -129,7 +138,7 @@ public class MigrationService(IDbContext db, ISchemaBuilderFactory schemaFactory
 
     public virtual Task InsertSchemaPhaseAsync(SchemaPhase phase)
     {
-        var sql = new SqlBuilder(null, options.SchemaTableSchema, options.SchemaTable!);
+        var sql = new SqlBuilder(null, _options.SchemaTableSchema, _options.SchemaTable!);
 
         sql.RegisterFields(["version", "title", "description", "summary", "applied"]);
         sql.RegisterValues(["@Version", "@Title", "@Description", "@Summary", "@Applied"]);
