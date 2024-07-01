@@ -97,6 +97,15 @@ namespace Sqlist.NET.Tools.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The version of where the migration roadmap should be processed from..
+        /// </summary>
+        internal static string FromVersionDescription {
+            get {
+                return ResourceManager.GetString("FromVersionDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to No value has been provided for the handler project option..
         /// </summary>
         internal static string HandlerProjectNoValueException {
@@ -115,11 +124,38 @@ namespace Sqlist.NET.Tools.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The value &quot;{0}&quot; is not valid for the option &quot;{1}&quot; of the command &quot;{2}&quot;..
+        /// </summary>
+        internal static string InvalidOptionException {
+            get {
+                return ResourceManager.GetString("InvalidOptionException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The name of the launch profile (if any) to use when launching the application. Launch profiles are defined in the launchSettings.json file and are typically called Development, Staging, and Production..
         /// </summary>
         internal static string LaunchProfileDescription {
             get {
                 return ResourceManager.GetString("LaunchProfileDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Migrating database from version ({0}) to version ({1}).
+        /// </summary>
+        internal static string MigratingFromVersion {
+            get {
+                return ResourceManager.GetString("MigratingFromVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Migrating database to version ({1}).
+        /// </summary>
+        internal static string MigratingToVersion {
+            get {
+                return ResourceManager.GetString("MigratingToVersion", resourceCulture);
             }
         }
         
@@ -210,6 +246,15 @@ namespace Sqlist.NET.Tools.Properties {
         internal static string RuntimeDescription {
             get {
                 return ResourceManager.GetString("RuntimeDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The version that database is to be migrated up to..
+        /// </summary>
+        internal static string ToVersionDescription {
+            get {
+                return ResourceManager.GetString("ToVersionDescription", resourceCulture);
             }
         }
         

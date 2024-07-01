@@ -7,7 +7,7 @@ namespace Sqlist.NET.Migration.Deserialization
         /// <summary>
         ///     Gets or sets the version of the phase.
         /// </summary>
-        public Version? Version { get; set; }
+        public Version Version { get; set; } = new();
 
         /// <summary>
         ///     Gets or sets the title describing the phase.

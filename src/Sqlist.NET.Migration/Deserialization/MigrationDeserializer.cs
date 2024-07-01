@@ -5,58 +5,56 @@ using System.Runtime.Serialization;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace Sqlist.NET.Migration.Deserialization
+namespace Sqlist.NET.Migration.Deserialization;
+public class MigrationDeserializer
 {
-    public class MigrationDeserializer
+    private readonly IDeserializer _deserializer;
+
+    /// <summary>
+    ///     Initializes a new instance of <see cref="MigrationDeserializer"/> class.
+    /// </summary>
+    public MigrationDeserializer()
     {
-        private readonly IDeserializer _deserializer;
+        _deserializer = new DeserializerBuilder()
+            .WithNodeDeserializer(new VersionNodeDeserializer())
+            .WithNodeDeserializer(new DefinitionNodeDeserializer())
+            .WithNodeDeserializer(new ColumnsDefinitionNodeDeserializer())
+            .WithNamingConvention(UnderscoredNamingConvention.Instance)
+            .Build();
+    }
 
-        /// <summary>
-        ///     Initializes a new instance of <see cref="MigrationDeserializer"/> class.
-        /// </summary>
-        public MigrationDeserializer()
+    public MigrationPhase DeserializePhase(string data)
+    {
+        MigrationPhase phase;
+
+        try
         {
-            _deserializer = new DeserializerBuilder()
-                .WithNodeDeserializer(new VersionNodeDeserializer())
-                .WithNodeDeserializer(new DefinitionNodeDeserializer())
-                .WithNodeDeserializer(new ColumnsDefinitionNodeDeserializer())
-                .WithNamingConvention(UnderscoredNamingConvention.Instance)
-                .Build();
+            phase = _deserializer.Deserialize<MigrationPhase>(data);
+        }
+        catch (Exception ex)
+        {
+            throw new SerializationException("Deserialization failed due to invalid YAML format.\n" + ex.Message);
         }
 
-        public MigrationPhase DeserializePhase(string data)
-        {
-            MigrationPhase phase;
+        ValidatePhase(phase);
+        return phase;
+    }
 
-            try
-            {
-                phase = _deserializer.Deserialize<MigrationPhase>(data);
-            }
-            catch (Exception ex)
-            {
-                throw new SerializationException("Deserialization failed due to invalid YAML format.\n" + ex.Message);
-            }
+    private static void ValidatePhase(MigrationPhase phase)
+    {
+        if (phase is null)
+            throw new ArgumentException("Invalid input.");
 
-            ValidatePhase(phase);
-            return phase;
-        }
+        if (string.IsNullOrEmpty(phase.Title))
+            throw new InvalidOperationException("Phase title is required.");
 
-        private static void ValidatePhase(MigrationPhase phase)
-        {
-            if (phase is null)
-                throw new ArgumentException("Invalid input.");
+        var guidelines = phase.Guidelines;
+        if (guidelines is null || (IsNullOrEmpty(guidelines.Create) && IsNullOrEmpty(guidelines.Update) && IsNullOrEmpty(guidelines.Delete)))
+            throw new InvalidOperationException("Migration phase has no guidelines defined.");
+    }
 
-            if (string.IsNullOrEmpty(phase.Title))
-                throw new InvalidOperationException("Phase title is required.");
-
-            var guidelines = phase.Guidelines;
-            if (guidelines is null || (IsNullOrEmpty(guidelines.Create) && IsNullOrEmpty(guidelines.Update) && IsNullOrEmpty(guidelines.Delete)))
-                throw new InvalidOperationException("Migration phase has no guidelines defined.");
-        }
-
-        private static bool IsNullOrEmpty(ICollection collection)
-        {
-            return collection is null || collection.Count == 0;
-        }
+    private static bool IsNullOrEmpty(ICollection collection)
+    {
+        return collection is null || collection.Count == 0;
     }
 }
