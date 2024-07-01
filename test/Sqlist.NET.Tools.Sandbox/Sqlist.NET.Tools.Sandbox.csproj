@@ -15,9 +15,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Sqlist.NET.Migration\Sqlist.NET.Migration.csproj" />
     <ProjectReference Include="..\..\src\Sqlist.NET.PostgreSQL\Sqlist.NET.PostgreSQL.csproj" />
     <ProjectReference Include="..\..\src\Sqlist.NET.Tools\Sqlist.NET.Tools.csproj" />
     <ProjectReference Include="..\..\src\Sqlist.NET\Sqlist.NET.csproj" />
+    <ProjectReference Include="..\Sqlist.NET.TestResources\Sqlist.NET.TestResources.csproj" />
   </ItemGroup>
 
 </Project>

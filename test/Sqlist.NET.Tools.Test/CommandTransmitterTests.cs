@@ -1,11 +1,10 @@
 ﻿using McMaster.Extensions.CommandLineUtils;
 
 using Moq;
-using Sqlist.NET.Tools.Exceptions;
-using Sqlist.NET.Tools.Handlers;
-using Sqlist.NET.Tools.Infrastructure;
 
-using static Sqlist.NET.Tools.Tests.CommandsTests;
+using Sqlist.NET.Tools.Exceptions;
+using Sqlist.NET.Tools.Extensions;
+using Sqlist.NET.Tools.Infrastructure;
 
 namespace Sqlist.NET.Tools.Tests;
 public class CommandTransmitterTests
@@ -77,9 +76,9 @@ public class CommandTransmitterTests
         var symbolOption = app.Option("-# <VALUE>", "A symbol option", CommandOptionType.SingleValue);
 
         // Act & Assert
-        Assert.Equal("--long", CommandTransmitter.GetOptionName(longOption));
-        Assert.Equal("-s", CommandTransmitter.GetOptionName(shortOption));
-        Assert.Equal("-#", CommandTransmitter.GetOptionName(symbolOption));
+        Assert.Equal("--long", longOption.GetOptionName());
+        Assert.Equal("-s", shortOption.GetOptionName());
+        Assert.Equal("-#", symbolOption.GetOptionName());
     }
 
     [Fact]
