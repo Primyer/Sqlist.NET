@@ -1,4 +1,4 @@
-﻿namespace Sqlist.NET.Migration.Tests.Utilities;
+﻿namespace Sqlist.NET.TestResources.Utilities;
 public static class AssemblyUtility
 {
     public static string GetEmbeddedResource(string name)

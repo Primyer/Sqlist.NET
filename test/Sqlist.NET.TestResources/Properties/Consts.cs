@@ -1,4 +1,4 @@
-﻿namespace Sqlist.NET.Migration.Tests.Properties;
+﻿namespace Sqlist.NET.TestResources.Properties;
 public static class Consts
 {
     public const string ScriptsRscPath = "Resources.Scripts";
@@ -6,7 +6,7 @@ public static class Consts
 
     public const string TestDatabaseName = "sqlist_net_test";
 
-    public const string ER_Resources = "Sqlist.NET.Migration.Tests.Resources.";
+    public const string ER_Resources = "Sqlist.NET.TestResources.Resources.";
 
     public const string ER_InvalidPhases = ER_Resources + "InvalidPhases.";
     public const string ER_InvalidPhases_InvalidFormat = ER_InvalidPhases + "invalid_format.yml";

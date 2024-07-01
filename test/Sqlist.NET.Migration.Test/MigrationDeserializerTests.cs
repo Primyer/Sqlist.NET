@@ -1,6 +1,6 @@
 ﻿using Sqlist.NET.Migration.Deserialization;
-using Sqlist.NET.Migration.Tests.Properties;
-using Sqlist.NET.Migration.Tests.Utilities;
+using Sqlist.NET.TestResources.Properties;
+using Sqlist.NET.TestResources.Utilities;
 
 using System.Runtime.Serialization;
 

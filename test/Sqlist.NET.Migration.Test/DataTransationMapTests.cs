@@ -7,8 +7,8 @@ using Sqlist.NET.Data;
 using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Migration.Deserialization;
 using Sqlist.NET.Migration.Infrastructure;
-using Sqlist.NET.Migration.Tests.Properties;
-using Sqlist.NET.Migration.Tests.Utilities;
+using Sqlist.NET.TestResources.Properties;
+using Sqlist.NET.TestResources.Utilities;
 
 namespace Sqlist.NET.Migration.Tests;
 /// <summary>
@@ -168,7 +168,7 @@ public class DataTransationMapTests
 
         mockOptions.Setup(x => x.Value).Returns(new MigrationOptions()
         {
-            RoadmapAssembly = GetType().Assembly,
+            RoadmapAssembly = typeof(Consts).Assembly,
             RoadmapPath = Consts.RoadmapRscPath
         });
 

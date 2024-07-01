@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\InvalidPhases\invalid_format.yml" />
+    <EmbeddedResource Include="Resources\InvalidPhases\invalid_version.yml" />
+    <EmbeddedResource Include="Resources\InvalidPhases\missing_title.yml" />
+    <EmbeddedResource Include="Resources\InvalidPhases\undefined_guidelines.yml" />
+    <EmbeddedResource Include="Resources\Roadmap\v1_initial.yml" />
+    <EmbeddedResource Include="Resources\Roadmap\v2_modify_Users_table.yml" />
+    <EmbeddedResource Include="Resources\Roadmap\v3_delete_Users_SecurityStamp.yml" />
+    <EmbeddedResource Include="Resources\Scripts\v1\01_CreateTable_Users.sql" />
+    <EmbeddedResource Include="Resources\Scripts\v1\02_CreateTable_Roles.sql" />
+    <EmbeddedResource Include="Resources\Scripts\v1\03_CreateTable_UserRoles.sql" />
+    <EmbeddedResource Include="Resources\Scripts\v1\04_PopulateData.sql" />
+    <EmbeddedResource Include="Resources\Scripts\v2\01_CreateTable_Users.sql" />
+    <EmbeddedResource Include="Resources\Scripts\v2\02_CreateTable_Roles.sql" />
+    <EmbeddedResource Include="Resources\Scripts\v2\03_CreateTable_UserRoles.sql" />
+    <EmbeddedResource Include="Resources\Scripts\v2\04_CreateTable_DummyRoles.sql" />
+    <EmbeddedResource Include="Resources\Scripts\v3\01_CreateTable_Users.sql" />
+    <EmbeddedResource Include="Resources\Scripts\v3\02_CreateTable_Roles.sql" />
+    <EmbeddedResource Include="Resources\Scripts\v3\03_CreateTable_UserRoles.sql" />
+    <EmbeddedResource Include="Resources\Scripts\v3\04_CreateTable_DummyRoles.sql" />
+  </ItemGroup>
+
+</Project>

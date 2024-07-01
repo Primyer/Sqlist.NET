@@ -8,8 +8,8 @@ using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Migration.Extensions;
 using Sqlist.NET.Migration.Infrastructure;
 using Sqlist.NET.Migration.Tests.Metadata;
-using Sqlist.NET.Migration.Tests.Properties;
 using Sqlist.NET.Sql;
+using Sqlist.NET.TestResources.Properties;
 
 using System.Collections;
 
