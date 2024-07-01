@@ -7,9 +7,9 @@ using static Sqlist.NET.Tools.Out.AnsiConstants;
 namespace Sqlist.NET.Tools.Logging;
 internal class Auditor : IAuditor
 {
-    public const string ErrorPrefix = "ERROR:   ";
-    public const string WarningPrefix = "WARN:    ";
     public const string InfoPrefix = "INFO:    ";
+    public const string WarningPrefix = "WARN:    ";
+    public const string ErrorPrefix = "ERROR:   ";
     public const string DataPrefix = "DATA:    ";
     public const string VerbosePrefix = "VERBOSE: ";
 

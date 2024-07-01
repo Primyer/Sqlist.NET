@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using Sqlist.NET.Tools.Infrastructure;
+using Sqlist.NET.Tools.Logging;
 using Sqlist.NET.Tools.Properties;
 using Sqlist.NET.Tools.Utilities;
 
@@ -26,7 +27,9 @@ public static class HostExtensions
         if (CommandLine.String.StartsWith(Resources.RootCommandName))
         {
             builder.Logging.ClearProviders();
-            
+
+            builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, AuditorLoggerProvider>());
+
             builder.Services.RemoveServices<IHostedService>();
             builder.Services.AddSqlistTools();
         }

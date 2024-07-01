@@ -6,6 +6,7 @@ using Moq;
 
 using Sqlist.NET.Extensions;
 using Sqlist.NET.Tools.Extensions;
+using Sqlist.NET.Tools.Logging;
 using Sqlist.NET.Tools.Properties;
 using Sqlist.NET.Tools.Tests.TestUtilities;
 using Sqlist.NET.Tools.Utilities;
@@ -66,7 +67,9 @@ public class DependencyRegistrationTests
         builderMock.Object.UseSqlistTools();
 
         // Assert
-        Assert.DoesNotContain(services, s => s.ServiceType == typeof(ILoggerProvider));
+        var loggerProvider = Assert.Single(services, s => s.ServiceType == typeof(ILoggerProvider));
+        
+        Assert.Equal(typeof(AuditorLoggerProvider), loggerProvider.ImplementationType);
         Assert.DoesNotContain(services, s => s.ServiceType == typeof(MockHostedService));
         Assert.Contains(services, s => s.ImplementationType == typeof(CommandHandlerService));
     }
