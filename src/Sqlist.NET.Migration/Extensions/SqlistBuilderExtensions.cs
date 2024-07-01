@@ -25,7 +25,7 @@ namespace Sqlist.NET.Migration.Extensions
             });
 
             builder.Services.TryAddScoped<IMigrationService, MigrationService>();
-            builder.Services.TryAddTransient<IMigrationContext, MigrationContext>();
+            builder.Services.TryAddScoped<IMigrationContext, MigrationContext>();
 
             return builder;
         }

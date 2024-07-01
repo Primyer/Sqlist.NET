@@ -124,7 +124,7 @@ namespace Sqlist.NET.Tools.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The value &quot;{0}&quot; is not valid for the option &quot;{1}&quot; of the command &quot;{2}&quot;..
+        ///   Looks up a localized string similar to The value &quot;{0}&quot; is not valid for the ({1}) option..
         /// </summary>
         internal static string InvalidOptionException {
             get {
@@ -151,7 +151,7 @@ namespace Sqlist.NET.Tools.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Migrating database to version ({1}).
+        ///   Looks up a localized string similar to Migrating database to version ({0}).
         /// </summary>
         internal static string MigratingToVersion {
             get {

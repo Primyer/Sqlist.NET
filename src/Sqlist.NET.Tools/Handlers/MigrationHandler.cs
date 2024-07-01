@@ -17,8 +17,8 @@ internal class MigrationHandler(IServiceProvider services) : TransmittableComman
 
     public override async Task<int> OnExecuteAsync(CancellationToken cancellationToken)
     {
-        var migration = services.GetRequiredService<IMigrationContext>();
         var auditor = services.GetRequiredService<IAuditor>();
+        var migration = GetScopedServices();
 
         var info = await migration.InitializeAsync(ToVersion, FromVersion);
         LogInfo(auditor, info);
@@ -38,5 +38,11 @@ internal class MigrationHandler(IServiceProvider services) : TransmittableComman
         auditor.WriteInformation(message);
         auditor.WriteInformation(info.Description);
         auditor.WriteInformation("Migrating...");
+    }
+
+    private IMigrationContext GetScopedServices()
+    {
+        using var scope = services.CreateScope();
+        return scope.ServiceProvider.GetRequiredService<IMigrationContext>();
     }
 }

@@ -35,7 +35,7 @@ internal class MigrationCommand(MigrationHandler handler, ICommandInitializer in
         {
             var value = FromVersion.Value() ?? string.Empty;
 
-            if (Version.TryParse(value, out var version))
+            if (!Version.TryParse(value, out var version))
                 throw new InvalidOptionException(FromVersion);
 
             _handler.FromVersion = version;
@@ -45,7 +45,7 @@ internal class MigrationCommand(MigrationHandler handler, ICommandInitializer in
         {
             var value = ToVersion.Value() ?? string.Empty;
 
-            if (Version.TryParse(value, out var version))
+            if (!Version.TryParse(value, out var version))
                 throw new InvalidOptionException(ToVersion);
 
             _handler.ToVersion = version;

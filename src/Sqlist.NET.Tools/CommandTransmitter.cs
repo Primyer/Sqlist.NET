@@ -1,6 +1,7 @@
 ﻿using McMaster.Extensions.CommandLineUtils;
 
 using Sqlist.NET.Tools.Exceptions;
+using Sqlist.NET.Tools.Extensions;
 using Sqlist.NET.Tools.Handlers;
 using Sqlist.NET.Tools.Infrastructure;
 using Sqlist.NET.Tools.Properties;
@@ -58,20 +59,12 @@ internal partial class CommandTransmitter(IProcessManager processRunner, IExecut
 
             foreach (var value in option.Values)
             {
-                args.Add(GetOptionName(option));
+                args.Add(option.GetOptionName());
 
                 if (!string.IsNullOrEmpty(value))
                     args.Add(value);
             }
         }
-    }
-
-    public static string GetOptionName(CommandOption option)
-    {
-        if (option.LongName is not null)
-            return "--" + option.LongName;
-
-        return "-" + (option.ShortName ?? option.SymbolName ?? string.Empty);
     }
 
     [GeneratedRegex("\\s+")]

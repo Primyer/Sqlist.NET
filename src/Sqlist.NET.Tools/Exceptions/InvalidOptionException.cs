@@ -1,5 +1,6 @@
 ﻿using McMaster.Extensions.CommandLineUtils;
 
+using Sqlist.NET.Tools.Extensions;
 using Sqlist.NET.Tools.Properties;
 
 namespace Sqlist.NET.Tools.Exceptions;
@@ -11,6 +12,6 @@ internal class InvalidOptionException(CommandOption option) : Exception(CreateMe
 {
     private static string CreateMessage(CommandOption option)
     {
-        return string.Format(Resources.InvalidOptionException, option.Value() ?? "N/A", option.ValueName);
+        return string.Format(Resources.InvalidOptionException, option.Value() ?? "N/A", option.GetOptionName());
     }
 }
