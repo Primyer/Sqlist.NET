@@ -16,8 +16,7 @@ internal class ProcessManager(IAuditor auditor) : IProcessManager
     {
         var arguments = ToArguments(args);
 
-        processCommandLine ??= auditor.WriteLine;
-        processCommandLine($"{executable} {arguments}");
+        processCommandLine?.Invoke($"{executable} {arguments}");
 
         handleOutput ??= auditor.WriteLine;
         handleError ??= auditor.WriteError;

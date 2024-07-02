@@ -1,11 +1,17 @@
-﻿using Sqlist.NET.Tools.Out;
+﻿using Sqlist.NET.Tools.Infrastructure;
+using Sqlist.NET.Tools.Out;
 
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 using static Sqlist.NET.Tools.Out.AnsiConstants;
 
 namespace Sqlist.NET.Tools.Logging;
-internal class Auditor : IAuditor
+
+/// <summary>
+///     Initializes a new instance of the <see cref="Auditor"/> class.
+/// </summary>
+internal class Auditor(IExecutionContext context) : IAuditor
 {
     public const string ErrorPrefix = "[fail]: ";
     public const string WarningPrefix = "[warn]: ";
@@ -22,29 +28,46 @@ internal class Auditor : IAuditor
         => NoColor ? value : colorizeFunc(value);
 
     public void WriteError(string? message)
-        => WriteLine(Prefix(ErrorPrefix, Colorize(message, x => Bold + Red + x + Reset)));
+    {
+        message = Prefix(ErrorPrefix, message);
+        message = Colorize(message, x => Bold + Red + x + Reset);
+
+        WriteLine(message);
+    }
 
     public void WriteError(Exception ex, string? message = null)
     {
-        message = string.Join(Environment.NewLine, message, ex.ToString());
         WriteError(message);
+        WriteError(IsVerbose ? ex.ToString() : ex.Message);
     }
 
     public void WriteWarning(string? message)
-        => WriteLine(Prefix(WarningPrefix, Colorize(message, x => Bold + Yellow + x + Reset)));
+    {
+        message = Prefix(WarningPrefix, message);
+        message = Colorize(message, x => Bold + Yellow + x + Reset);
+
+        WriteLine(message);
+    }
 
     public void WriteInformation(string? message)
         => WriteLine(Prefix(InfoPrefix, message));
 
     public void WriteDebug(string? message)
-        => WriteLine(Prefix(DebugPrefix, Colorize(message, x => Bold + Gray + x + Reset)));
+    {
+        message = Prefix(DebugPrefix, message);
+        message = Colorize(message, x => Bold + Gray + x + Reset);
+
+        WriteLine(message);
+    }
 
     public void WriteTrace(string? message)
     {
-        if (IsVerbose)
-        {
-            WriteLine(Prefix(TracePrefix, Colorize(message, x => Bold + Black + x + Reset)));
-        }
+        if (!IsVerbose) return;
+
+        message = Prefix(TracePrefix, message);
+        message = Colorize(message, x => Bold + Black + x + Reset);
+        
+        WriteLine(message);
     }
 
     private static string? Prefix(string prefix, string? value)
@@ -60,7 +83,7 @@ internal class Auditor : IAuditor
 
     public virtual void WriteLine(string? message)
     {
-        if (NoColor)
+        if (NoColor || !context.IsToolContext)
             Console.WriteLine(message);
         else
             AnsiConsole.WriteLine(message);

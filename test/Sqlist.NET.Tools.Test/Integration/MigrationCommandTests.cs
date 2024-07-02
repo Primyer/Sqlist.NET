@@ -19,7 +19,9 @@ public class MigrationCommandTests(ITestOutputHelper output)
         // Arrange
         var logs = new List<string?>();
 
-        var auditorMock = new Mock<Auditor>();
+        var mockContext = new Mock<IExecutionContext>();
+        var auditorMock = new Mock<Auditor>(mockContext.Object);
+
         auditorMock.Setup(a => a.WriteLine(It.IsAny<string?>())).Callback((string? message) => logs.Add(message));
 
         var host = new HostBuilderMock()

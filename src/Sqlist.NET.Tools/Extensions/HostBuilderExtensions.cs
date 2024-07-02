@@ -14,11 +14,12 @@ public static class HostExtensions
 {
     internal static IHostBuilder UseCommandLineApplication(this IHostBuilder host)
     {
-        host.ConfigureServices(services =>
-        {
-            services.AddCommonServices();
-            services.TryAddSingleton<IApplicationExecutor, ToolCliExecutor>();
-        });
+        host.ConfigureLogging(logging => logging.ClearProviders())
+            .ConfigureServices(services =>
+            {
+                services.AddCommonServices();
+                services.TryAddSingleton<IApplicationExecutor, ToolCliExecutor>();
+            });
 
         return host;
     }
