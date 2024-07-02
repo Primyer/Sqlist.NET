@@ -20,7 +20,7 @@ try
 catch (Exception ex)
 {
     if (ex is CommandParsingException)
-        auditor.WriteVerbose(ex.ToString());
+        auditor.WriteTrace(ex.ToString());
     else
         auditor.WriteInformation(ex.ToString());
 

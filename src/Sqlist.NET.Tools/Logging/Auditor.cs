@@ -7,11 +7,11 @@ using static Sqlist.NET.Tools.Out.AnsiConstants;
 namespace Sqlist.NET.Tools.Logging;
 internal class Auditor : IAuditor
 {
-    public const string InfoPrefix = "INFO:    ";
-    public const string WarningPrefix = "WARN:    ";
-    public const string ErrorPrefix = "ERROR:   ";
-    public const string DataPrefix = "DATA:    ";
-    public const string VerbosePrefix = "VERBOSE: ";
+    public const string ErrorPrefix = "[fail]: ";
+    public const string WarningPrefix = "[warn]: ";
+    public const string InfoPrefix = "[info]: ";
+    public const string DebugPrefix = "[dbug]: ";
+    public const string TracePrefix = "[trce]: ";
 
     public static bool IsVerbose { get; set; }
     public static bool NoColor { get; set; }
@@ -19,7 +19,7 @@ internal class Auditor : IAuditor
 
     [return: NotNullIfNotNull(nameof(value))]
     public static string? Colorize(string? value, Func<string?, string> colorizeFunc)
-    => NoColor ? value : colorizeFunc(value);
+        => NoColor ? value : colorizeFunc(value);
 
     public void WriteError(string? message)
         => WriteLine(Prefix(ErrorPrefix, Colorize(message, x => Bold + Red + x + Reset)));
@@ -34,16 +34,16 @@ internal class Auditor : IAuditor
         => WriteLine(Prefix(WarningPrefix, Colorize(message, x => Bold + Yellow + x + Reset)));
 
     public void WriteInformation(string? message)
-    => WriteLine(Prefix(InfoPrefix, message));
+        => WriteLine(Prefix(InfoPrefix, message));
 
-    public void WriteData(string? message)
-        => WriteLine(Prefix(DataPrefix, Colorize(message, x => Bold + Gray + x + Reset)));
+    public void WriteDebug(string? message)
+        => WriteLine(Prefix(DebugPrefix, Colorize(message, x => Bold + Gray + x + Reset)));
 
-    public void WriteVerbose(string? message)
+    public void WriteTrace(string? message)
     {
         if (IsVerbose)
         {
-            WriteLine(Prefix(VerbosePrefix, Colorize(message, x => Bold + Black + x + Reset)));
+            WriteLine(Prefix(TracePrefix, Colorize(message, x => Bold + Black + x + Reset)));
         }
     }
 
@@ -58,11 +58,11 @@ internal class Auditor : IAuditor
         return prefix + value.Replace(Environment.NewLine, Environment.NewLine + prefix);
     }
 
-    public virtual void WriteLine(string? value)
+    public virtual void WriteLine(string? message)
     {
         if (NoColor)
-            Console.WriteLine(value);
+            Console.WriteLine(message);
         else
-            AnsiConsole.WriteLine(value);
+            AnsiConsole.WriteLine(message);
     }
 }

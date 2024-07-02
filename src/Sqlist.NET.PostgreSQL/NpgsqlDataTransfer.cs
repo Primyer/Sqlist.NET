@@ -13,14 +13,14 @@ using Npgsql;
 using System.Linq;
 
 namespace Sqlist.NET;
-public class NpgsqlDataTransfer(DbContext db, ISchemaBuilderFactory schemaFactory, ILogger<NpgsqlDataTransfer> logger) : IDataTransfer
+public class NpgsqlDataTransfer(DbContext db, ISchemaBuilderFactory schemaFactory, ILogger<NpgsqlDataTransfer>? logger) : IDataTransfer
 {
     public DbConnection? Connection => db.Connection;
 
     /// <inheritdoc />
     public async Task CopyAsync(DbConnection exporter, DbConnection importer, string table, TransactionRuleDictionary rules, CancellationToken cancellationToken = default)
     {
-        logger?.LogInformation("Creating staging table for '{Table}'.", table);
+        logger?.LogTrace("Creating staging table for '{Table}'.", table);
 
         var stagingTable = table + "_staging";
         await CreateStagingTableAsync(stagingTable, rules);
@@ -29,7 +29,7 @@ public class NpgsqlDataTransfer(DbContext db, ISchemaBuilderFactory schemaFactor
         using (var reader = await ExecuteReaderAsync(exporter, table, rules, cancellationToken))
         using (var writer = await CreateImporterAsync(importer, stagingTable, rules, cancellationToken))
         {
-            logger?.LogInformation("Copying '{Table}' data...", table);
+            logger?.LogTrace("Copying '{Table}' data...", table);
 
             while (await reader.ReadAsync(cancellationToken))
             {
@@ -75,7 +75,7 @@ public class NpgsqlDataTransfer(DbContext db, ISchemaBuilderFactory schemaFactor
             await CommitDataAsync(stagingTable, table, rules);
 
         await DeleteStagingTableAsync(stagingTable);
-        logger?.LogInformation("Copy of '{Table}' data is completed.", table);
+        logger?.LogTrace("Copy of '{Table}' data is completed.", table);
     }
 
     /// <inheritdoc />
@@ -89,7 +89,7 @@ public class NpgsqlDataTransfer(DbContext db, ISchemaBuilderFactory schemaFactor
 
         using (var writer = await db.Connection!.BeginBinaryImportAsync(stmt, cancellationToken))
         {
-            logger?.LogInformation("Transferring data to '{Table}'...", table);
+            logger?.LogTrace("Transferring data to '{Table}'...", table);
 
             while (await reader.ReadAsync(cancellationToken))
             {
@@ -121,7 +121,7 @@ public class NpgsqlDataTransfer(DbContext db, ISchemaBuilderFactory schemaFactor
             await writer.CompleteAsync(cancellationToken);
         }
 
-        logger?.LogInformation("Transfer to table '{Table}' is completed.", table);
+        logger?.LogTrace("Transfer to table '{Table}' is completed.", table);
     }
 
     private Task<int> CreateStagingTableAsync(string table, TransactionRuleDictionary rules)

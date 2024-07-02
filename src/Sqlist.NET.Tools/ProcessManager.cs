@@ -16,10 +16,10 @@ internal class ProcessManager(IAuditor auditor) : IProcessManager
     {
         var arguments = ToArguments(args);
 
-        processCommandLine ??= auditor.WriteInformation;
+        processCommandLine ??= auditor.WriteLine;
         processCommandLine($"{executable} {arguments}");
 
-        handleOutput ??= auditor.WriteVerbose;
+        handleOutput ??= auditor.WriteLine;
         handleError ??= auditor.WriteError;
 
         var startInfo = new ProcessStartInfo

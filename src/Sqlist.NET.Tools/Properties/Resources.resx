@@ -144,12 +144,6 @@
   <data name="LaunchProfileDescription" xml:space="preserve">
     <value>The name of the launch profile (if any) to use when launching the application. Launch profiles are defined in the launchSettings.json file and are typically called Development, Staging, and Production.</value>
   </data>
-  <data name="MigratingFromVersion" xml:space="preserve">
-    <value>Migrating database from version ({0}) to version ({1})</value>
-  </data>
-  <data name="MigratingToVersion" xml:space="preserve">
-    <value>Migrating database to version ({0})</value>
-  </data>
   <data name="NoBuildDescription" xml:space="preserve">
     <value>Don't build the project. Intended to be used when the build is up-to-date.</value>
   </data>

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Sqlist.NET.Tools.Infrastructure;
 using Sqlist.NET.Tools.Logging;
@@ -28,7 +29,11 @@ public static class HostExtensions
         {
             builder.Logging.ClearProviders();
 
+            builder.Services.RemoveAll<IConfigureOptions<LoggerFilterOptions>>();
             builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, AuditorLoggerProvider>());
+
+            builder.Logging.SetMinimumLevel(LogLevel.None);
+            builder.Logging.AddFilter("Sqlist.NET", LogLevel.Trace);
 
             builder.Services.RemoveServices<IHostedService>();
             builder.Services.AddSqlistTools();

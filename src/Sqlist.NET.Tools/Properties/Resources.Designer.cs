@@ -142,24 +142,6 @@ namespace Sqlist.NET.Tools.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Migrating database from version ({0}) to version ({1}).
-        /// </summary>
-        internal static string MigratingFromVersion {
-            get {
-                return ResourceManager.GetString("MigratingFromVersion", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Migrating database to version ({0}).
-        /// </summary>
-        internal static string MigratingToVersion {
-            get {
-                return ResourceManager.GetString("MigratingToVersion", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Don&apos;t build the project. Intended to be used when the build is up-to-date..
         /// </summary>
         internal static string NoBuildDescription {

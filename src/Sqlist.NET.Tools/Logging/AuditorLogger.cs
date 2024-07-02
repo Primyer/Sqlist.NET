@@ -11,7 +11,7 @@ internal class AuditorLogger(IAuditor auditor) : ILogger
 
     public bool IsEnabled(LogLevel logLevel)
     {
-        return IAuditor.IsVerbose || LogLevel.Trace < logLevel;
+        return Auditor.IsVerbose || LogLevel.Trace < logLevel;
     }
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
@@ -21,11 +21,11 @@ internal class AuditorLogger(IAuditor auditor) : ILogger
         switch (logLevel)
         {
             case LogLevel.Trace:
-                auditor.WriteVerbose(message);
+                auditor.WriteTrace(message);
                 break;
 
             case LogLevel.Debug:
-                auditor.WriteData(message);
+                auditor.WriteDebug(message);
                 break;
 
             case LogLevel.Information:

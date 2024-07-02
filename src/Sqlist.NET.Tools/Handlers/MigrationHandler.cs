@@ -1,9 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
 using Sqlist.NET.Migration;
-using Sqlist.NET.Migration.Deserialization;
-using Sqlist.NET.Tools.Logging;
-using Sqlist.NET.Tools.Properties;
 
 namespace Sqlist.NET.Tools.Handlers;
 
@@ -17,27 +14,12 @@ internal class MigrationHandler(IServiceProvider services) : TransmittableComman
 
     public override async Task<int> OnExecuteAsync(CancellationToken cancellationToken)
     {
-        var auditor = services.GetRequiredService<IAuditor>();
         var migration = GetScopedServices();
 
-        var info = await migration.InitializeAsync(ToVersion, FromVersion);
-        LogInfo(auditor, info);
-
+        await migration.InitializeAsync(ToVersion, FromVersion);
         await migration.MigrateDataAsync();
+
         return 0;
-    }
-
-    private static void LogInfo(IAuditor auditor, MigrationOperationInformation info)
-    {
-        auditor.WriteInformation(info.Title);
-
-        var message = info.CurrentVersion is not null
-            ? string.Format(Resources.MigratingFromVersion, info.CurrentVersion, info.TargetVersion)
-            : string.Format(Resources.MigratingToVersion, info.TargetVersion);
-
-        auditor.WriteInformation(message);
-        auditor.WriteInformation(info.Description);
-        auditor.WriteInformation("Migrating...");
     }
 
     private IMigrationContext GetScopedServices()

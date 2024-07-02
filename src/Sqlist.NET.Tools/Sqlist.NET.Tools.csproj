@@ -7,8 +7,7 @@
 		<Nullable>enable</Nullable>
 
 		<PackAsTool>true</PackAsTool>
-		<ToolCommandName>sqlist</ToolCommandName>
-		<PackageOutputPath>./nupkg</PackageOutputPath>
+		<ToolCommandName>dotnet-sqlist</ToolCommandName>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
