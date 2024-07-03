@@ -1,22 +1,33 @@
-name: NuGet Publish - Sqlist.NET
-
-env:
-  MAIN_PROJECT: Sqlist.NET
+name: Publish NuGet Packages
 
 on:
-  push:
-    branches: [ main ]  # Trigger on push to the main branch (adjust as needed)
+  workflow_dispatch:
+    inputs:
+      dotnet-version:
+        description: '.NET'
+        required: true
+        default: '8.0'
+        type: string
+      target:
+        description: 'Target'
+        required: true
+        default: 'github'
+        type: choice
+        options:
+        - github
+        - nuget
 
 jobs:
   build-and-publish:
-    runs-on: ubuntu-latest  # Workflow will run on Ubuntu virtual machines
+    runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3  # Checkout code from the repository
+      - uses: actions/checkout@v3
 
       - name: Use NuGet CLI
-        uses: actions/setup-dotnet@v4.0.0  # Setup .NET environment
+        uses: actions/setup-dotnet@v4.0.0
         with:
-          dotnet-version: '>= 7.0'
+          dotnet-version: ${{ inputs.dotnet-version }}
 
       - name: Create a temporary directory
         run: echo "TEMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
@@ -25,6 +36,13 @@ jobs:
         run: dotnet pack --configuration Release --output ${{ env.TEMP_DIR }}
 
       - name: Publish to GitHub Packages (using PAT)
+        if: ${{ inputs.target == 'github' }}
         run: |
-          cd ${{ env.TEMP_DIR }}  # Navigate to the directory containing the generated package
-          dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://nuget.pkg.github.com/Primyer/index.json
+          cd ${{ env.TEMP_DIR }}
+          dotnet nuget push *.nupkg -k ${{ secrets.GH_PACK_PAT }} -s https://nuget.pkg.github.com/Primyer/index.json
+
+      - name: Publish to NuGet
+        if: ${{ inputs.target == 'nuget' }}
+        run: |
+          cd ${{ env.TEMP_DIR }}
+          dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
