@@ -17,10 +17,22 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
-		<AssemblyVersion>2.0.0</AssemblyVersion>
-		<FileVersion>2.0.0</FileVersion>
 		<PackageIcon>primyer-logo-p.jpg</PackageIcon>
 	</PropertyGroup>
+	
+	<PropertyGroup>
+		<VersionPrefix>2.0.0</VersionPrefix>
+		<VersionSuffix>beta.1</VersionSuffix>
+		<AssemblyVersion>$(VersionPrefix)</AssemblyVersion>
+		<FileVersion>$(VersionPrefix)</FileVersion>
+	</PropertyGroup>
+
+	<Target Name="SetPackageVersion" BeforeTargets="GenerateNuspec">
+		<PropertyGroup>
+			<PackageVersion Condition=" '$(VersionSuffix)' != '' ">$(VersionPrefix)-$(VersionSuffix)</PackageVersion>
+			<PackageVersion Condition=" '$(VersionSuffix)' == '' ">$(VersionPrefix)</PackageVersion>
+		</PropertyGroup>
+	</Target>
 	
 	<ItemGroup>
 	  <None Include="..\..\LICENSE">
