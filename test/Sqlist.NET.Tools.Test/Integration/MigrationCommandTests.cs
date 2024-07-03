@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 
 using Moq;
 
+using Sqlist.NET.Tools.Cli.Extensions;
 using Sqlist.NET.Tools.Extensions;
 using Sqlist.NET.Tools.Infrastructure;
 using Sqlist.NET.Tools.Logging;
@@ -25,9 +26,9 @@ public class MigrationCommandTests(ITestOutputHelper output)
         auditorMock.Setup(a => a.WriteLine(It.IsAny<string?>())).Callback((string? message) => logs.Add(message));
 
         var host = new HostBuilderMock()
-            .UseCommandLineApplication()
             .ConfigureServices(services =>
             {
+                services.AddCliServices();
                 services.Remove(ServiceDescriptor.Singleton<IAuditor, Auditor>());
                 services.AddSingleton<IAuditor>(auditorMock.Object);
             })

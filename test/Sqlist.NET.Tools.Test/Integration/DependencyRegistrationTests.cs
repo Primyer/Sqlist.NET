@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 
 using Sqlist.NET.Extensions;
+using Sqlist.NET.Tools.Cli.Extensions;
 using Sqlist.NET.Tools.Extensions;
 using Sqlist.NET.Tools.Logging;
 using Sqlist.NET.Tools.Properties;
@@ -79,8 +80,11 @@ public class DependencyRegistrationTests
     {
         // Arrange
         var host = new HostBuilderMock()
-            .ConfigureServices(services => services.AddLogging())
-            .UseCommandLineApplication()
+            .ConfigureServices(services =>
+            {
+                services.AddLogging();
+                services.AddCliServices();
+            })
             .Build();
 
         // Assert

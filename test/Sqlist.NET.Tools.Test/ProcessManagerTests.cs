@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
-using Moq;
+﻿using Moq;
 
+using Sqlist.NET.Tools.Cli;
 using Sqlist.NET.Tools.Logging;
 
 using System.Reflection;
