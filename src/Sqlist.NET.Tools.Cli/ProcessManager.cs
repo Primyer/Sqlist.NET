@@ -3,7 +3,7 @@
 using System.Diagnostics;
 using System.Text;
 
-namespace Sqlist.NET.Tools;
+namespace Sqlist.NET.Tools.Cli;
 internal class ProcessManager(IAuditor auditor) : IProcessManager
 {
     public IProcess Prepare(

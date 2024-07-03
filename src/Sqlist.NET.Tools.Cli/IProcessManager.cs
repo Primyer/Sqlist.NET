@@ -1,4 +1,4 @@
-﻿namespace Sqlist.NET.Tools;
+﻿namespace Sqlist.NET.Tools.Cli;
 internal interface IProcessManager
 {
     IProcess Prepare(

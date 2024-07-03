@@ -12,18 +12,6 @@ using Sqlist.NET.Tools.Utilities;
 namespace Sqlist.NET.Tools.Extensions;
 public static class HostExtensions
 {
-    internal static IHostBuilder UseCommandLineApplication(this IHostBuilder host)
-    {
-        host.ConfigureLogging(logging => logging.ClearProviders())
-            .ConfigureServices(services =>
-            {
-                services.AddCommonServices();
-                services.TryAddSingleton<IApplicationExecutor, ToolCliExecutor>();
-            });
-
-        return host;
-    }
-
     public static TBuilder UseSqlistTools<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
         if (CommandLine.String.StartsWith(Resources.RootCommandName))

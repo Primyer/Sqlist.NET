@@ -1,8 +1,8 @@
-﻿using Sqlist.NET.Tools;
-using Sqlist.NET.Tools.Logging;
+﻿using Sqlist.NET.Tools.Logging;
 
 using System.Diagnostics;
 
+namespace Sqlist.NET.Tools.Cli;
 internal class ManagedProcess(Process process, IAuditor auditor) : IProcess
 {
     public bool Started { get; private set; }

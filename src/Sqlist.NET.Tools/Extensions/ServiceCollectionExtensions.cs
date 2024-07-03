@@ -14,8 +14,9 @@ internal static class ServiceCollectionExtensions
 {
     public static void AddSqlistTools(this IServiceCollection services)
     {
-        services.AddCommonServices();
+        services.TryAddSingleton<ICommandInitializer, CommandInitializer>();
         services.TryAddSingleton<IApplicationExecutor, EmbeddedAppExecutor>();
+        services.AddCommonServices();
     }
 
     public static void AddCommonServices(this IServiceCollection services)
@@ -27,10 +28,6 @@ internal static class ServiceCollectionExtensions
 #endif
         services.TryAddSingleton<MigrationHandler>();
         services.TryAddSingleton<MigrationCommand>();
-
-        services.TryAddSingleton<IProcessManager, ProcessManager>();
-        services.TryAddSingleton<ICommandTransmitter, CommandTransmitter>();
-        services.TryAddSingleton<ICommandInitializer, CommandInitializer>();
         services.TryAddSingleton<IExecutionContext, ExecutionContext>();
 
         services.AddHostedService<CommandHandlerService>();

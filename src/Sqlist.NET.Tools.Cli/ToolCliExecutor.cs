@@ -1,9 +1,10 @@
 ﻿using Sqlist.NET.Tools.Commands;
+using Sqlist.NET.Tools.Infrastructure;
 using Sqlist.NET.Tools.Properties;
 
 using System.Reflection;
 
-namespace Sqlist.NET.Tools.Infrastructure;
+namespace Sqlist.NET.Tools.Cli;
 internal class ToolCliExecutor : IApplicationExecutor, IDisposable
 {
     private readonly IExecutionContext _context;
