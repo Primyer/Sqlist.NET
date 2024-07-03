@@ -8,6 +8,16 @@
 
 		<PackAsTool>true</PackAsTool>
 		<ToolCommandName>dotnet-sqlist</ToolCommandName>
+		<Description>Special .NET tool for Sqlist.NET</Description>
+		<Copyright>(c) 2024, Primyer</Copyright>
+		<PackageProjectUrl>https://github.com/Primyer/Sqlist.NET</PackageProjectUrl>
+		<PackageIcon>primyer-logo-p.jpg</PackageIcon>
+		<RepositoryUrl>https://github.com/Primyer/Sqlist.NET</RepositoryUrl>
+		<PackageTags>O/RM;Data;SQL;dotnet-tool</PackageTags>
+		<AssemblyVersion>1.0.0</AssemblyVersion>
+		<FileVersion>1.0.0</FileVersion>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -18,6 +28,17 @@
 	  <Compile Remove="nupkg\**" />
 	  <EmbeddedResource Remove="nupkg\**" />
 	  <None Remove="nupkg\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="..\..\LICENSE">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	  <None Include="..\..\primyer-logo-p.jpg">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
 	</ItemGroup>
 
 	<ItemGroup>

@@ -5,7 +5,30 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Sqlist.NET</RootNamespace>
+    <Authors>Primyer</Authors>
+    <Company>Primyer</Company>
+    <Description>Advanced Object/Relational Mapping (O/RM) framework designed to streamline the interaction between .NET applications and relational databases.</Description>
+    <Copyright>(c) 2024, Primyer</Copyright>
+    <PackageProjectUrl>https://github.com/Primyer/Sqlist.NET</PackageProjectUrl>
+    <PackageIcon>primyer-logo-p.jpg</PackageIcon>
+    <RepositoryUrl>https://github.com/Primyer/Sqlist.NET</RepositoryUrl>
+    <PackageTags>O/RM;Data;SQL</PackageTags>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <FileVersion>1.0.0</FileVersion>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\primyer-logo-p.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />

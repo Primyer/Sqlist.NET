@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
-		<Description>A micro ORM with highly efficient API.</Description>
+		<Description>Advanced Object/Relational Mapping (O/RM) framework designed to streamline the interaction between .NET applications and relational databases.</Description>
 		<Copyright>(c) 2024, Primyer</Copyright>
 		<Authors>Primyer</Authors>
 		<Company>Primyer</Company>
@@ -12,17 +12,24 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<RepositoryUrl>https://github.com/Primyer/Sqlist.NET</RepositoryUrl>
-		<PackageTags>orm;sql;micro-orm</PackageTags>
+		<PackageTags>O/RM;Data;SQL</PackageTags>
 		<PackageProjectUrl>https://github.com/Primyer/Sqlist.NET</PackageProjectUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<AssemblyVersion>2.0.0</AssemblyVersion>
+		<FileVersion>2.0.0</FileVersion>
+		<PackageIcon>primyer-logo-p.jpg</PackageIcon>
 	</PropertyGroup>
 	
 	<ItemGroup>
 	  <None Include="..\..\LICENSE">
 	    <Pack>True</Pack>
 	    <PackagePath></PackagePath>
+	  </None>
+	  <None Include="..\..\primyer-logo-p.jpg">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
 	  </None>
 	  <None Include="..\..\README.md">
 	    <Pack>True</Pack>
