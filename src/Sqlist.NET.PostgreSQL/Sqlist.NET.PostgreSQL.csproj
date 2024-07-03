@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+	    <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Sqlist.NET</RootNamespace>
+		<Description>PostgreSQL specific tools and extensions for Sqlist.NET</Description>
+		<Copyright>(c) 2024, Primyer</Copyright>
+		<Authors>Primyer</Authors>
+		<Company>Primyer</Company>
+		<NeutralLanguage>en-GB</NeutralLanguage>
+		<Configurations>Debug;Release</Configurations>
+		<Platforms>AnyCPU</Platforms>
+		<Nullable>enable</Nullable>
+		<RepositoryUrl>https://github.com/Primyer/Sqlist.NET</RepositoryUrl>
+		<PackageTags>orm;sql;micro-orm;postgresql;postgre;npgsql</PackageTags>
+		<PackageProjectUrl>https://github.com/Primyer/Sqlist.NET</PackageProjectUrl>
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+    </PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\..\LICENSE">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
+	</ItemGroup>
+	
+    <ItemGroup>
+        <PackageReference Include="Npgsql" Version="8.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Sqlist.NET\Sqlist.NET.csproj" />
+    </ItemGroup>
+
+</Project>

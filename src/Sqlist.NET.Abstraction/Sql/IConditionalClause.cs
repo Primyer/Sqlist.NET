@@ -1,0 +1,40 @@
+﻿namespace Sqlist.NET.Sql;
+public interface IConditionalClause
+{
+    IConditionalClause And(string content);
+    IConditionalClause And(Action<IConditionalClause> inner);
+    IConditionalClause AndIn(string content);
+    IConditionalClause AndIn(Action<IConditionalClause> inner);
+    IConditionalClause AndIn(Action<ISqlBuilder> select);
+    IConditionalClause AndIsNull(string content);
+    IConditionalClause AndNot(string content);
+    IConditionalClause AndNot(Action<IConditionalClause> inner);
+    IConditionalClause AndNotIn(string content);
+    IConditionalClause AndNotIn(Action<IConditionalClause> inner);
+    IConditionalClause AndNotIn(Action<ISqlBuilder> select);
+    IConditionalClause AndNotNull(string content);
+    IConditionalClause In(string content);
+    IConditionalClause In(Action<IConditionalClause> inner);
+    IConditionalClause In(Action<ISqlBuilder> select);
+    IConditionalClause Init(string content);
+    IConditionalClause Init(Action<IConditionalClause> inner);
+    IConditionalClause IsNull(string content);
+    IConditionalClause Not(string content);
+    IConditionalClause Not(Action<IConditionalClause> inner);
+    IConditionalClause NotIn(string content);
+    IConditionalClause NotIn(Action<IConditionalClause> inner);
+    IConditionalClause NotIn(Action<ISqlBuilder> select);
+    IConditionalClause NotNull(string content);
+    IConditionalClause Or(string content);
+    IConditionalClause Or(Action<IConditionalClause> inner);
+    IConditionalClause OrIn(string content);
+    IConditionalClause OrIn(Action<IConditionalClause> inner);
+    IConditionalClause OrIn(Action<ISqlBuilder> select);
+    IConditionalClause OrIsNull(string content);
+    IConditionalClause OrNot(string content);
+    IConditionalClause OrNot(Action<IConditionalClause> inner);
+    IConditionalClause OrNotIn(string content);
+    IConditionalClause OrNotIn(Action<IConditionalClause> inner);
+    IConditionalClause OrNotIn(Action<ISqlBuilder> select);
+    IConditionalClause OrNotNull(string content);
+}
