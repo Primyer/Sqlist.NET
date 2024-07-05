@@ -16,6 +16,10 @@ on:
         options:
         - github
         - nuget
+      projects:
+        description: 'Comma-separated list of projects to pack (without .csproj extension). Leave empty to pack all projects.'
+        required: false
+        type: string
 
 jobs:
   build-and-publish:
@@ -32,8 +36,20 @@ jobs:
       - name: Create a temporary directory
         run: echo "TEMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
 
-      - name: Pack NuGet package
-        run: dotnet pack --configuration Release --output ${{ env.TEMP_DIR }}
+      - name: Pack selected NuGet packages
+        if: ${{ inputs.projects }}
+        run: |
+          IFS=',' read -ra SELECTED_PROJECTS <<< "${{ inputs.projects }}"
+          for project in "${SELECTED_PROJECTS[@]}"; do
+            dotnet pack "src/$project/$project.csproj" --configuration Release --output ${{ env.TEMP_DIR }}
+          done
+
+      - name: Find and pack all projects
+        if: ${{ !inputs.projects }}
+        run: |
+          for project in $(find src -type f -name '*.csproj'); do
+            dotnet pack "$project" --configuration Release --output ${{ env.TEMP_DIR }}
+          done
 
       - name: Publish to GitHub Packages (using PAT)
         if: ${{ inputs.target == 'github' }}
