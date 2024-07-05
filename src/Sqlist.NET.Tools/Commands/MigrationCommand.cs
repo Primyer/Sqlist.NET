@@ -9,7 +9,7 @@ namespace Sqlist.NET.Tools.Commands;
 /// <summary>
 ///     Initializes a new instance of the <see cref="MigrationCommand"/> class.
 /// </summary>
-internal class MigrationCommand(MigrationHandler handler, ICommandInitializer initializer) : CommandBase<MigrationHandler>(handler, initializer)
+public class MigrationCommand(MigrationHandler handler, ICommandInitializer initializer) : CommandBase<MigrationHandler>(handler, initializer)
 {
     private readonly MigrationHandler _handler = handler;
 

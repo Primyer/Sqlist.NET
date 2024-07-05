@@ -25,7 +25,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Sqlist.NET.Tools.Cli\Sqlist.NET.Tools.Cli.csproj" />
+    <ProjectReference Include="..\..\src\Sqlist.NET.Tools\Sqlist.NET.Tools.csproj">
+      <Aliases>global,sqlist_tools,%(Aliases)</Aliases>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>

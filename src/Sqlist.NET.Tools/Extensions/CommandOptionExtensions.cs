@@ -1,7 +1,7 @@
 ﻿using McMaster.Extensions.CommandLineUtils;
 
 namespace Sqlist.NET.Tools.Extensions;
-internal static class CommandOptionExtensions
+public static class CommandOptionExtensions
 {
     public static string GetOptionName(this CommandOption option)
     {

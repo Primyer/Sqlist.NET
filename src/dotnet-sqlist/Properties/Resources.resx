@@ -117,70 +117,13 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="CommandSucceeded" xml:space="preserve">
-    <value>Command has successfully completed.</value>
-  </data>
-  <data name="ConfigurationDescription" xml:space="preserve">
-    <value>The configuration to use.</value>
-  </data>
-  <data name="ForceDescription" xml:space="preserve">
-    <value>Force all dependencies to be resolved even if the last restore was successful.</value>
-  </data>
-  <data name="FrameworkDescription" xml:space="preserve">
-    <value>The target framework. Defaults to the first one in the project.</value>
-  </data>
-  <data name="FromVersionDescription" xml:space="preserve">
-    <value>The version of where the migration roadmap should be processed from.</value>
-  </data>
   <data name="HandlerProjectNoValueException" xml:space="preserve">
     <value>No value has been provided for the handler project option.</value>
   </data>
   <data name="HandlerProjectNullException" xml:space="preserve">
     <value>The handler project option is null.</value>
   </data>
-  <data name="InvalidOptionException" xml:space="preserve">
-    <value>The value "{0}" is not valid for the ({1}) option.</value>
-  </data>
-  <data name="LaunchProfileDescription" xml:space="preserve">
-    <value>The name of the launch profile (if any) to use when launching the application. Launch profiles are defined in the launchSettings.json file and are typically called Development, Staging, and Production.</value>
-  </data>
-  <data name="NoBuildDescription" xml:space="preserve">
-    <value>Don't build the project. Intended to be used when the build is up-to-date.</value>
-  </data>
-  <data name="NoColorDescription" xml:space="preserve">
-    <value>Don't colorize output.</value>
-  </data>
-  <data name="NoRestoreDescription" xml:space="preserve">
-    <value>Don't execute an implicit restore when running the command.</value>
-  </data>
-  <data name="NoSelectedCommandException" xml:space="preserve">
-    <value>The selected command isn't available before execution.</value>
-  </data>
-  <data name="PrefixDescription" xml:space="preserve">
-    <value>Prefix output with level.</value>
-  </data>
-  <data name="ProcessAlreadyRunningException" xml:space="preserve">
-    <value>The process is already running.</value>
-  </data>
-  <data name="ProjectDescription" xml:space="preserve">
-    <value>The path to the startup project file.</value>
-  </data>
-  <data name="RootCommandExpectedException" xml:space="preserve">
-    <value>The arguments must start with '{0}'.</value>
-  </data>
   <data name="RootCommandName" xml:space="preserve">
     <value>dotnet sqlist</value>
-  </data>
-  <data name="RuntimeDescription" xml:space="preserve">
-    <value>The target runtime to bundle for.</value>
-  </data>
-  <data name="ToVersionDescription" xml:space="preserve">
-    <value>The version that database is to be migrated up to.</value>
-  </data>
-  <data name="UnhandledException" xml:space="preserve">
-    <value>Unhandled exception!</value>
-  </data>
-  <data name="VerboseDescription" xml:space="preserve">
-    <value>Show verbose output.</value>
   </data>
 </root>

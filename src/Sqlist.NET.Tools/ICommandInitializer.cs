@@ -1,7 +1,7 @@
 ﻿using Sqlist.NET.Tools.Handlers;
 
 namespace Sqlist.NET.Tools;
-internal interface ICommandInitializer
+public interface ICommandInitializer
 {
     Task ExecuteAsync<THandler>(THandler handler, CancellationToken cancellationToken) where THandler : ICommandHandler;
 }

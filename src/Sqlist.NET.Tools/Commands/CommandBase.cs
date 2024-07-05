@@ -9,7 +9,7 @@ namespace Sqlist.NET.Tools.Commands;
 /// <summary>
 ///     Initializes a new instance of the <see cref="CommandBase{THandler}"/> class.
 /// </summary>
-internal abstract class CommandBase : ICommand
+public abstract class CommandBase : ICommand
 {
     public CommandOption? Verbose { get; set; }
     public CommandOption? NoColor { get; set; }
@@ -26,7 +26,7 @@ internal abstract class CommandBase : ICommand
 /// <summary>
 ///     Initializes a new instance of the <see cref="CommandBase{THandler}"/> class.
 /// </summary>
-internal abstract class CommandBase<THandler>(THandler handler, ICommandInitializer initializer) : CommandBase where THandler : ICommandHandler
+public abstract class CommandBase<THandler>(THandler handler, ICommandInitializer initializer) : CommandBase where THandler : ICommandHandler
 {
     public override void Configure(CommandLineApplication app)
     {

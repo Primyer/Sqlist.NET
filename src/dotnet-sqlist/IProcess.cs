@@ -1,4 +1,4 @@
-﻿namespace Sqlist.NET.Tools.Cli;
+﻿namespace Sqlist.NET.Tools;
 internal interface IProcess
 {
     bool Started { get; }

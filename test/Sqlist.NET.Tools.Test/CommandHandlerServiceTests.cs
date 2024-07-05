@@ -1,13 +1,16 @@
-﻿using McMaster.Extensions.CommandLineUtils;
+﻿extern alias sqlist_tools;
+
+using McMaster.Extensions.CommandLineUtils;
 
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 using Moq;
+
 using Sqlist.NET.Tools.Infrastructure;
 using Sqlist.NET.Tools.Logging;
-using Sqlist.NET.Tools.Properties;
 using Sqlist.NET.Tools.Tests.TestUtilities;
+
+using sqlist_tools::Sqlist.NET.Tools.Properties;
 
 namespace Sqlist.NET.Tools.Tests;
 public class CommandHandlerServiceTests

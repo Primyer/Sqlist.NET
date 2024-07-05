@@ -4,7 +4,8 @@ using McMaster.Extensions.CommandLineUtils;
 using Sqlist.NET.Tools.Handlers;
 
 namespace Sqlist.NET.Tools.Commands;
-internal class TestCommand(TestHandler handler, ICommandInitializer initializer) : CommandBase<TestHandler>(handler, initializer)
+
+public class TestCommand(TestHandler handler, ICommandInitializer initializer) : CommandBase<TestHandler>(handler, initializer)
 {
     private readonly TestHandler _handler = handler;
 

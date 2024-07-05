@@ -2,7 +2,6 @@
 
 using Moq;
 
-using Sqlist.NET.Tools.Cli;
 using Sqlist.NET.Tools.Exceptions;
 using Sqlist.NET.Tools.Extensions;
 using Sqlist.NET.Tools.Infrastructure;

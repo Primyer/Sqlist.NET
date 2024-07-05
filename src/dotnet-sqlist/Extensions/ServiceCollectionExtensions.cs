@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Sqlist.NET.Tools.Infrastructure;
 
-namespace Sqlist.NET.Tools.Cli.Extensions;
+namespace Sqlist.NET.Tools.Extensions;
 internal static class ServiceCollectionExtensions
 {
     public static void AddCliServices(this IServiceCollection services)

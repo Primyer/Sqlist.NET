@@ -106,24 +106,6 @@ namespace Sqlist.NET.Tools.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to No value has been provided for the handler project option..
-        /// </summary>
-        internal static string HandlerProjectNoValueException {
-            get {
-                return ResourceManager.GetString("HandlerProjectNoValueException", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The handler project option is null..
-        /// </summary>
-        internal static string HandlerProjectNullException {
-            get {
-                return ResourceManager.GetString("HandlerProjectNullException", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to The value &quot;{0}&quot; is not valid for the ({1}) option..
         /// </summary>
         internal static string InvalidOptionException {

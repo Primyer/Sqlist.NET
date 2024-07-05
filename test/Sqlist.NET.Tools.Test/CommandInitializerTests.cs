@@ -1,6 +1,5 @@
 ﻿using Moq;
 
-using Sqlist.NET.Tools.Cli;
 using Sqlist.NET.Tools.Handlers;
 
 namespace Sqlist.NET.Tools.Tests;

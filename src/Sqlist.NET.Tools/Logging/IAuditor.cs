@@ -1,5 +1,5 @@
 ﻿namespace Sqlist.NET.Tools.Logging;
-internal interface IAuditor
+public interface IAuditor
 {
     void WriteError(string? message);
     void WriteError(Exception ex, string? message = null);

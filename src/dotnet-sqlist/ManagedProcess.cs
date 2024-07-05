@@ -2,7 +2,7 @@
 
 using System.Diagnostics;
 
-namespace Sqlist.NET.Tools.Cli;
+namespace Sqlist.NET.Tools;
 internal class ManagedProcess(Process process, IAuditor auditor) : IProcess
 {
     public bool Started { get; private set; }

@@ -8,7 +8,7 @@ using Sqlist.NET.Tools.Properties;
 
 using System.Text.RegularExpressions;
 
-namespace Sqlist.NET.Tools.Cli;
+namespace Sqlist.NET.Tools;
 internal partial class CommandTransmitter(IProcessManager processRunner, IExecutionContext context) : ICommandTransmitter
 {
     public Task TransmitAsync<THandler>(THandler handler, CancellationToken cancellationToken) where THandler : TransmittableCommandHandler

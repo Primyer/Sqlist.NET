@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-using Sqlist.NET.Tools.Cli.Extensions;
+using Sqlist.NET.Tools.Extensions;
 using Sqlist.NET.Tools.Logging;
 
 var host = Host.CreateDefaultBuilder(args)

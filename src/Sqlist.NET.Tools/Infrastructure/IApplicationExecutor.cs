@@ -1,5 +1,5 @@
 ﻿namespace Sqlist.NET.Tools.Infrastructure;
-internal interface IApplicationExecutor
+public interface IApplicationExecutor
 {
     Task<int> ExecuteAsync(string[] args, CancellationToken cancellationToken);
 }

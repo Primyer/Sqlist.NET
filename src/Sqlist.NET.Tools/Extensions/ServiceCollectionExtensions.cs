@@ -10,9 +10,9 @@ using ExecutionContext = Sqlist.NET.Tools.Infrastructure.ExecutionContext;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
-internal static class ServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
-    public static void AddSqlistTools(this IServiceCollection services)
+    internal static void AddSqlistTools(this IServiceCollection services)
     {
         services.TryAddSingleton<ICommandInitializer, CommandInitializer>();
         services.TryAddSingleton<IApplicationExecutor, EmbeddedAppExecutor>();
@@ -33,7 +33,7 @@ internal static class ServiceCollectionExtensions
         services.AddHostedService<CommandHandlerService>();
     }
 
-    public static void RemoveServices<T>(this IServiceCollection services)
+    internal static void RemoveServices<T>(this IServiceCollection services)
     {
         var descriptors = services.Where(d => d.ServiceType == typeof(T)).ToList();
         foreach (var descriptor in descriptors)

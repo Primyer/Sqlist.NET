@@ -7,7 +7,7 @@ namespace Sqlist.NET.Tools.Handlers;
 /// <summary>
 ///     initializes a new instance of the <see cref="MigrationHandler"/> class.
 /// </summary>
-internal class MigrationHandler(IServiceProvider services) : TransmittableCommandHandler
+public class MigrationHandler(IServiceProvider services) : TransmittableCommandHandler
 {
     public Version? FromVersion { get; set; }
     public Version? ToVersion { get; set; }

@@ -1,6 +1,6 @@
 ﻿using Sqlist.NET.Tools.Handlers;
 
-namespace Sqlist.NET.Tools.Cli;
+namespace Sqlist.NET.Tools;
 
 /// <summary>
 ///     Initializes a new instance of the <see cref="CliCommandInitializer"/> class.

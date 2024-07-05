@@ -46,7 +46,7 @@
 	    <Pack>True</Pack>
 	    <PackagePath>\</PackagePath>
 	  </None>
-	  <None Include="..\..\primyer-logo-p.jpg">
+	  <None Include="..\..\logo\primyer-logo-p.jpg">
 	    <Pack>True</Pack>
 	    <PackagePath>\</PackagePath>
 	  </None>

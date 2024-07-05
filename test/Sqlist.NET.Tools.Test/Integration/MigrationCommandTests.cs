@@ -3,7 +3,6 @@ using Microsoft.Extensions.Hosting;
 
 using Moq;
 
-using Sqlist.NET.Tools.Cli.Extensions;
 using Sqlist.NET.Tools.Extensions;
 using Sqlist.NET.Tools.Infrastructure;
 using Sqlist.NET.Tools.Logging;

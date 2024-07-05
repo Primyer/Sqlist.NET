@@ -3,7 +3,7 @@
 using Sqlist.NET.Tools.Properties;
 
 namespace Sqlist.NET.Tools.Handlers;
-internal abstract class TransmittableCommandHandler : ICommandHandler
+public abstract class TransmittableCommandHandler : ICommandHandler
 {
     public CommandOption? Project { get; private set; }
     public CommandOption? Framework { get; private set; }

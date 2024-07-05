@@ -1,5 +1,5 @@
 ﻿namespace Sqlist.NET.Tools.Handlers;
-internal interface ICommandHandler
+public interface ICommandHandler
 {
     Task<int> OnExecuteAsync(CancellationToken cancellationToken);
 }

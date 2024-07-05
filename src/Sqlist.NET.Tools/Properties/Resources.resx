@@ -132,12 +132,6 @@
   <data name="FromVersionDescription" xml:space="preserve">
     <value>The version of where the migration roadmap should be processed from.</value>
   </data>
-  <data name="HandlerProjectNoValueException" xml:space="preserve">
-    <value>No value has been provided for the handler project option.</value>
-  </data>
-  <data name="HandlerProjectNullException" xml:space="preserve">
-    <value>The handler project option is null.</value>
-  </data>
   <data name="InvalidOptionException" xml:space="preserve">
     <value>The value "{0}" is not valid for the ({1}) option.</value>
   </data>

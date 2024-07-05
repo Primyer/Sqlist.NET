@@ -1,14 +1,14 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿extern alias dotnet_sqlist;
+
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using Moq;
 
 using Sqlist.NET.Extensions;
-using Sqlist.NET.Tools.Cli.Extensions;
 using Sqlist.NET.Tools.Extensions;
 using Sqlist.NET.Tools.Logging;
-using Sqlist.NET.Tools.Properties;
 using Sqlist.NET.Tools.Tests.TestUtilities;
 using Sqlist.NET.Tools.Utilities;
 
@@ -62,7 +62,7 @@ public class DependencyRegistrationTests
         builderMock.Setup(b => b.Services).Returns(services);
         builderMock.Setup(b => b.Logging).Returns(loggingBuilderMock.Object);
 
-        CommandLine.Args = [Resources.RootCommandName, "arg1", "arg2"];
+        CommandLine.Args = [dotnet_sqlist::Sqlist.NET.Tools.Properties.Resources.RootCommandName, "arg1", "arg2"];
 
         // Act
         builderMock.Object.UseSqlistTools();

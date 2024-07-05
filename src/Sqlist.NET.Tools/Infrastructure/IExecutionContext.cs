@@ -1,7 +1,7 @@
 ﻿using McMaster.Extensions.CommandLineUtils;
 
 namespace Sqlist.NET.Tools.Infrastructure;
-internal interface IExecutionContext
+public interface IExecutionContext
 {
     bool IsToolContext { get; set; }
 

@@ -8,7 +8,10 @@
 
 		<PackAsTool>true</PackAsTool>
 		<ToolCommandName>dotnet-sqlist</ToolCommandName>
+		<RootNamespace>Sqlist.NET.Tools</RootNamespace>
 		<Description>Special .NET tool for Sqlist.NET</Description>
+		<Company>Primyer</Company>
+		<Product>$(AssemblyName)</Product>
 		<Copyright>(c) 2024, Primyer</Copyright>
 		<PackageProjectUrl>https://github.com/Primyer/Sqlist.NET</PackageProjectUrl>
 		<PackageIcon>primyer-logo-p.jpg</PackageIcon>
@@ -23,8 +26,7 @@
 		<VersionSuffix>beta.1</VersionSuffix>
 		<AssemblyVersion>$(VersionPrefix)</AssemblyVersion>
 		<FileVersion>$(VersionPrefix)</FileVersion>
-		<Company>Primyer</Company>
-		<Product>Primyer</Product>
+		<Authors>Primyer</Authors>
 	</PropertyGroup>
 
 	<Target Name="SetPackageVersion" BeforeTargets="GenerateNuspec">
@@ -43,7 +45,7 @@
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
-		<None Include="..\..\primyer-logo-p.jpg">
+		<None Include="..\..\logo\primyer-logo-p.jpg">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
