@@ -23,6 +23,7 @@ internal class ToolCliExecutor : IApplicationExecutor, IDisposable
         _context.IsToolContext = true;
 
         _context.Application.Name = Resources.RootCommandName;
+        _context.Application.HelpOption("-h|--help|-?", true);
         _context.Application.VersionOption("-v|--version", GetVersion);
 
         migrationCommand.Configure(_context.Application);
@@ -41,7 +42,6 @@ internal class ToolCliExecutor : IApplicationExecutor, IDisposable
         return _context.Application.ExecuteAsync(args, cancellationToken);
     }
 
-    private static string GetVersion()
-        => typeof(ToolCliExecutor).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!
-            .InformationalVersion;
+    private static string? GetVersion()
+        => typeof(ToolCliExecutor).Assembly.GetName().Version?.ToString();
 }
