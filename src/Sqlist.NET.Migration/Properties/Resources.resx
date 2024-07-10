@@ -117,10 +117,28 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="InvalidYamlFormat" xml:space="preserve">
+    <value>Deserialization failed due to invalid YAML format.</value>
+  </data>
+  <data name="MigrationNotInitialized" xml:space="preserve">
+    <value>Migration service has not been initialized.</value>
+  </data>
+  <data name="NoMigrationGuidelinesDefined" xml:space="preserve">
+    <value>Migration phase has no guidelines defined.</value>
+  </data>
+  <data name="PhaseTitleRequired" xml:space="preserve">
+    <value>Phase title is required.</value>
+  </data>
   <data name="RoadmapAssemblyIsNull" xml:space="preserve">
     <value>Failed to identify the roadmap assembly. If no entry assembly is expected, the {0} option must be set.</value>
   </data>
+  <data name="ScriptExecutionFailed" xml:space="preserve">
+    <value>Failed to execute scripts in resource "{0}".</value>
+  </data>
   <data name="ScriptsAssemblyIsNull" xml:space="preserve">
     <value>Failed to identify the scripts assembly. If no entry assembly is expected, the {0} option must be set.</value>
+  </data>
+  <data name="UnsupportedDatabase" xml:space="preserve">
+    <value>DBMS with no default database are not supported.</value>
   </data>
 </root>

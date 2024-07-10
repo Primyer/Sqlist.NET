@@ -61,6 +61,42 @@ namespace Sqlist.NET.Migration.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Deserialization failed due to invalid YAML format..
+        /// </summary>
+        internal static string InvalidYamlFormat {
+            get {
+                return ResourceManager.GetString("InvalidYamlFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Migration service has not been initialized..
+        /// </summary>
+        internal static string MigrationNotInitialized {
+            get {
+                return ResourceManager.GetString("MigrationNotInitialized", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Migration phase has no guidelines defined..
+        /// </summary>
+        internal static string NoMigrationGuidelinesDefined {
+            get {
+                return ResourceManager.GetString("NoMigrationGuidelinesDefined", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Phase title is required..
+        /// </summary>
+        internal static string PhaseTitleRequired {
+            get {
+                return ResourceManager.GetString("PhaseTitleRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to identify the roadmap assembly. If no entry assembly is expected, the {0} option must be set..
         /// </summary>
         internal static string RoadmapAssemblyIsNull {
@@ -70,11 +106,29 @@ namespace Sqlist.NET.Migration.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to execute scripts in resource &quot;{0}&quot;..
+        /// </summary>
+        internal static string ScriptExecutionFailed {
+            get {
+                return ResourceManager.GetString("ScriptExecutionFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to identify the scripts assembly. If no entry assembly is expected, the {0} option must be set..
         /// </summary>
         internal static string ScriptsAssemblyIsNull {
             get {
                 return ResourceManager.GetString("ScriptsAssemblyIsNull", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to DBMS with no default database are not supported..
+        /// </summary>
+        internal static string UnsupportedDatabase {
+            get {
+                return ResourceManager.GetString("UnsupportedDatabase", resourceCulture);
             }
         }
     }

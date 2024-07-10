@@ -50,24 +50,28 @@ namespace Sqlist.NET.Migration
                 _info.CurrentVersion = new Version(phase.Version!);
             }
 
-            var roadMap = GetMigrationRoadMap()
+            var roadmap = GetMigrationRoadMap();
+            if (roadmap.Count == 0)
+                throw new MigrationException();
+
+            var phases = roadmap
                 .Where(phase => targetVersion is null || phase.Version <= targetVersion)
                 .OrderBy(phase => phase.Version);
 
-            _dataMap = new DataTransactionMap(roadMap, _info.CurrentVersion ?? currentVersion);
+            _dataMap = new DataTransactionMap(phases, _info.CurrentVersion ?? currentVersion);
 
             if (_info.CurrentVersion is null)
                 _info.CurrentVersion = currentVersion;
             else
                 MergeSchemaDefinition();
 
-            var lastPhase = roadMap.Last();
+            var lastPhase = phases.Last();
 
             _info.Title = lastPhase.Title;
             _info.Description = lastPhase.Description;
             _info.SchemaChanges = _dataMap.GenerateSummary();
             _info.LatestVersion = lastPhase.Version;
-            _info.TargetVersion = targetVersion != null && roadMap.LastOrDefault()?.Version == targetVersion ? targetVersion : _info.LatestVersion;
+            _info.TargetVersion = targetVersion != null && phases.LastOrDefault()?.Version == targetVersion ? targetVersion : _info.LatestVersion;
 
             _initialized = true;
 
@@ -116,7 +120,7 @@ namespace Sqlist.NET.Migration
             logger.LogTrace("Schema changes: {schema}", _info.SchemaChanges);
         }
 
-        public IEnumerable<MigrationPhase> GetMigrationRoadMap()
+        public IList<MigrationPhase> GetMigrationRoadMap()
         {
             var deserializer = new MigrationDeserializer();
             var phasesList = new List<MigrationPhase>();
@@ -138,13 +142,15 @@ namespace Sqlist.NET.Migration
         ///     Executes database migration.
         /// </summary>
         /// <returns>The <see cref="Task"/> object that represents the asynchronous operation.</returns>
+        /// <exception cref="NotSupportedException" />
+        /// <exception cref="MigrationException" />
         public virtual async Task MigrateDataAsync()
         {
             if (string.IsNullOrEmpty(db.DefaultDatabase))
-                throw new NotSupportedException("DBMS with no default database are not supported.");
+                throw new NotSupportedException(Resources.UnsupportedDatabase);
 
             if (!_initialized)
-                throw new MigrationException("Migration service has not been initialized.");
+                throw new MigrationException(Resources.MigrationNotInitialized);
 
             var renamed = false;
             var created = false;
@@ -216,7 +222,7 @@ namespace Sqlist.NET.Migration
                     }
                     catch (Exception ex)
                     {
-                        throw new MigrationException($"Failed to execute scripts in resource '{resource}'.", ex);
+                        throw new MigrationException(string.Format(Resources.ScriptExecutionFailed, resource), ex);
                     }
                 });
 

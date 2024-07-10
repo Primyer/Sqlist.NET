@@ -1,5 +1,8 @@
-﻿using System;
+﻿using Sqlist.NET.Migration.Properties;
+
+using System;
 using System.Collections;
+using System.Linq;
 using System.Runtime.Serialization;
 
 using YamlDotNet.Serialization;
@@ -33,7 +36,7 @@ public class MigrationDeserializer
         }
         catch (Exception ex)
         {
-            throw new SerializationException("Deserialization failed due to invalid YAML format.\n" + ex.Message);
+            throw new SerializationException(Resources.InvalidYamlFormat, ex);
         }
 
         ValidatePhase(phase);
@@ -42,19 +45,20 @@ public class MigrationDeserializer
 
     private static void ValidatePhase(MigrationPhase phase)
     {
-        if (phase is null)
-            throw new ArgumentException("Invalid input.");
+        ArgumentNullException.ThrowIfNull(phase);
 
         if (string.IsNullOrEmpty(phase.Title))
-            throw new InvalidOperationException("Phase title is required.");
+            throw new InvalidOperationException(Resources.PhaseTitleRequired);
 
         var guidelines = phase.Guidelines;
-        if (guidelines is null || (IsNullOrEmpty(guidelines.Create) && IsNullOrEmpty(guidelines.Update) && IsNullOrEmpty(guidelines.Delete)))
-            throw new InvalidOperationException("Migration phase has no guidelines defined.");
+        if (guidelines is null || AllAreNullOrEmpty(guidelines.Create, guidelines.Update, guidelines.Delete))
+        {
+            throw new InvalidOperationException(Resources.NoMigrationGuidelinesDefined);
+        }
     }
 
-    private static bool IsNullOrEmpty(ICollection collection)
+    private static bool AllAreNullOrEmpty(params ICollection[] collections)
     {
-        return collection is null || collection.Count == 0;
+        return collections.All(collection => collection is null || collection.Count == 0);
     }
 }
