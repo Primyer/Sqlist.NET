@@ -117,13 +117,22 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="HandlerProjectNoValueException" xml:space="preserve">
-    <value>No value has been provided for the handler project option.</value>
+  <data name="DirectoryPathNotFound" xml:space="preserve">
+    <value>The specified project path does not exist.</value>
   </data>
-  <data name="HandlerProjectNullException" xml:space="preserve">
-    <value>The handler project option is null.</value>
+  <data name="InvalidProjectDirectory" xml:space="preserve">
+    <value>The specified directory does not contain a .csproj, therefore is invalid.</value>
+  </data>
+  <data name="PathIsNotDirectory" xml:space="preserve">
+    <value>The project file must point to the directory containing a .csproj file.</value>
+  </data>
+  <data name="ProjectOptionIsNull" xml:space="preserve">
+    <value>The project option cannot be null.</value>
   </data>
   <data name="RootCommandName" xml:space="preserve">
     <value>dotnet sqlist</value>
+  </data>
+  <data name="RunningProject" xml:space="preserve">
+    <value>Running project "{0}"...</value>
   </data>
 </root>

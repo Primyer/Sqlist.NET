@@ -61,20 +61,38 @@ namespace Sqlist.NET.Tools.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to No value has been provided for the handler project option..
+        ///   Looks up a localized string similar to The specified project path does not exist..
         /// </summary>
-        internal static string HandlerProjectNoValueException {
+        internal static string DirectoryPathNotFound {
             get {
-                return ResourceManager.GetString("HandlerProjectNoValueException", resourceCulture);
+                return ResourceManager.GetString("DirectoryPathNotFound", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The handler project option is null..
+        ///   Looks up a localized string similar to The specified directory does not contain a .csproj, therefore is invalid..
         /// </summary>
-        internal static string HandlerProjectNullException {
+        internal static string InvalidProjectDirectory {
             get {
-                return ResourceManager.GetString("HandlerProjectNullException", resourceCulture);
+                return ResourceManager.GetString("InvalidProjectDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The project file must point to the directory containing a .csproj file..
+        /// </summary>
+        internal static string PathIsNotDirectory {
+            get {
+                return ResourceManager.GetString("PathIsNotDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The project option cannot be null..
+        /// </summary>
+        internal static string ProjectOptionIsNull {
+            get {
+                return ResourceManager.GetString("ProjectOptionIsNull", resourceCulture);
             }
         }
         
@@ -84,6 +102,15 @@ namespace Sqlist.NET.Tools.Properties {
         internal static string RootCommandName {
             get {
                 return ResourceManager.GetString("RootCommandName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Running project &quot;{0}&quot;....
+        /// </summary>
+        internal static string RunningProject {
+            get {
+                return ResourceManager.GetString("RunningProject", resourceCulture);
             }
         }
     }
