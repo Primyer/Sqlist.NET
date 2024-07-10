@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Sqlist.NET.Migration
@@ -120,7 +121,11 @@ namespace Sqlist.NET.Migration
             var deserializer = new MigrationDeserializer();
             var phasesList = new List<MigrationPhase>();
 
-            _options.RoadmapAssembly?.ReadEmbeddedResources(_options.RoadmapPath, (_, content) =>
+            var assembly = _options.RoadmapAssembly ?? Assembly.GetEntryAssembly();
+            if (assembly is null)
+                throw new MigrationException(string.Format(Resources.RoadmapAssemblyIsNull, nameof(MigrationOptions.RoadmapAssembly)));
+
+            assembly?.ReadEmbeddedResources(_options.RoadmapPath, (_, content) =>
             {
                 var phase = deserializer.DeserializePhase(content!);
                 phasesList.Add(phase);
@@ -199,7 +204,11 @@ namespace Sqlist.NET.Migration
             {
                 logger?.LogInformation("Executing database scripts...");
 
-                await _options.ScriptsAssembly!.ReadEmbeddedResources(_options.ScriptsPath, async (resource, script) =>
+                var assembly = _options.ScriptsAssembly ?? Assembly.GetEntryAssembly();
+                if (assembly is null)
+                    throw new MigrationException(string.Format(Resources.ScriptsAssemblyIsNull, nameof(MigrationOptions.ScriptsAssembly)));
+
+                await assembly.ReadEmbeddedResources(_options.ScriptsPath, async (resource, script) =>
                 {
                     try
                     {
