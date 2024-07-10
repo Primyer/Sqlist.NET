@@ -10,7 +10,7 @@ namespace Sqlist.NET.Migration.Infrastructure
         public Assembly? ScriptsAssembly { get; set; }
         public Assembly? RoadmapAssembly { get; set; }
 
-        public string ScriptsPath { get; set; } = "Scripts";
-        public string RoadmapPath { get; set; } = "Roadmap";
+        public string ScriptsPath { get; set; } = "Migration.Scripts";
+        public string RoadmapPath { get; set; } = "Migration.Roadmap";
     }
 }
