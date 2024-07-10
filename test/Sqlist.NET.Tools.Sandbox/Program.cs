@@ -20,7 +20,7 @@ builder.Services
                builder.MapEnum<UserStatus>("user_status", new NpgsqlNullNameTranslator());
            });
        })
-       .AddSqlistMigration(options =>
+       .WithMigration(options =>
        {
            var assembly = typeof(Consts).Assembly;
 
