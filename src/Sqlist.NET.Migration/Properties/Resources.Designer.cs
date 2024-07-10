@@ -61,6 +61,15 @@ namespace Sqlist.NET.Migration.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No roadmap phases were found. This is likely due invalid assembly or path configurations..
+        /// </summary>
+        internal static string EmptyRoadmap {
+            get {
+                return ResourceManager.GetString("EmptyRoadmap", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Deserialization failed due to invalid YAML format..
         /// </summary>
         internal static string InvalidYamlFormat {

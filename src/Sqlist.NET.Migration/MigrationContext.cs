@@ -52,7 +52,7 @@ namespace Sqlist.NET.Migration
 
             var roadmap = GetMigrationRoadMap();
             if (roadmap.Count == 0)
-                throw new MigrationException();
+                throw new MigrationException(Resources.EmptyRoadmap);
 
             var phases = roadmap
                 .Where(phase => targetVersion is null || phase.Version <= targetVersion)
