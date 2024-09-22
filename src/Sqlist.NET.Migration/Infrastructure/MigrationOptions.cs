@@ -1,16 +1,26 @@
-﻿using System.Reflection;
+﻿using System.Collections.Generic;
+using System.Reflection;
 
-namespace Sqlist.NET.Migration.Infrastructure
+namespace Sqlist.NET.Migration.Infrastructure;
+public class MigrationOptions : MigrationAssetInfo
 {
-    public class MigrationOptions
+    private Assembly? _scriptsAssembly;
+    private Assembly? _roadmapAssembly;
+
+    public override Assembly? ScriptsAssembly
     {
-        public string? SchemaTable { get; set; } = "schema_phases";
-        public string? SchemaTableSchema { get; set; }
-
-        public Assembly? ScriptsAssembly { get; set; }
-        public Assembly? RoadmapAssembly { get; set; }
-
-        public string ScriptsPath { get; set; } = "Migration.Scripts";
-        public string RoadmapPath { get; set; } = "Migration.Roadmap";
+        get => _scriptsAssembly ??= Assembly.GetEntryAssembly();
+        set => _scriptsAssembly = value;
     }
+
+    public override Assembly? RoadmapAssembly
+    {
+        get => _roadmapAssembly ??= Assembly.GetEntryAssembly();
+        set => _roadmapAssembly = value;
+    }
+
+    public string? SchemaTable { get; set; }
+    public string? SchemaTableSchema { get; set; }
+
+    public Dictionary<string, MigrationAssetInfo> ModularAssets { get; } = [];
 }

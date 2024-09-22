@@ -12,7 +12,7 @@ namespace Sqlist.NET.Migration.Deserialization
         /// <summary>
         ///     Gets or sets the title describing the phase.
         /// </summary>
-        public string? Title { get; set; }
+        public string Title { get; set; } = null!;
 
         /// <summary>
         ///     Gets or sets an optional description of the phase.

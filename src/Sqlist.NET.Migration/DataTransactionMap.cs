@@ -1,13 +1,14 @@
-﻿using Sqlist.NET.Data;
-using Sqlist.NET.Migration.Deserialization;
-using Sqlist.NET.Migration.Deserialization.Collections;
-
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
+
+using Sqlist.NET.Data;
+using Sqlist.NET.Migration.Deserialization;
+using Sqlist.NET.Migration.Deserialization.Collections;
+using Sqlist.NET.Migration.Exceptions;
 
 namespace Sqlist.NET.Migration
 {
@@ -43,7 +44,9 @@ namespace Sqlist.NET.Migration
                 if (transfer.Count != 0 && currentVersion < phase.Version && phase.Version < latest)
                 {
                     foreach (var (table, definition) in transfer)
+                    {
                         TransferDefinitions[table] = definition;
+                    }
                 }
             }
         }
@@ -101,7 +104,9 @@ namespace Sqlist.NET.Migration
                     {
                         var index = _orderList.IndexOf(collection.Before);
                         if (index == -1)
-                            throw new InvalidOperationException($"Cannot execute table ({table}) before ({collection.Before}) because it doesn't exist.");
+                        {
+                            throw new MigrationException($"Cannot execute table ({table}) before ({collection.Before}) because it doesn't exist.");
+                        }
 
                         _orderList.Insert(index, table);
                     }
@@ -112,17 +117,22 @@ namespace Sqlist.NET.Migration
                 }
                 else
                 {
-                    if (collection.Condition?.Trim() == "")
-                        rules.Condition = null;
-
-                    else if (!string.IsNullOrWhiteSpace(collection.Condition))
+                    if (!string.IsNullOrWhiteSpace(collection.Condition))
+                    {
                         rules.Condition = collection.Condition;
+                    }
+                    else if (collection.Condition?.Trim() == "")
+                    {
+                        rules.Condition = null;
+                    }
                 }
 
                 foreach (var (name, definition) in collection.Columns)
                 {
                     if (string.IsNullOrEmpty(definition.Type))
-                        throw new InvalidOperationException($"Column ({name}) of table ({table}) has no corresponding type specified.");
+                    {
+                        throw new MigrationException($"Column ({name}) of table ({table}) has no corresponding type specified.");
+                    }
 
                     var type = NormalizeType(definition.Type);
 
@@ -223,7 +233,9 @@ namespace Sqlist.NET.Migration
                         if (TransferDefinitions.TryGetValue(table, out DataTransferDefinition? value))
                         {
                             if (value.Columns.ContainsKey(column))
-                                throw new InvalidOperationException($"Column ({column}) of table ({table}) is set for transfer. Updating the transfer definition accordingly is recommended.");
+                            {
+                                throw new MigrationException($"Column ({column}) of table ({table}) is set for transfer. Updating the transfer definition accordingly is recommended.");
+                            }
                         }
                     }
                 }
@@ -292,14 +304,18 @@ namespace Sqlist.NET.Migration
         private void EnsureTableExists(string operation, string table)
         {
             if (!_map.ContainsKey(table))
-                throw new InvalidOperationException($"Cannot {operation} undefined table ({table}).");
+            {
+                throw new MigrationException($"Cannot {operation} undefined table ({table}).");
+            }
         }
 
         private KeyValuePair<string, DataTransactionRule> GetRecord(string operation, string table, string column)
         {
             var record = _map[table].SingleOrDefault(record => record.Key == column || record.Value?.ColumnName == column);
             if (record.Equals(DefaultRecord))
-                throw new InvalidOperationException($"Cannot {operation} undefined column ({column}) of table ({table}).");
+            {
+                throw new MigrationException($"Cannot {operation} undefined column ({column}) of table ({table}).");
+            }
 
             return record;
         }
