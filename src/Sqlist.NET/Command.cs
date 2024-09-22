@@ -17,7 +17,7 @@ public class Command : ICommand
         Check.NotNull(db, nameof(db));
 
         _db = db;
-        _cmd = _db.Connection!.CreateCommand();
+        _cmd = _db.Connection.CreateCommand();
         _conn = _db.Connection;
     }
 

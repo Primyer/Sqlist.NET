@@ -1,16 +1,20 @@
-﻿using Microsoft.Extensions.Logging;
-using NpgsqlTypes;
-using Sqlist.NET.Data;
-using Sqlist.NET.Metadata;
-using Sqlist.NET.Sql;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Threading.Tasks;
-using System.Threading;
-using System;
-using Sqlist.NET.Infrastructure;
-using Npgsql;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+using Microsoft.Extensions.Logging;
+
+using Npgsql;
+
+using NpgsqlTypes;
+
+using Sqlist.NET.Data;
+using Sqlist.NET.Infrastructure;
+using Sqlist.NET.Metadata;
+using Sqlist.NET.Sql;
 
 namespace Sqlist.NET;
 public class NpgsqlDataTransfer(DbContext db, ISchemaBuilderFactory schemaFactory, ILogger<NpgsqlDataTransfer>? logger) : IDataTransfer

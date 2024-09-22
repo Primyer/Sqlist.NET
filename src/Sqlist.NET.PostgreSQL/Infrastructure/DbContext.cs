@@ -16,7 +16,7 @@ namespace Sqlist.NET.Infrastructure
         private readonly NpgsqlConnectionStringBuilder _csBuilder = new (options.Value.ConnectionString);
 
         /// <inheritdoc />
-        public override NpgsqlConnection? Connection => base.Connection as NpgsqlConnection;
+        public override NpgsqlConnection Connection => (NpgsqlConnection)base.Connection;
 
         /// <inheritdoc />
         public override NpgsqlTransaction? Transaction => base.Transaction as NpgsqlTransaction;
@@ -47,8 +47,10 @@ namespace Sqlist.NET.Infrastructure
         /// <inheritdoc />
         public override async Task TerminateDatabaseConnectionsAsync(string database, CancellationToken cancellationToken = default)
         {
-            if (database == Connection?.Database)
+            if (IsConnectionAvailable && database == Connection.Database)
+            {
                 await Connection.ChangeDatabaseAsync(DefaultDatabase!, cancellationToken);
+            }
 
             var sql = $"""
                 REVOKE CONNECT ON DATABASE {database} FROM PUBLIC, {_csBuilder.Username};

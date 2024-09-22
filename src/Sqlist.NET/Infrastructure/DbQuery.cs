@@ -52,7 +52,7 @@ public class DbQuery : QueryStore
         if (_initTransaction)
             await _db.BeginTransactionAsync(cancellationToken);
 
-        return _db.Connection!;
+        return _db.Connection;
     }
 
     /// <inheritdoc />

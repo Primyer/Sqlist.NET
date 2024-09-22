@@ -24,7 +24,13 @@ public abstract class DbContextBase : QueryStore, IDbContext
         _dataSource = BuildDataSource(options.ConnectionString!);
     }
 
-    public virtual DbConnection? Connection { get => _conn; internal set => _conn = value; }
+    public virtual DbConnection Connection
+    {
+        get => _conn ?? throw new InvalidOperationException("The database connection has not been initialized.");
+        internal set => _conn = value;
+    }
+
+    public bool IsConnectionAvailable => _conn is not null;
 
     public virtual DbTransaction? Transaction { get => _trans; internal set => _trans = value; }
 

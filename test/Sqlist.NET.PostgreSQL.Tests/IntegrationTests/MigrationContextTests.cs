@@ -123,7 +123,7 @@ public class MigrationContextTests
         var sql = _schemaFactory.Create().CreateDatabase(Consts.TestDatabaseName);
 
         await _db.Query().ExecuteAsync(sql);
-        await _db.Connection!.ChangeDatabaseAsync(Consts.TestDatabaseName);
+        await _db.Connection.ChangeDatabaseAsync(Consts.TestDatabaseName);
     }
 
     private async Task DeleteTestDatabases()

@@ -3,7 +3,16 @@
 namespace Sqlist.NET.Infrastructure;
 public interface IDbContext : IQueryStore, ICommandProvider, IDisposable, IAsyncDisposable
 {
-    DbConnection? Connection { get; }
+    /// <summary>
+    ///     Gets the currently available connection of the DB provider.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The database connection has not been initialized.</exception>
+    DbConnection Connection { get; }
+
+    /// <summary>
+    ///     Gets a value indicating whether an initialized connection is available.
+    /// </summary>
+    public bool IsConnectionAvailable { get; }
 
     /// <summary>
     ///     Gets or sets the pending transaction, if any.
