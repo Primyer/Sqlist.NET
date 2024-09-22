@@ -1,7 +1,7 @@
-﻿using Sqlist.NET.Migration.Deserialization.Collections;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
+
+using Sqlist.NET.Migration.Deserialization.Collections;
 
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
@@ -10,7 +10,7 @@ using YamlDotNet.Serialization;
 namespace Sqlist.NET.Migration.Deserialization;
 internal class ColumnsDefinitionNodeDeserializer : INodeDeserializer
 {
-    public bool Deserialize(IParser reader, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value)
+    public bool Deserialize(IParser reader, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value, ObjectDeserializer rootDeserializer)
     {
         if (expectedType != typeof(ColumnsDefinition))
         {

@@ -9,7 +9,7 @@ namespace Sqlist.NET.Migration.Deserialization
 {
     internal class DefinitionNodeDeserializer : INodeDeserializer
     {
-        public bool Deserialize(IParser parser, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value)
+        public bool Deserialize(IParser parser, Type expectedType, Func<IParser, Type, object?> nestedObjectDeserializer, out object? value, ObjectDeserializer rootDeserializer)
         {
             if (expectedType.IsGenericType && expectedType == typeof(KeyValuePair<string, ColumnDefinition>))
             {
