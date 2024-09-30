@@ -15,17 +15,17 @@ builder.Services
            var connectionString = builder.Configuration.GetConnectionString("Default") ?? "";
 
            options.SetConnectionString(connectionString);
-           options.ConfigureDataSource(builder =>
+           options.ConfigureDataSource(srcBuilder =>
            {
-               builder.MapEnum<UserStatus>("user_status", new NpgsqlNullNameTranslator());
+               srcBuilder.MapEnum<UserStatus>("user_status", new NpgsqlNullNameTranslator());
            });
        })
        .WithMigration(options =>
        {
            var assembly = typeof(Consts).Assembly;
 
-           options.SetMigrationAssembly(assembly, Consts.ScriptsRscPath + ".v3");
-           options.SetDataMigrationRoadmapAssembly(assembly, Consts.RoadmapRscPath);
+           options.SetScriptsAssembly(assembly, Consts.ScriptsRscPath + ".v3");
+           options.SetRoadmapAssembly(assembly, Consts.RoadmapRscPath);
        });
 
 builder.UseSqlistTools()
