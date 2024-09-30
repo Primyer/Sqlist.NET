@@ -11,8 +11,8 @@ public abstract class TransmittableCommandHandler : ICommandHandler
     public CommandOption? Runtime { get; private set; }
     public CommandOption? LaunchProfile { get; private set; }
     public CommandOption? Force { get; private set; }
-    public CommandOption? NoBuild { get; set; }
-    public CommandOption? NoRestore { get; set; }
+    public CommandOption? NoBuild { get; private set; }
+    public CommandOption? NoRestore { get; private set; }
 
     internal void Initialize(CommandLineApplication command)
     {
