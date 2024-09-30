@@ -19,40 +19,44 @@ using Sqlist.NET.Migration.Properties;
 
 namespace Sqlist.NET.Migration
 {
-    internal class MigrationContext(IDbContext db, IMigrationService migrationService, IOptions<MigrationOptions> options, ILogger<MigrationContext>? logger = null) : IMigrationContext
+    /// <inheritdoc cref="IMigrationContext"/>
+    /// <param name="db">The database context used for executing database operations.</param>
+    /// <param name="migrationService">The migration service responsible for handling migration operations and scripts.</param>
+    /// <param name="options">The migration options containing configuration settings for the migration process.</param>
+    /// <param name="logger">The logger used for logging migration-related information and errors, if available.</param>
+    internal class MigrationContext(
+        IDbContext db,
+        IMigrationService migrationService,
+        IOptions<MigrationOptions> options,
+        ILogger<MigrationContext>? logger = null) : IMigrationContext
     {
         private readonly MigrationOptions _options = options.Value;
-        private readonly List<DataTransactionMap> _modularDatamaps = [];
 
         private MigrationOperationInfo? _info;
         private DataTransactionMap? _datamap;
 
         [MemberNotNullWhen(true, nameof(_info))]
-        protected bool Initialized { get; private set; }
+        private bool Initialized { get; set; }
 
         [NotNullIfNotNull(nameof(_info))]
         public MigrationOperationInfo? OperationInfo => _info;
 
-        /// <summary>Initializes the migration service.</summary>
-        /// <param name="targetVersion">The version that database is to be migrated up to.</param>
-        /// <returns>
-        ///     The <see cref="Task"/> object that represents the asynchronous operation, containing the <see cref="MigrationOperationInfo"/>.
-        /// </returns>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <inheritdoc />
         public async Task<MigrationOperationInfo> InitializeAsync(Version? targetVersion = null, Version? currentVersion = null, CancellationToken cancellationToken = default)
         {
             LogInitialization(targetVersion);
             await InitializeOperationAsync(cancellationToken);
 
             _datamap = BuildTransactionMap(_options, _info, _info.CurrentVersion ?? currentVersion, targetVersion);
-
+            var modules = new List<DataTransactionMap>();
+            
             foreach (var (package, assets) in _options.ModularAssets)
             {
                 if (!_info.ModularMigrations.TryGetValue(package, out var moduleInfo))
                     continue;
 
                 var moduleMap = BuildTransactionMap(assets, moduleInfo, moduleInfo.CurrentVersion);
-                _modularDatamaps.Add(moduleMap);
+                modules.Add(moduleMap);
             }
 
             if (_info.CurrentVersion is null)
@@ -61,6 +65,9 @@ namespace Sqlist.NET.Migration
             {
                 MergeSchemaDefinition();
             }
+
+            var modularRoadmap = DataTransactionMapMerger.SafeMerge(modules);
+            DataTransactionMapMerger.FullMerge(_datamap, modularRoadmap);
 
             Initialized = true;
 
@@ -97,7 +104,7 @@ namespace Sqlist.NET.Migration
         private async Task InitializeOperationAsync(CancellationToken cancellationToken)
         {
             var moduleInfo = new Dictionary<string, MigrationRoadmapInfo>();
-            _info = new()
+            _info = new MigrationOperationInfo
             {
                 ModularMigrations = moduleInfo
             };
@@ -118,7 +125,7 @@ namespace Sqlist.NET.Migration
                 if (phase.Package is null)
                     continue;
 
-                moduleInfo.Add(phase.Package, new() { CurrentVersion = new Version(phase.Version) });
+                moduleInfo.Add(phase.Package, new MigrationRoadmapInfo { CurrentVersion = new Version(phase.Version) });
             }
         }
 
@@ -189,8 +196,11 @@ namespace Sqlist.NET.Migration
             logger.LogTrace("Title: {title}", _info.Title);
             logger.LogTrace("Description: {description}", _info.Description);
             logger.LogTrace("Schema changes: {schema}", _info.SchemaChanges);
+            
+            // TODO: Log modular migrations.
         }
 
+        /// <inheritdoc />
         public static IList<MigrationPhase> GetMigrationRoadmap(MigrationAssetInfo assets)
         {
             var deserializer = new MigrationDeserializer();
@@ -210,44 +220,48 @@ namespace Sqlist.NET.Migration
             return phasesList;
         }
 
-        /// <summary>
-        ///     Executes database migration.
-        /// </summary>
-        /// <returns>The <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        /// <exception cref="NotSupportedException" />
-        /// <exception cref="MigrationException" />
-        public virtual async Task MigrateDataAsync(CancellationToken cancellationToken = default)
+        /// <inheritdoc />
+        public async Task MigrateDataAsync(CancellationToken cancellationToken = default)
         {
             ValidateMigrationState();
 
             var dbname = db.Connection.Database;
-            var old_db = dbname + "_" + DateTime.Now.Ticks;
+            var oldDb = dbname + "_" + DateTime.Now.Ticks;
 
             try
             {
-                await PrepareDatabaseForMigrationAsync(dbname, old_db, cancellationToken);
-                await ExecuteMigrationsAsync(old_db, cancellationToken);
+                // Prepare the database for migration by renaming the current database and creating a new one
+                await PrepareDatabaseForMigrationAsync(dbname, oldDb, cancellationToken); 
+                await ExecuteMigrationsAsync(oldDb, cancellationToken); // Execute the migration scripts and roadmap
             }
             catch (MigrationException ex)
             {
+                // Log the error and clean up the database in case of a migration-specific exception
                 logger?.LogError(ex, "An error has occurred during migration; cleaning up...");
-                await CleanupDatabaseAsync(dbname, old_db, ex, cancellationToken);
+                await CleanupDatabaseAsync(dbname, oldDb, ex, cancellationToken);
                 throw;
             }
             catch (Exception ex)
             {
+                // Log the error and clean up the database
                 logger?.LogError("An unexpected error occurred during migration; cleaning up...");
-                await CleanupDatabaseAsync(dbname, old_db, ex, cancellationToken);
+                await CleanupDatabaseAsync(dbname, oldDb, ex, cancellationToken);
 
                 throw new MigrationException("An unexpected error occurred during migration.", ex);
             }
         }
-
-        private async Task ExecuteMigrationsAsync(string old_db, CancellationToken cancellationToken)
+        
+        /// <summary>
+        /// Executes the migration operations, including executing scripts and the migration roadmap.
+        /// </summary>
+        /// <param name="oldDb">The name of the old database to be used during migration.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous migration operation.</returns>
+        /// <exception cref="MigrationException">Thrown when an error occurs during migration.</exception>
+        private async Task ExecuteMigrationsAsync(string oldDb, CancellationToken cancellationToken)
         {
             await ExecuteScriptsAsync(_options, cancellationToken);
-            await ExecuteRoadmapAsync(old_db, cancellationToken);
-            // TODO: Implement modular migrations.
+            await ExecuteRoadmapAsync(oldDb, cancellationToken);
 
             await RecordMigrationPhaseAsync(cancellationToken);
 
@@ -263,13 +277,19 @@ namespace Sqlist.NET.Migration
                 throw new MigrationException(Resources.MigrationNotInitialized);
         }
 
-        private async Task PrepareDatabaseForMigrationAsync(string dbname, string old_db, CancellationToken cancellationToken)
+        /// <summary>
+        /// Prepares the database for migration by renaming the current database and creating a new one.
+        /// </summary>
+        /// <param name="dbname">The name of the new database.</param>
+        /// <param name="oldDb">The name of the old database to be renamed.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        private async Task PrepareDatabaseForMigrationAsync(string dbname, string oldDb, CancellationToken cancellationToken)
         {
             if (_info!.CurrentVersion is null)
                 return;
 
             await db.TerminateDatabaseConnectionsAsync(dbname, cancellationToken);
-            await migrationService.RenameDatabaseAsync(dbname, old_db, cancellationToken);
+            await migrationService.RenameDatabaseAsync(dbname, oldDb, cancellationToken);
             await migrationService.CreateDatabaseAsync(dbname, cancellationToken);
 
             logger?.LogInformation("Created new database.");
@@ -277,7 +297,15 @@ namespace Sqlist.NET.Migration
             await db.Connection.ChangeDatabaseAsync(dbname, cancellationToken);
         }
 
-        private async Task CleanupDatabaseAsync(string dbname, string old_db, Exception ex, CancellationToken cancellationToken)
+        /// <summary>
+        /// Cleans up the database in case of an error during migration.
+        /// </summary>
+        /// <param name="dbname">The name of the new database.</param>
+        /// <param name="oldDb">The name of the old database.</param>
+        /// <param name="ex">The exception that occurred during migration.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous cleanup operation.</returns>
+        private async Task CleanupDatabaseAsync(string dbname, string oldDb, Exception ex, CancellationToken cancellationToken)
         {
             if (db.Connection.State != ConnectionState.Open)
             {
@@ -291,12 +319,24 @@ namespace Sqlist.NET.Migration
                 if (ex is MigrationException)
                 {
                     await migrationService.DeleteDatabaseAsync(dbname, cancellationToken);
-                    await db.TerminateDatabaseConnectionsAsync(old_db, cancellationToken);
-                    await migrationService.RenameDatabaseAsync(old_db, dbname, cancellationToken);
+                    await db.TerminateDatabaseConnectionsAsync(oldDb, cancellationToken);
+                    await migrationService.RenameDatabaseAsync(oldDb, dbname, cancellationToken);
                 }
             }
         }
 
+        /// <summary>
+        /// Executes the migration scripts provided in the assets.
+        /// </summary>
+        /// <param name="assets">The assets required for the migration, including scripts and roadmap information.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <exception cref="MigrationException">
+        /// Thrown when the scripts assembly is null or when there is an error during script execution.
+        /// </exception>
+        /// <remarks>
+        /// This method reads the embedded resources from the scripts assembly and executes each script
+        /// against the database. If any script fails, the transaction is rolled back and an exception is thrown.
+        /// </remarks>
         private async Task ExecuteScriptsAsync(MigrationAssetInfo assets, CancellationToken cancellationToken)
         {
             if (assets.ScriptsAssembly is null)
@@ -305,16 +345,16 @@ namespace Sqlist.NET.Migration
             }
 
             await db.BeginTransactionAsync(cancellationToken);
-
             try
             {
                 logger?.LogInformation("Executing database scripts...");
 
+                // Read and execute each script from the embedded resources in the scripts assembly
                 await assets.ScriptsAssembly.ReadEmbeddedResources(assets.ScriptsPath, async (resource, script) =>
                 {
                     try
                     {
-                        await db.Query().ExecuteAsync(script!);
+                        await db.Query().ExecuteAsync(script!, cancellationToken: cancellationToken);
                     }
                     catch (Exception ex)
                     {

@@ -19,8 +19,8 @@ public static class SqlistBuilderExtensions
     {
         builder.Services.Configure<MigrationOptions>(options =>
         {
-            var builder = new MigrationOptionsBuilder(options);
-            configureOptions?.Invoke(builder);
+            var optionsBuilder = new MigrationOptionsBuilder(options);
+            configureOptions?.Invoke(optionsBuilder);
         });
 
         builder.Services.TryAddScoped<IMigrationService, MigrationService>();
