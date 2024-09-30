@@ -1,16 +1,14 @@
 ﻿extern alias sqlist_tools;
-
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 using Moq;
+
+using sqlist_tools::Sqlist.NET.Tools.Properties;
 
 using Sqlist.NET.Tools.Extensions;
 using Sqlist.NET.Tools.Infrastructure;
 using Sqlist.NET.Tools.Logging;
 using Sqlist.NET.Tools.Tests.TestUtilities;
-
-using sqlist_tools::Sqlist.NET.Tools.Properties;
 
 using Xunit.Abstractions;
 
@@ -29,7 +27,7 @@ public class CommandTransmissionTests(ITestOutputHelper output)
         mockAuditor.Setup(a => a.WriteLine(It.IsAny<string?>())).Callback((string? message) => logs.Add(message));
 
         var host = new HostBuilderMock()
-            .ConfigureServices(services =>
+            .ConfigureServices((_, services) =>
             {
                 services.AddCliServices();
                 services.Remove(ServiceDescriptor.Singleton<IAuditor, Auditor>());

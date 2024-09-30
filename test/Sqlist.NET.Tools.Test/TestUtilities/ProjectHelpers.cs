@@ -9,7 +9,7 @@ internal static class ProjectHelpers
         return Path.GetFullPath(sandboxDir);
     }
 
-    public static string GetProjectDirectory()
+    private static string GetProjectDirectory()
     {
         var baseDirectory = AppContext.BaseDirectory;
         var directoryInfo = new DirectoryInfo(baseDirectory);

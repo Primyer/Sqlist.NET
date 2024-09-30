@@ -5,6 +5,7 @@ using Moq;
 using Sqlist.NET.Tools.Exceptions;
 using Sqlist.NET.Tools.Extensions;
 using Sqlist.NET.Tools.Infrastructure;
+using Sqlist.NET.Tools.Logging;
 
 namespace Sqlist.NET.Tools.Tests;
 public class CommandTransmitterTests
@@ -53,17 +54,17 @@ public class CommandTransmitterTests
         // Arrange
         var args = new List<string>();
         var app = new CommandLineApplication();
-        var noValueOption = app.Option("-n|--novalue", "An option with no value", CommandOptionType.NoValue);
+        var noValueOption = app.Option("-n|--no-value", "An option with no value", CommandOptionType.NoValue);
 
         // Simulate setting the no-value option
-        app.Parse("--novalue");
+        app.Parse("--no-value");
 
         // Act
         CommandTransmitter.AddArguments(args, [noValueOption]);
 
         // Assert
-        Assert.Contains("--novalue", args);
-        Assert.DoesNotContain("-n", args);  // Should only contain the long name since it's set to --novalue
+        Assert.Contains("--no-value", args);
+        Assert.DoesNotContain("-n", args);  // Should only contain the long name since it's set to --no-value
     }
 
     [Fact]
@@ -87,8 +88,9 @@ public class CommandTransmitterTests
         // Arrange
         var mockProcessRunner = new Mock<IProcessManager>();
         var mockContext = new Mock<IExecutionContext>();
+        var mockAuditor = new Mock<IAuditor>();
 
-        var transmitter = new CommandTransmitter(mockProcessRunner.Object, mockContext.Object);
+        var transmitter = new CommandTransmitter(mockProcessRunner.Object, mockContext.Object, mockAuditor.Object);
         var handler = new TestTransmittableCommandHandler();
 
         // Act & Assert
@@ -102,8 +104,9 @@ public class CommandTransmitterTests
         // Arrange
         var mockProcessRunner = new Mock<IProcessManager>();
         var mockContext = new Mock<IExecutionContext>();
+        var mockAuditor = new Mock<IAuditor>();
 
-        var transmitter = new CommandTransmitter(mockProcessRunner.Object, mockContext.Object);
+        var transmitter = new CommandTransmitter(mockProcessRunner.Object, mockContext.Object, mockAuditor.Object);
         var handler = new TestTransmittableCommandHandler();
         var app = new CommandLineApplication();
 
@@ -124,6 +127,8 @@ public class CommandTransmitterTests
         var mockProcessRunner = new Mock<IProcessManager>();
         var mockContext = new Mock<IExecutionContext>();
         var mockProcess = new Mock<IProcess>();
+        var mockAuditor = new Mock<IAuditor>();
+
         var app = new CommandLineApplication();
 
         mockContext.Setup(c => c.Application).Returns(app);
@@ -141,7 +146,7 @@ public class CommandTransmitterTests
         mockProcess.Setup(p => p.RunAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
 
-        var transmitter = new CommandTransmitter(mockProcessRunner.Object, mockContext.Object);
+        var transmitter = new CommandTransmitter(mockProcessRunner.Object, mockContext.Object, mockAuditor.Object);
         var handler = new TestTransmittableCommandHandler();
         
         handler.Initialize(app);

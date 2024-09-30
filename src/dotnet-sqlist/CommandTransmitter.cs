@@ -15,9 +15,9 @@ internal partial class CommandTransmitter(IProcessManager processRunner, IExecut
     public Task TransmitAsync<THandler>(THandler handler, CancellationToken cancellationToken) where THandler : TransmittableCommandHandler
     {
         if (handler.Project is null)
-            throw new NullReferenceException(Resources.ProjectOptionIsNull);
+            throw new CommandTransmissionException(Resources.ProjectOptionIsNull);
 
-        var exec = "dotnet";
+        const string exec = "dotnet";
         var args = new List<string> { "run" };
         var opts = handler.GetOptions().Except([handler.Project]);
 
@@ -66,7 +66,7 @@ internal partial class CommandTransmitter(IProcessManager processRunner, IExecut
         }
     }
 
-    void AddProjectOption(in List<string> args, CommandOption project)
+    private void AddProjectOption(in List<string> args, CommandOption project)
     {
         var directory = !project.HasValue()
             ? Directory.GetCurrentDirectory()
@@ -80,7 +80,7 @@ internal partial class CommandTransmitter(IProcessManager processRunner, IExecut
         auditor.WriteInformation(string.Format(Resources.RunningProject, fileName));
     }
 
-    static string GetProjectFileName(string? directory)
+    private static string GetProjectFileName(string? directory)
     {
         if (!Directory.Exists(directory))
         {
