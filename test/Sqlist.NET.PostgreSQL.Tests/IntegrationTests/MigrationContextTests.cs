@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Collections;
+
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Npgsql.NameTranslation;
@@ -10,8 +13,6 @@ using Sqlist.NET.Migration.Infrastructure;
 using Sqlist.NET.Migration.Tests.Metadata;
 using Sqlist.NET.Sql;
 using Sqlist.NET.TestResources.Properties;
-
-using System.Collections;
 
 using Xunit.Abstractions;
 
@@ -30,32 +31,43 @@ public class MigrationContextTests
     /// </summary>
     public MigrationContextTests(ITestOutputHelper output)
     {
-        var host = Host
-            .CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        var host = Host.CreateDefaultBuilder()
+            .ConfigureHostConfiguration(builder =>
             {
+                builder.SetBasePath(Directory.GetCurrentDirectory());
+                builder.AddJsonFile("appsettings.development.json", false, false);
+            })
+            .ConfigureServices((context, services) =>
+            {
+                var connectionString = context.Configuration.GetConnectionString("Default");
+                if (string.IsNullOrWhiteSpace(connectionString))
+                {
+                    throw new InvalidOperationException("The default connection string is missing.");
+                }
+                
                 services.AddSqlist()
                         .ForPostgreSQL(options =>
                         {
-                            options.SetConnectionString($"Server=localhost; Port=5432; User Id=postgres; Database={Consts.TestDatabaseName}; Password=1974563; Include Error Detail=true;");
+                            connectionString = string.Format(connectionString, Consts.TestDatabaseName);
+                            
+                            options.SetConnectionString(connectionString);
                             options.ConfigureDataSource(builder =>
                             {
                                 builder.MapEnum<UserStatus>("user_status", new NpgsqlNullNameTranslator());
                             });
                         })
-                        .AddSqlistMigration(options =>
+                        .WithMigration(options =>
                         {
                             var assembly = typeof(Consts).Assembly;
 
-                            options.SetMigrationAssembly(assembly, Consts.ScriptsRscPath);
-                            options.SetDataMigrationRoadmapAssembly(assembly, Consts.RoadmapRscPath);
+                            options.SetScriptsAssembly(assembly, Consts.ScriptsRscPath);
+                            options.SetRoadmapAssembly(assembly, Consts.RoadmapRscPath);
 
                             _options = options.GetOptions();
                         });
             })
             .Build();
-
-
+        
         _output = output;
 
         _db = host.Services.GetRequiredService<IDbContext>();
@@ -67,7 +79,7 @@ public class MigrationContextTests
     [Fact]
     public async Task InitializeAsync_ShouldReturnInformation()
     {
-        var info = await _migration.InitializeAsync(null);
+        var info = await _migration.InitializeAsync();
 
         _output.WriteLine("Current version      = " + info.CurrentVersion);
         _output.WriteLine("Migration to version = " + info.LatestVersion);
