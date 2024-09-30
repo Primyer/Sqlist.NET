@@ -1,20 +1,15 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-
-using Moq;
-
-using Sqlist.NET.Data;
-using Sqlist.NET.Infrastructure;
+﻿using Sqlist.NET.Data;
 using Sqlist.NET.Migration.Deserialization;
+using Sqlist.NET.Migration.Exceptions;
 using Sqlist.NET.Migration.Infrastructure;
 using Sqlist.NET.TestResources.Properties;
 using Sqlist.NET.TestResources.Utilities;
 
 namespace Sqlist.NET.Migration.Tests;
 /// <summary>
-///     Initializes a new instance of the <see cref="DataTransationMapTests"/> class.
+///     Initializes a new instance of the <see cref="DataTransactionMapTests"/> class.
 /// </summary>
-public class DataTransationMapTests
+public class DataTransactionMapTests
 {
     private readonly MigrationDeserializer _deserializer = new();
 
@@ -29,7 +24,7 @@ public class DataTransationMapTests
             }
         };
 
-        Assert.Throws<InvalidOperationException>(() => new DataTransactionMap().Merge(phase));
+        Assert.Throws<MigrationException>(() => new DataTransactionMap().Merge(phase));
     }
 
     [Fact]
@@ -39,26 +34,14 @@ public class DataTransationMapTests
         {
             ["SomeTable"] = []
         };
-
-        var guidelines = new PhaseGuidelines()
-        {
-            Update =
-            {
-                ["SomeTable"] = new()
-                {
-                    ["UndefinedColumn"] = new DataTransactionRule()
-                }
-            }
-        };
-
-
+        
         var phase = new MigrationPhase
         {
-            Guidelines = new()
+            Guidelines = new PhaseGuidelines
             {
                 Update =
                 {
-                    ["SomeTable"] = new()
+                    ["SomeTable"] = new TransactionRuleDictionary
                     {
                         ["UndefinedColumn"] = new DataTransactionRule()
                     }
@@ -66,7 +49,7 @@ public class DataTransationMapTests
             }
         };
 
-        Assert.Throws<InvalidOperationException>(() => dataMap.Merge(phase));
+        Assert.Throws<MigrationException>(() => dataMap.Merge(phase));
     }
     [Fact]
     public void Merge_DeleteOfUndefinedTable_ShouldFail()
@@ -79,7 +62,7 @@ public class DataTransationMapTests
             }
         };
 
-        Assert.Throws<InvalidOperationException>(() => new DataTransactionMap().Merge(phase));
+        Assert.Throws<MigrationException>(() => new DataTransactionMap().Merge(phase));
     }
 
     [Fact]
@@ -98,13 +81,13 @@ public class DataTransationMapTests
             }
         };
 
-        Assert.Throws<InvalidOperationException>(() => dataMap.Merge(phase));
+        Assert.Throws<MigrationException>(() => dataMap.Merge(phase));
     }
 
     [Fact]
     public void Merge_TransferOfDeletedColumn_ShouldFail()
     {
-        var data = AssemblyUtility.GetEmbeddedResource(Consts.ER_Migration_Intial);
+        var data = AssemblyUtility.GetEmbeddedResource(Consts.ErMigrationInitial);
 
         var phase1 = _deserializer.DeserializePhase(data);
         var phase2 = new MigrationPhase()
@@ -127,13 +110,13 @@ public class DataTransationMapTests
         });
 
         var phases = new[] { phase1, phase2 };
-        Assert.Throws<InvalidOperationException>(() => new DataTransactionMap(phases));
+        Assert.Throws<MigrationException>(() => new DataTransactionMap(phases));
     }
 
     [Fact]
     public void Merge_DeletingTableShouldCancelTransfer()
     {
-        var data = AssemblyUtility.GetEmbeddedResource(Consts.ER_Migration_Intial);
+        var data = AssemblyUtility.GetEmbeddedResource(Consts.ErMigrationInitial);
 
         var phase1 = _deserializer.DeserializePhase(data);
         var phase2 = new MigrationPhase()
@@ -164,25 +147,13 @@ public class DataTransationMapTests
     public void Merge_ShouldSucceed()
     {
         // Arrange
-        var mockOptions = new Mock<IOptions<MigrationOptions>>();
-
-        mockOptions.Setup(x => x.Value).Returns(new MigrationOptions()
+        var roadMap = MigrationContext.GetMigrationRoadmap(new MigrationAssetInfo
         {
             RoadmapAssembly = typeof(Consts).Assembly,
             RoadmapPath = Consts.RoadmapRscPath
         });
-
-        var mockMigrationContext = new Mock<MigrationContext>(
-            new Mock<IDbContext>().Object,
-            new Mock<IMigrationService>().Object,
-            mockOptions.Object,
-            new Mock<ILogger<MigrationContext>>().Object)
-        {
-            CallBase = true
-        };
-
+        
         // Act
-        var roadMap = mockMigrationContext.Object.GetMigrationRoadMap();
         var dataMap = new DataTransactionMap(roadMap);
 
         // Assert
