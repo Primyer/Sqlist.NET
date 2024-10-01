@@ -16,7 +16,7 @@ public abstract class TransmittableCommandHandler : ICommandHandler
 
     internal void Initialize(CommandLineApplication command)
     {
-        Project = command.Option("-p|--project <PROJECT>", Resources.ProjectDescription, CommandOptionType.SingleValue);
+        Project = command.Option("--project <PROJECT>", Resources.ProjectDescription, CommandOptionType.SingleValue);
         Framework = command.Option("-f|--framework <FRAMEWORK>", Resources.FrameworkDescription, CommandOptionType.SingleValue);
         Configuration = command.Option("-c|--configuration <CONFIGURATION>", Resources.ConfigurationDescription, CommandOptionType.SingleValue);
         Runtime = command.Option("-r|--runtime <RUNTIME_IDENTIFIER>", Resources.RuntimeDescription, CommandOptionType.SingleValue);

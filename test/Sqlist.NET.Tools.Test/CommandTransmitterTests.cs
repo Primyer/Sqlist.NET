@@ -114,7 +114,7 @@ public class CommandTransmitterTests
         handler.Initialize(app);
 
         // Simulate setting the value of the project option to an empty string
-        app.Parse("-p ");
+        app.Parse("--project ");
 
         // Act & Assert
         await Assert.ThrowsAsync<CommandTransmissionException>(() =>
@@ -154,7 +154,7 @@ public class CommandTransmitterTests
 
         // Simulate setting the value of the project option
         var path = ProjectHelpers.GetSandboxProjectPath();
-        app.Parse("-p " + path);
+        app.Parse("--project " + path);
 
         // Act
         await transmitter.TransmitAsync(handler, CancellationToken.None);
