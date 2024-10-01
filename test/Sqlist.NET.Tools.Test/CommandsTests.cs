@@ -9,7 +9,7 @@ using Sqlist.NET.Tools.Logging;
 namespace Sqlist.NET.Tools.Tests;
 public class CommandsTests
 {
-    internal class TestHandledCommand(
+    private class TestHandledCommand(
         ICommandHandler handler, ICommandInitializer initializer)
         : CommandBase<ICommandHandler>(handler, initializer)
     {
@@ -33,16 +33,16 @@ public class CommandsTests
         // Add more assertions based on Validate() method and other behavior
     }
     
-    internal class TestCommandHandler : TransmittableCommandHandler
+    private class TestCommandHandler : TransmittableCommandHandler
     {
         public override Task<int> OnExecuteAsync(CancellationToken cancellationToken) => Task.FromResult(0);
     }
 
-    internal class TestCommand(TestCommandHandler handler, ICommandInitializer initializer) : CommandBase<TestCommandHandler>(handler, initializer)
+    private class TestCommand(TestCommandHandler handler, ICommandInitializer initializer) : CommandBase<TestCommandHandler>(handler, initializer)
     {
         public bool ValidateCalled { get; private set; }
 
-        public override void Validate()
+        protected override void Validate()
         {
             ValidateCalled = true;
         }

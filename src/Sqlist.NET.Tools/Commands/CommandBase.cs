@@ -11,9 +11,9 @@ namespace Sqlist.NET.Tools.Commands;
 /// </summary>
 public abstract class CommandBase : ICommand
 {
-    public CommandOption? Verbose { get; set; }
-    public CommandOption? NoColor { get; set; }
-    public CommandOption? PrefixOutput { get; set; }
+    public CommandOption? Verbose { get; private set; }
+    public CommandOption? NoColor { get; private set; }
+    public CommandOption? PrefixOutput { get; private set; }
 
     public virtual void Configure(CommandLineApplication app)
     {
@@ -45,5 +45,5 @@ public abstract class CommandBase<THandler>(THandler handler, ICommandInitialize
         return initializer.ExecuteAsync(handler, cancellationToken);
     }
 
-    public virtual void Validate() { }
+    protected virtual void Validate() { }
 }

@@ -29,7 +29,7 @@ public class MigrationCommand(MigrationHandler handler, ICommandInitializer init
         base.Configure(command);
     }
 
-    public override void Validate()
+    protected override void Validate()
     {
         if (FromVersion!.HasValue())
         {
