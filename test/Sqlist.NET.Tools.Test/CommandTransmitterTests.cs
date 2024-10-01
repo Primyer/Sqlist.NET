@@ -6,6 +6,7 @@ using Sqlist.NET.Tools.Exceptions;
 using Sqlist.NET.Tools.Extensions;
 using Sqlist.NET.Tools.Infrastructure;
 using Sqlist.NET.Tools.Logging;
+using Sqlist.NET.Tools.Tests.TestUtilities;
 
 namespace Sqlist.NET.Tools.Tests;
 public class CommandTransmitterTests
@@ -152,7 +153,8 @@ public class CommandTransmitterTests
         handler.Initialize(app);
 
         // Simulate setting the value of the project option
-        app.Parse("-p MyProject.csproj");
+        var path = ProjectHelpers.GetSandboxProjectPath();
+        app.Parse("-p " + path);
 
         // Act
         await transmitter.TransmitAsync(handler, CancellationToken.None);
@@ -160,7 +162,7 @@ public class CommandTransmitterTests
         // Assert
         mockProcessRunner.Verify(pr => pr.Prepare(
             It.Is<string>(s => s == "dotnet"),
-            It.Is<IReadOnlyList<string>>(a => a.Contains("run") && a.Contains("MyProject.csproj")),
+            It.Is<IReadOnlyList<string>>(a => a.Contains("run") && a.Contains(path)),
             It.IsAny<string>(),
             It.IsAny<Action<string?>>(),
             It.IsAny<Action<string?>>(),

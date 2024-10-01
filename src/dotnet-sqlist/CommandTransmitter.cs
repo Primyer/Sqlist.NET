@@ -72,7 +72,7 @@ internal partial class CommandTransmitter(IProcessManager processRunner, IExecut
             ? Directory.GetCurrentDirectory()
             : project.Value();
 
-        var fileName = GetProjectFileName(directory);
+        var fileName = GetProjectFileName(directory!);
 
         args.Add(project.GetOptionName());
         args.Add(directory!);
@@ -80,21 +80,27 @@ internal partial class CommandTransmitter(IProcessManager processRunner, IExecut
         auditor.WriteInformation(string.Format(Resources.RunningProject, fileName));
     }
 
-    private static string GetProjectFileName(string? directory)
+    private static string GetProjectFileName(string path)
     {
-        if (!Directory.Exists(directory))
+        ArgumentNullException.ThrowIfNull(path);
+        
+        const string ext = ".csproj";
+
+        if (Directory.Exists(path))
         {
-            if (Path.HasExtension(directory))
-                throw new CommandTransmissionException(Resources.PathIsNotDirectory);
-
-            throw new CommandTransmissionException(Resources.DirectoryPathNotFound);
+            var csprojFileName = Directory.GetFiles(path, "*" + ext, SearchOption.TopDirectoryOnly).FirstOrDefault();
+            if (csprojFileName is null)
+            {
+                throw new CommandTransmissionException(Resources.InvalidProjectDirectory);
+            }
+            return csprojFileName;
         }
-
-        var csprojFileName = Directory.GetFiles(directory, "*.csproj", SearchOption.TopDirectoryOnly).FirstOrDefault();
-        if (csprojFileName is null)
-            throw new CommandTransmissionException(Resources.InvalidProjectDirectory);
-
-        return csprojFileName;
+        else if (File.Exists(path) && path.EndsWith(ext, StringComparison.OrdinalIgnoreCase))
+        {
+            return path;
+        }
+        
+        throw new CommandTransmissionException(Resources.DirectoryPathNotFound);
     }
 
     [GeneratedRegex("\\s+")]
