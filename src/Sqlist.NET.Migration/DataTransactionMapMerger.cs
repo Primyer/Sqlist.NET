@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 using Sqlist.NET.Data;
+using Sqlist.NET.Migration.Deserialization;
 using Sqlist.NET.Migration.Exceptions;
 
 namespace Sqlist.NET.Migration;
@@ -124,11 +125,35 @@ public static class DataTransactionMapMerger
 
             foreach (var (column, rule) in columns)
             {
-                if (!string.IsNullOrEmpty(rule.ColumnName) && transferDefinition.Columns.ContainsKey(column))
-                {
-                    transferDefinition.Columns[column] = rule.ColumnName;
-                }
+                OverrideTransferColumn(table, column, transferDefinition, rule);
             }
         }
+    }
+
+    private static void OverrideTransferColumn(
+        string table, string column, DataTransferDefinition transferDefinition, DataTransactionRule rule)
+    {
+        var columns = transferDefinition.Columns;
+        
+        if (!columns.TryGetValue(column, out var transferType))
+            return;
+
+        if (transferType != (rule.Type ?? rule.CurrentType))
+        {
+            throw new InvalidOperationException(
+                $"""The transfer type of the column "{column}" of table "{table}" has been changed through merge and could fail or cause data loss during transfer.""");
+        }
+
+        if (string.IsNullOrEmpty(rule.ColumnName))
+            return;
+
+        if (columns.ContainsKey(rule.ColumnName))
+        {
+            throw new InvalidOperationException(
+                $"""The transfer column "{column}" of table "{table}" is has been renamed through merge and won't be present during transfer.""");
+        }
+
+        columns.Remove(column);
+        columns.Add(rule.ColumnName, transferType);
     }
 }

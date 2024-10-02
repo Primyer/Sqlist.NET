@@ -3,6 +3,6 @@
 namespace Sqlist.NET.Migration.Deserialization;
 public class DataTransferDefinition
 {
-    public Dictionary<string, string> Columns { get; set; } = [];
-    public required string Script { get; set; }
+    public Dictionary<string, string> Columns { get; init; } = [];
+    public required string Script { get; init; }
 }

@@ -181,8 +181,7 @@ public class DataTransactionMap : IDictionary<string, TransactionRuleDictionary>
                 }
 
                 var type = NormalizeType(definition.Type);
-
-                _map[table].Add(name, new DataTransactionRule
+                var rule = new DataTransactionRule
                 {
                     Type = type,
                     CurrentType = type,
@@ -192,7 +191,12 @@ public class DataTransactionMap : IDictionary<string, TransactionRuleDictionary>
                     IsSequence = definition.IsSequence,
                     SequenceName = definition.SequenceName,
                     Inherits = definition.Inherits,
-                });
+                };
+
+                if (!_map[table].TryAdd(name, rule))
+                {
+                    throw new MigrationException($"A column with the name ({name}) already exists in table ({table}).");
+                }
             }
         }
     }

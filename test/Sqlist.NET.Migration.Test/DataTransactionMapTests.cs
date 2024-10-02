@@ -1,11 +1,13 @@
 ﻿using Sqlist.NET.Data;
 using Sqlist.NET.Migration.Deserialization;
+using Sqlist.NET.Migration.Deserialization.Collections;
 using Sqlist.NET.Migration.Exceptions;
 using Sqlist.NET.Migration.Infrastructure;
 using Sqlist.NET.TestResources.Properties;
 using Sqlist.NET.TestResources.Utilities;
 
 namespace Sqlist.NET.Migration.Tests;
+
 /// <summary>
 ///     Initializes a new instance of the <see cref="DataTransactionMapTests"/> class.
 /// </summary>
@@ -14,7 +16,7 @@ public class DataTransactionMapTests
     private readonly MigrationDeserializer _deserializer = new();
 
     [Fact]
-    public void Merge_UpdateOfUndefinedTable_ShouldFail()
+    public void UpdatingUndefinedTable_ShouldThrowMigrationException()
     {
         var phase = new MigrationPhase
         {
@@ -28,7 +30,7 @@ public class DataTransactionMapTests
     }
 
     [Fact]
-    public void Merge_UpdateOfUndefinedColumn_ShouldFail()
+    public void UpdatingUndefinedColumn_ShouldThrowMigrationException()
     {
         var dataMap = new DataTransactionMap
         {
@@ -52,7 +54,7 @@ public class DataTransactionMapTests
         Assert.Throws<MigrationException>(() => dataMap.Merge(phase));
     }
     [Fact]
-    public void Merge_DeleteOfUndefinedTable_ShouldFail()
+    public void DeletingUndefinedTable_ShouldThrowMigrationException()
     {
         var phase = new MigrationPhase
         {
@@ -66,7 +68,7 @@ public class DataTransactionMapTests
     }
 
     [Fact]
-    public void Merge_DeleteOfUndefinedColumn_ShouldFail()
+    public void DeletingUndefinedColumn_ShouldThrowMigrationException()
     {
         var dataMap = new DataTransactionMap
         {
@@ -85,7 +87,7 @@ public class DataTransactionMapTests
     }
 
     [Fact]
-    public void Merge_TransferOfDeletedColumn_ShouldFail()
+    public void TransferringDeletedColumn_ShouldThrowMigrationException()
     {
         var data = AssemblyUtility.GetEmbeddedResource(Consts.ErMigrationInitial);
 
@@ -114,7 +116,7 @@ public class DataTransactionMapTests
     }
 
     [Fact]
-    public void Merge_DeletingTableShouldCancelTransfer()
+    public void DeletingTable_ShouldCancelTransfer()
     {
         var data = AssemblyUtility.GetEmbeddedResource(Consts.ErMigrationInitial);
 
@@ -144,7 +146,7 @@ public class DataTransactionMapTests
     }
 
     [Fact]
-    public void Merge_ShouldSucceed()
+    public void MergingEmbeddedMigrationDefinitions_ShouldSucceed()
     {
         // Arrange
         var roadMap = MigrationContext.GetMigrationRoadmap(new MigrationAssetInfo
@@ -169,5 +171,82 @@ public class DataTransactionMapTests
                 Assert.NotEmpty(rule.CurrentType);
             }
         }
+    }
+
+    [Fact]
+    public void UpdatingExistingColumn_ShouldSucceed()
+    {
+        // Arrange
+        var datamap = new DataTransactionMap
+        {
+            ["SomeTable"] = new TransactionRuleDictionary
+            {
+                ["Column1"] = new() { Type = "integer" }
+            }
+        };
+
+        var phase = new MigrationPhase
+        {
+            Guidelines = new()
+            {
+                Update =
+                {
+                    ["SomeTable"] = new TransactionRuleDictionary
+                    {
+                        ["Column1"] = new DataTransactionRule { Type = "text" }
+                    }
+                }
+            }
+        };
+        
+        // Act
+        datamap.Merge(phase);
+        
+        // Assert
+        Assert.Equal("text", datamap["SomeTable"]["Column1"].Type);
+    }
+
+    [Fact]
+    public void DuplicateColumns_ShouldThrowMigrationException()
+    {
+        // Arrange
+        var datamap = new DataTransactionMap
+        {
+            ["SomeTable"] = new TransactionRuleDictionary
+            {
+                ["Column1"] = new() { Type = "integer" }
+            }
+        };
+
+        var phase = new MigrationPhase
+        {
+            Guidelines = new()
+            {
+                Create =
+                {
+                    ["SomeTable"] = new ColumnsDefinition
+                    {
+                        Columns = { KeyValuePair.Create("Column1", new ColumnDefinition { Type = "text" }) }
+                    }
+                }
+            }
+        };
+        
+        // Act & Assert
+        Assert.Throws<MigrationException>(() => datamap.Merge(phase));
+    }
+
+    [Fact]
+    public void MergingEmptyPhase_ShouldSucceed()
+    {
+        // Arrange
+        var datamap = new DataTransactionMap();
+        var phase = new MigrationPhase();
+
+        // Act
+        datamap.Merge(phase);
+        
+        // Assert
+        Assert.Empty(datamap);
     }
 }

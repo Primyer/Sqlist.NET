@@ -12,9 +12,6 @@ using Sqlist.NET.Sql;
 
 namespace Sqlist.NET.Migration;
 
-/// <summary>
-///     Initializes a new instance of the <see cref="PostgreDbManager"/> class.
-/// </summary>
 internal class MigrationService(
     IDbContext db,
     ISchemaBuilderFactory schemaFactory,
