@@ -71,7 +71,7 @@ namespace Sqlist.NET.Migration
 
             Initialized = true;
 
-            TraceLogInformation();
+            LogOperationInfo();
             return _info;
         }
 
@@ -90,14 +90,8 @@ namespace Sqlist.NET.Migration
 
         private void LogInitialization(Version? targetVersion)
         {
-            if (targetVersion is null)
-            {
-                logger?.LogInformation("Initializing migration");
-            }
-            else
-            {
-                logger?.LogInformation("Initializing migration to version {version}", targetVersion);
-            }
+            logger?.LogInformation("Initializing migration...");
+            logger?.LogInformation("Target version: {version}", targetVersion?.ToString() ?? "Not specified");
         }
 
         [MemberNotNull(nameof(_info))]
@@ -110,7 +104,11 @@ namespace Sqlist.NET.Migration
             };
 
             var exists = await migrationService.DoesSchemaTableExistAsync(cancellationToken);
-            if (!exists) return;
+            if (!exists)
+            {
+                logger?.LogDebug("No schema table could be located; the database is presumed empty.");
+                return;
+            }
 
             var mainPhase = await migrationService.GetLastSchemaPhaseAsync(cancellationToken);
             if (mainPhase is not null)
@@ -185,19 +183,26 @@ namespace Sqlist.NET.Migration
             _datamap?.Merge(phase, _info!.CurrentVersion);
         }
 
-        // TODO: Change to debug and fix the name.
-        private void TraceLogInformation()
+        private void LogOperationInfo()
         {
-            if (logger is null)
-                return;
-
-            logger.LogTrace("Current version: {version}", _info!.CurrentVersion);
-            logger.LogTrace("Migration to version: {version}", _info.LatestVersion);
-            logger.LogTrace("Title: {title}", _info.Title);
-            logger.LogTrace("Description: {description}", _info.Description);
-            logger.LogTrace("Schema changes: {schema}", _info.SchemaChanges);
+            if (_info is null)
+            {
+                throw new InvalidOperationException("MigrationOperationInfo is unexpectedly null.");
+            }
             
-            // TODO: Log modular migrations.
+            if (logger is null) return;
+            logger.LogInformation("* CORE MIGRATION INFO:");
+            _info.Log(logger);
+
+            if (_info.ModularMigrations.Count == 0) return;
+            logger.LogInformation("* MODULAR MIGRATION INFO:");
+            var count = 0;
+
+            foreach (var (module, moduleInfo) in _info.ModularMigrations)
+            {
+                logger.LogInformation("** {number}) {module}", ++count, module);
+                moduleInfo.Log(logger);
+            }
         }
 
         /// <inheritdoc />
@@ -208,7 +213,8 @@ namespace Sqlist.NET.Migration
 
             if (assets.RoadmapAssembly is null)
             {
-                throw new MigrationException(string.Format(Resources.RoadmapAssemblyIsNull, nameof(MigrationAssetInfo.RoadmapAssembly)));
+                throw new MigrationException(
+                    string.Format(Resources.RoadmapAssemblyIsNull, nameof(MigrationAssetInfo.RoadmapAssembly)));
             }
 
             assets.RoadmapAssembly?.ReadEmbeddedResources(assets.RoadmapPath, (_, content) =>
@@ -292,7 +298,8 @@ namespace Sqlist.NET.Migration
             await migrationService.RenameDatabaseAsync(dbname, oldDb, cancellationToken);
             await migrationService.CreateDatabaseAsync(dbname, cancellationToken);
 
-            logger?.LogInformation("Created new database.");
+            logger?.LogInformation("Created a new database.");
+            logger?.LogDebug("""The old database was renamed to "{name}".""", oldDb);
 
             await db.Connection.ChangeDatabaseAsync(dbname, cancellationToken);
         }
@@ -341,7 +348,8 @@ namespace Sqlist.NET.Migration
         {
             if (assets.ScriptsAssembly is null)
             {
-                throw new MigrationException(string.Format(Resources.ScriptsAssemblyIsNull, nameof(MigrationAssetInfo.ScriptsAssembly)));
+                throw new MigrationException(
+                    string.Format(Resources.ScriptsAssemblyIsNull, nameof(MigrationAssetInfo.ScriptsAssembly)));
             }
 
             await db.BeginTransactionAsync(cancellationToken);
@@ -354,6 +362,7 @@ namespace Sqlist.NET.Migration
                 {
                     try
                     {
+                        logger?.LogDebug("Executing script resource: {resource}", resource);
                         await db.Query().ExecuteAsync(script!, cancellationToken: cancellationToken);
                     }
                     catch (Exception ex)
@@ -377,7 +386,7 @@ namespace Sqlist.NET.Migration
         private async Task ExecuteRoadmapAsync(string dbname, CancellationToken cancellationToken)
         {
             if (_info!.CurrentVersion is null)
-                logger?.LogInformation("No previous version of the database was found; no data migration required.");
+                logger?.LogInformation("No previous version of the database was found; no data migration is required.");
             else
             {
                 logger?.LogInformation("Performing data migration...");
@@ -392,7 +401,8 @@ namespace Sqlist.NET.Migration
                 Version = _info!.LatestVersion.ToString(),
                 Title = _info.Title,
                 Description = _info.Description,
-                Summary = _info.SchemaChanges
+                Summary = _info.SchemaChanges,
+                
             };
 
             await migrationService.InsertSchemaPhaseAsync(phase, cancellationToken);
