@@ -27,6 +27,7 @@ namespace Sqlist.NET.Migration
     internal class MigrationContext(
         IDbContext db,
         IMigrationService migrationService,
+        IRoadmapBuilder roadmapBuilder,
         IOptions<MigrationOptions> options,
         ILogger<MigrationContext>? logger = null) : IMigrationContext
     {
@@ -75,14 +76,12 @@ namespace Sqlist.NET.Migration
             return _info;
         }
 
-        private static DataTransactionMap BuildTransactionMap(MigrationAssetInfo assets, MigrationRoadmapInfo info, Version? currentVersion, Version? targetVersion = null)
+        private DataTransactionMap BuildTransactionMap(
+            MigrationAssetInfo assets, MigrationRoadmapInfo info, Version? currentVersion, Version? targetVersion = null)
         {
-            var roadmap = GetMigrationRoadmap(assets);
-            ValidateRoadmap(roadmap);
-
-            var phases = GetOrderedPhases(roadmap, targetVersion);
-            var datamap = new DataTransactionMap(phases, currentVersion);
-
+            var phases = GetMigrationRoadmap(assets);
+            var datamap = roadmapBuilder.Build(ref phases, currentVersion, targetVersion);
+            
             SetOperationInformation(info, datamap, phases.Last(), targetVersion);
 
             return datamap;
@@ -127,22 +126,8 @@ namespace Sqlist.NET.Migration
             }
         }
 
-        private static void ValidateRoadmap(IList<MigrationPhase> roadmap)
-        {
-            if (roadmap.Count == 0)
-            {
-                throw new MigrationException(Resources.EmptyRoadmap);
-            }
-        }
-
-        private static IEnumerable<MigrationPhase> GetOrderedPhases(IList<MigrationPhase> roadmap, Version? targetVersion)
-        {
-            return roadmap
-                .Where(phase => targetVersion is null || phase.Version <= targetVersion)
-                .OrderBy(phase => phase.Version);
-        }
-
-        private static void SetOperationInformation(MigrationRoadmapInfo info, DataTransactionMap datamap, MigrationPhase lastPhase, Version? targetVersion)
+        private static void SetOperationInformation(
+            MigrationRoadmapInfo info, DataTransactionMap datamap, MigrationPhase lastPhase, Version? targetVersion)
         {
             info.Title = lastPhase.Title;
             info.Description = lastPhase.Description;
@@ -206,7 +191,7 @@ namespace Sqlist.NET.Migration
         }
 
         /// <inheritdoc />
-        public static IList<MigrationPhase> GetMigrationRoadmap(MigrationAssetInfo assets)
+        public static IEnumerable<MigrationPhase> GetMigrationRoadmap(MigrationAssetInfo assets)
         {
             var deserializer = new MigrationDeserializer();
             var phasesList = new List<MigrationPhase>();

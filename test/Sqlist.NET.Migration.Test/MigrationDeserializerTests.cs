@@ -10,7 +10,7 @@ public class MigrationDeserializerTests
     private readonly MigrationDeserializer _deserializer;
 
     /// <summary>
-    ///     Intializes a new instance of the <see cref="MigrationDeserializerTests"/> class.
+    ///     Initializes a new instance of the <see cref="MigrationDeserializerTests"/> class.
     /// </summary>
     public MigrationDeserializerTests()
     {
