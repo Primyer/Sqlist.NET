@@ -15,13 +15,13 @@ public interface IMigrationContext
 {
     /// <summary>Initializes the migration service.</summary>
     /// <param name="targetVersion">The version that database is to be migrated up to.</param>
-    /// <param name="currentVersion">The current version of the database.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>
     ///     The <see cref="Task"/> object that represents the asynchronous operation, containing the <see cref="MigrationOperationInfo"/>.
     /// </returns>
-    Task<MigrationOperationInfo> InitializeAsync(Version? targetVersion = null, Version? currentVersion = null, CancellationToken cancellationToken = default);
-    
+    Task<MigrationOperationInfo> InitializeAsync(Version? targetVersion = null,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     ///     Executes database migration.
     /// </summary>

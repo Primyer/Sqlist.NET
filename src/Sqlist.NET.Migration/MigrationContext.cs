@@ -41,60 +41,31 @@ namespace Sqlist.NET.Migration
         [MemberNotNullWhen(true, nameof(_info))]
         private bool Initialized { get; set; }
 
-        [NotNullIfNotNull(nameof(_info))]
         public MigrationOperationInfo? OperationInfo => _info;
 
         /// <inheritdoc />
-        public async Task<MigrationOperationInfo> InitializeAsync(Version? targetVersion = null,
-            Version? currentVersion = null, CancellationToken cancellationToken = default)
+        public async Task<MigrationOperationInfo> InitializeAsync(
+            Version? targetVersion = null, CancellationToken cancellationToken = default)
         {
             LogInitialization(targetVersion);
-            await InitializeOperationAsync(cancellationToken);
 
-            _datamap = BuildTransactionMap(_options, _info, _info.CurrentVersion ?? currentVersion, targetVersion);
+            _info = await RetrieveSchemaDetailsAsync(cancellationToken);
+            
+            var datamap = BuildTransactionMap(_options, _info, _info.CurrentVersion, targetVersion);
             var modules = BuildModularMaps(_info.ModularMigrations);
 
-            if (_info.CurrentVersion is null)
-                _info.CurrentVersion = currentVersion;
-            else
+            _datamap = DataTransactionMapMerger.SafeMerge(modules);
+            if (_info.CurrentVersion is not null)
             {
-                MergeSchemaDefinition();
+                var phase = CreateSchemaTablePhase();
+                _datamap.Merge(phase, _info.CurrentVersion);
             }
-
-            var modularRoadmap = DataTransactionMapMerger.SafeMerge(modules);
-            DataTransactionMapMerger.FullMerge(_datamap, modularRoadmap);
-
+            
+            DataTransactionMapMerger.FullMerge(datamap, _datamap);
+            LogOperationInfo(_info, logger);
+            
             Initialized = true;
-
-            LogOperationInfo();
             return _info;
-        }
-
-        private IEnumerable<DataTransactionMap> BuildModularMaps(IReadOnlyDictionary<string, MigrationRoadmapInfo> modulesInfo)
-        {
-            var modules = new List<DataTransactionMap>();
-            
-            foreach (var (package, assets) in _options.ModularAssets)
-            {
-                if (!modulesInfo.TryGetValue(package, out var moduleInfo))
-                    continue;
-
-                var moduleMap = BuildTransactionMap(assets, moduleInfo, moduleInfo.CurrentVersion);
-                modules.Add(moduleMap);
-            }
-
-            return modules;
-        }
-
-        private DataTransactionMap BuildTransactionMap(
-            MigrationAssetInfo assets, MigrationRoadmapInfo info, Version? currentVersion, Version? targetVersion = null)
-        {
-            var roadmap = roadmapProvider.GetMigrationRoadmap(assets, targetVersion);
-            var datamap = roadmapProvider.Build(roadmap, currentVersion, targetVersion);
-            
-            SetOperationInformation(info, datamap, roadmap.Last(), targetVersion);
-
-            return datamap;
         }
 
         private void LogInitialization(Version? targetVersion)
@@ -103,50 +74,82 @@ namespace Sqlist.NET.Migration
             logger.LogInformation("Target version: {version}", targetVersion?.ToString() ?? "Not specified");
         }
 
-        [MemberNotNull(nameof(_info))]
-        private async Task InitializeOperationAsync(CancellationToken cancellationToken)
+        private async Task<MigrationOperationInfo> RetrieveSchemaDetailsAsync(CancellationToken cancellationToken)
         {
-            var moduleInfo = new Dictionary<string, MigrationRoadmapInfo>();
-            _info = new MigrationOperationInfo
+            var info = new MigrationOperationInfo
             {
-                ModularMigrations = moduleInfo
+                CurrentVersion = await GetLatestVersionAsync(cancellationToken)
             };
 
+            if (info.CurrentVersion is not null)
+            {
+                info.ModularMigrations = await GetModularRoadmapInfo(cancellationToken);
+            }
+
+            return info;
+        }
+
+        private async Task<Version?> GetLatestVersionAsync(CancellationToken cancellationToken)
+        {
             var exists = await migrationService.DoesSchemaTableExistAsync(cancellationToken);
             if (!exists)
             {
                 logger.LogDebug("No schema table could be located; the database is presumed empty.");
-                return;
+                return null;
             }
 
             var mainPhase = await migrationService.GetLastSchemaPhaseAsync(cancellationToken);
-            if (mainPhase is not null)
-            {
-                _info.CurrentVersion = new Version(mainPhase.Version);
-            }
+            if (mainPhase is null) return null;
 
+            return new(mainPhase.Version);
+        }
+
+        private async Task<IReadOnlyDictionary<string, MigrationRoadmapInfo>> GetModularRoadmapInfo(
+            CancellationToken cancellationToken)
+        {
+            if (_info?.CurrentVersion is null)
+                return new Dictionary<string, MigrationRoadmapInfo>();
+
+            var moduleInfo = new Dictionary<string, MigrationRoadmapInfo>();
             var modularPhases = await migrationService.GetModularSchemaPhasesAsync(cancellationToken);
-            
+
             foreach (var phase in modularPhases)
             {
-                if (phase.Package is null)
-                    continue;
-
+                if (phase.Package is null) continue;
                 moduleInfo.Add(phase.Package, new MigrationRoadmapInfo { CurrentVersion = new Version(phase.Version) });
             }
+
+            return moduleInfo;
         }
 
-        private static void SetOperationInformation(
-            MigrationRoadmapInfo info, DataTransactionMap datamap, MigrationPhase lastPhase, Version? targetVersion)
+        private IEnumerable<DataTransactionMap> BuildModularMaps(
+            IReadOnlyDictionary<string, MigrationRoadmapInfo> modulesInfo)
         {
-            info.Title = lastPhase.Title;
-            info.Description = lastPhase.Description;
-            info.SchemaChanges = datamap.GenerateSummary();
-            info.LatestVersion = lastPhase.Version;
-            info.TargetVersion = targetVersion != null && lastPhase.Version == targetVersion ? targetVersion : info.LatestVersion;
+            var assets = _options.ModularAssets;
+            var datamaps = new List<DataTransactionMap>(assets.Count);
+
+            foreach (var (package, assetInfo) in assets)
+            {
+                if (!modulesInfo.TryGetValue(package, out var moduleInfo)) continue;
+
+                var moduleMap = BuildTransactionMap(assetInfo, moduleInfo, moduleInfo.CurrentVersion);
+                datamaps.Add(moduleMap);
+            }
+            
+            return datamaps.AsEnumerable();
         }
 
-        private void MergeSchemaDefinition()
+        private DataTransactionMap BuildTransactionMap(MigrationAssetInfo assets, MigrationRoadmapInfo info,
+            Version? currentVersion, Version? targetVersion = null)
+        {
+            var phases = roadmapProvider.GetMigrationRoadmap(assets, targetVersion);
+            var datamap = roadmapProvider.Build(phases, currentVersion, targetVersion);
+
+            info.SetFromPhase(phases.Last(), datamap, targetVersion);
+            return datamap;
+        }
+
+        private MigrationPhase CreateSchemaTablePhase()
         {
             var tableName = _options.SchemaTable ?? Consts.DefaultSchemaTable;
             var stringType = db.TypeMapper.TypeName<string>();
@@ -157,7 +160,8 @@ namespace Sqlist.NET.Migration
             {
                 Columns =
                 {
-                    KeyValuePair.Create(Consts.Id, new ColumnDefinition(db.TypeMapper.TypeName<int>()) { IsSequence = true }),
+                    KeyValuePair.Create(Consts.Id,
+                        new ColumnDefinition(db.TypeMapper.TypeName<int>()) { IsSequence = true }),
                     KeyValuePair.Create(Consts.Package, definition),
                     KeyValuePair.Create(Consts.Version, definition),
                     KeyValuePair.Create(Consts.Parent, new ColumnDefinition(db.TypeMapper.TypeName<int>())),
@@ -167,27 +171,21 @@ namespace Sqlist.NET.Migration
                     KeyValuePair.Create(Consts.Applied, new ColumnDefinition(db.TypeMapper.TypeName<DateTime>())),
                 }
             };
-            
+
             phase.Guidelines.Create.Add(tableName, columns);
-            _datamap?.Merge(phase, _info!.CurrentVersion);
+            return phase;
         }
 
-        private void LogOperationInfo()
+        private static void LogOperationInfo(MigrationOperationInfo info, ILogger logger)
         {
-            if (_info is null)
-            {
-                throw new InvalidOperationException("MigrationOperationInfo is unexpectedly null.");
-            }
-            
-            if (logger is null) return;
             logger.LogInformation("* CORE MIGRATION INFO:");
-            _info.Log(logger);
+            info.Log(logger);
 
-            if (_info.ModularMigrations.Count == 0) return;
+            if (info.ModularMigrations.Count == 0) return;
             logger.LogInformation("* MODULAR MIGRATION INFO:");
             var count = 0;
 
-            foreach (var (module, moduleInfo) in _info.ModularMigrations)
+            foreach (var (module, moduleInfo) in info.ModularMigrations)
             {
                 logger.LogInformation("** {number}) {module}", ++count, module);
                 moduleInfo.Log(logger);
@@ -208,16 +206,17 @@ namespace Sqlist.NET.Migration
                 {
                     await migrationTransaction.PrepareDatabaseForMigrationAsync(dbname, oldName, cancellationToken);
                 }
+
                 await ExecuteMigrationsAsync(oldName, cancellationToken);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "An error has occurred during migration; cleaning up...");
                 await migrationTransaction.RollbackMigrationAsync(dbname, oldName, cancellationToken);
-                
+
                 if (ex is not MigrationException)
                     throw new MigrationException("An unexpected error occurred during migration.", ex);
-                
+
                 throw;
             }
         }
@@ -231,7 +230,7 @@ namespace Sqlist.NET.Migration
             if (!Initialized)
                 throw new MigrationException(Resources.MigrationNotInitialized);
         }
-        
+
         /// <summary>
         /// Executes the migration operations, including executing scripts and the migration roadmap.
         /// </summary>
@@ -319,7 +318,6 @@ namespace Sqlist.NET.Migration
                 Title = _info.Title,
                 Description = _info.Description,
                 Summary = _info.SchemaChanges,
-                
             };
 
             await migrationService.InsertSchemaPhaseAsync(phase, cancellationToken);
