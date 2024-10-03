@@ -3,9 +3,9 @@ using Sqlist.NET.Migration.Exceptions;
 
 namespace Sqlist.NET.Migration.Tests;
 
-public class RoadmapBuilderTests
+public class RoadmapProviderTests
 {
-    private readonly RoadmapBuilder _roadmapBuilder = new RoadmapBuilder();
+    private readonly RoadmapProvider _roadmapProvider = new RoadmapProvider();
 
     [Fact]
     public void Build_ShouldCreateDataTransactionMap_WithOrderedPhases()
@@ -21,7 +21,7 @@ public class RoadmapBuilderTests
         var targetVersion = new Version("3.0.0");
 
         // Act
-        var result = _roadmapBuilder.Build(ref phases, currentVersion, targetVersion);
+        var result = _roadmapProvider.Build(ref phases, currentVersion, targetVersion);
 
         // Assert
         Assert.NotNull(result);
@@ -45,7 +45,7 @@ public class RoadmapBuilderTests
         var targetVersion = new Version("2.0.0"); 
 
         // Act
-        var result = _roadmapBuilder.Build(ref phases, currentVersion, targetVersion);
+        var result = _roadmapProvider.Build(ref phases, currentVersion, targetVersion);
 
         // Assert
         Assert.NotNull(result);
@@ -62,7 +62,7 @@ public class RoadmapBuilderTests
         var currentVersion = new Version("1.0.0");
 
         // Act & Assert
-        Assert.Throws<MigrationException>(() => _roadmapBuilder.Build(ref phases, currentVersion));
+        Assert.Throws<MigrationException>(() => _roadmapProvider.Build(ref phases, currentVersion));
     }
     
     [Fact]
@@ -78,7 +78,7 @@ public class RoadmapBuilderTests
         var targetVersion = new Version("2.0.0");
 
         // Act
-        var result = _roadmapBuilder.Build(ref phases, currentVersion, targetVersion);
+        var result = _roadmapProvider.Build(ref phases, currentVersion, targetVersion);
 
         // Assert
         Assert.NotNull(result);
@@ -98,7 +98,7 @@ public class RoadmapBuilderTests
         var targetVersion = new Version("1.0.0"); 
 
         // Act & Assert
-        Assert.Throws<MigrationException>(() => _roadmapBuilder.Build(ref phases, currentVersion, targetVersion)); 
+        Assert.Throws<MigrationException>(() => _roadmapProvider.Build(ref phases, currentVersion, targetVersion)); 
     }
     
     [Fact]
@@ -115,7 +115,7 @@ public class RoadmapBuilderTests
         var targetVersion = new Version("3.0.0");
 
         // Act & Assert
-        Assert.Throws<MigrationException>(() => _roadmapBuilder.Build(ref phases, currentVersion, targetVersion)); 
+        Assert.Throws<MigrationException>(() => _roadmapProvider.Build(ref phases, currentVersion, targetVersion)); 
     }
     
     [Fact]
@@ -126,6 +126,6 @@ public class RoadmapBuilderTests
         var currentVersion = new Version("1.0.0");
 
         // Act & Assert
-        Assert.Throws<MigrationException>(() => _roadmapBuilder.Build(ref phases, currentVersion));
+        Assert.Throws<MigrationException>(() => _roadmapProvider.Build(ref phases, currentVersion));
     }
 }

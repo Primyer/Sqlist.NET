@@ -20,7 +20,7 @@ namespace Sqlist.NET.Migration
 {
     /// <inheritdoc cref="IMigrationContext"/>
     /// <param name="db">The database context used for executing database operations.</param>
-    /// <param name="roadmapBuilder">The roadmap builder used for constructing migration roadmaps.</param>
+    /// <param name="roadmapProvider">The roadmap builder used for constructing migration roadmaps.</param>
     /// <param name="migrationTransaction">The transaction manager responsible for handling migration transactions.</param>
     /// <param name="migrationService">The migration service responsible for handling migration operations and scripts.</param>
     /// <param name="options">The migration options containing configuration settings for the migration process.</param>
@@ -28,7 +28,7 @@ namespace Sqlist.NET.Migration
     internal class MigrationContext(
         IDbContext db,
         IMigrationService migrationService,
-        IRoadmapBuilder roadmapBuilder,
+        IRoadmapProvider roadmapProvider,
         IMigrationTransactionManager migrationTransaction,
         IOptions<MigrationOptions> options,
         ILogger<MigrationContext> logger) : IMigrationContext
@@ -45,22 +45,14 @@ namespace Sqlist.NET.Migration
         public MigrationOperationInfo? OperationInfo => _info;
 
         /// <inheritdoc />
-        public async Task<MigrationOperationInfo> InitializeAsync(Version? targetVersion = null, Version? currentVersion = null, CancellationToken cancellationToken = default)
+        public async Task<MigrationOperationInfo> InitializeAsync(Version? targetVersion = null,
+            Version? currentVersion = null, CancellationToken cancellationToken = default)
         {
             LogInitialization(targetVersion);
             await InitializeOperationAsync(cancellationToken);
 
             _datamap = BuildTransactionMap(_options, _info, _info.CurrentVersion ?? currentVersion, targetVersion);
-            var modules = new List<DataTransactionMap>();
-            
-            foreach (var (package, assets) in _options.ModularAssets)
-            {
-                if (!_info.ModularMigrations.TryGetValue(package, out var moduleInfo))
-                    continue;
-
-                var moduleMap = BuildTransactionMap(assets, moduleInfo, moduleInfo.CurrentVersion);
-                modules.Add(moduleMap);
-            }
+            var modules = BuildModularMaps(_info.ModularMigrations);
 
             if (_info.CurrentVersion is null)
                 _info.CurrentVersion = currentVersion;
@@ -78,13 +70,29 @@ namespace Sqlist.NET.Migration
             return _info;
         }
 
+        private IEnumerable<DataTransactionMap> BuildModularMaps(IReadOnlyDictionary<string, MigrationRoadmapInfo> modulesInfo)
+        {
+            var modules = new List<DataTransactionMap>();
+            
+            foreach (var (package, assets) in _options.ModularAssets)
+            {
+                if (!modulesInfo.TryGetValue(package, out var moduleInfo))
+                    continue;
+
+                var moduleMap = BuildTransactionMap(assets, moduleInfo, moduleInfo.CurrentVersion);
+                modules.Add(moduleMap);
+            }
+
+            return modules;
+        }
+
         private DataTransactionMap BuildTransactionMap(
             MigrationAssetInfo assets, MigrationRoadmapInfo info, Version? currentVersion, Version? targetVersion = null)
         {
-            var phases = GetMigrationRoadmap(assets);
-            var datamap = roadmapBuilder.Build(ref phases, currentVersion, targetVersion);
+            var roadmap = roadmapProvider.GetMigrationRoadmap(assets, targetVersion);
+            var datamap = roadmapProvider.Build(roadmap, currentVersion, targetVersion);
             
-            SetOperationInformation(info, datamap, phases.Last(), targetVersion);
+            SetOperationInformation(info, datamap, roadmap.Last(), targetVersion);
 
             return datamap;
         }
@@ -140,33 +148,27 @@ namespace Sqlist.NET.Migration
 
         private void MergeSchemaDefinition()
         {
-            var strType = db.TypeMapper.TypeName<string>();
-            var definition = new ColumnDefinition(strType);
+            var tableName = _options.SchemaTable ?? Consts.DefaultSchemaTable;
+            var stringType = db.TypeMapper.TypeName<string>();
+            var definition = new ColumnDefinition(stringType);
 
-            var phase = new MigrationPhase()
+            var phase = new MigrationPhase();
+            var columns = new DefinitionCollection
             {
-                Guidelines =
+                Columns =
                 {
-                    Create =
-                    {
-                        [_options.SchemaTable ?? Consts.DefaultSchemaTable] = new DefinitionCollection()
-                        {
-                            Columns =
-                            {
-                                KeyValuePair.Create(Consts.Id, new ColumnDefinition(db.TypeMapper.TypeName<int>()) { IsSequence = true }),
-                                KeyValuePair.Create(Consts.Package, definition),
-                                KeyValuePair.Create(Consts.Version, definition),
-                                KeyValuePair.Create(Consts.Parent, new ColumnDefinition(db.TypeMapper.TypeName<int>())),
-                                KeyValuePair.Create(Consts.Title, definition),
-                                KeyValuePair.Create(Consts.Description, definition),
-                                KeyValuePair.Create(Consts.Summary, definition),
-                                KeyValuePair.Create(Consts.Applied, new ColumnDefinition(db.TypeMapper.TypeName<DateTime>())),
-                            }
-                        }
-                    }
+                    KeyValuePair.Create(Consts.Id, new ColumnDefinition(db.TypeMapper.TypeName<int>()) { IsSequence = true }),
+                    KeyValuePair.Create(Consts.Package, definition),
+                    KeyValuePair.Create(Consts.Version, definition),
+                    KeyValuePair.Create(Consts.Parent, new ColumnDefinition(db.TypeMapper.TypeName<int>())),
+                    KeyValuePair.Create(Consts.Title, definition),
+                    KeyValuePair.Create(Consts.Description, definition),
+                    KeyValuePair.Create(Consts.Summary, definition),
+                    KeyValuePair.Create(Consts.Applied, new ColumnDefinition(db.TypeMapper.TypeName<DateTime>())),
                 }
             };
-
+            
+            phase.Guidelines.Create.Add(tableName, columns);
             _datamap?.Merge(phase, _info!.CurrentVersion);
         }
 
@@ -190,27 +192,6 @@ namespace Sqlist.NET.Migration
                 logger.LogInformation("** {number}) {module}", ++count, module);
                 moduleInfo.Log(logger);
             }
-        }
-
-        /// <inheritdoc />
-        public static IEnumerable<MigrationPhase> GetMigrationRoadmap(MigrationAssetInfo assets)
-        {
-            var deserializer = new MigrationDeserializer();
-            var phasesList = new List<MigrationPhase>();
-
-            if (assets.RoadmapAssembly is null)
-            {
-                throw new MigrationException(
-                    string.Format(Resources.RoadmapAssemblyIsNull, nameof(MigrationAssetInfo.RoadmapAssembly)));
-            }
-
-            assets.RoadmapAssembly?.ReadEmbeddedResources(assets.RoadmapPath, (_, content) =>
-            {
-                var phase = deserializer.DeserializePhase(content!);
-                phasesList.Add(phase);
-            });
-
-            return phasesList;
         }
 
         /// <inheritdoc />

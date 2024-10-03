@@ -23,7 +23,7 @@ public static class SqlistBuilderExtensions
             configureOptions?.Invoke(optionsBuilder);
         });
 
-        builder.Services.TryAddTransient<IRoadmapBuilder, RoadmapBuilder>();
+        builder.Services.TryAddTransient<IRoadmapProvider, RoadmapProvider>();
         builder.Services.TryAddScoped<IMigrationService, MigrationService>();
         builder.Services.TryAddScoped<IMigrationContext, MigrationContext>();
 
