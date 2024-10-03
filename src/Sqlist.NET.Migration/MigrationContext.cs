@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
@@ -21,6 +20,8 @@ namespace Sqlist.NET.Migration
 {
     /// <inheritdoc cref="IMigrationContext"/>
     /// <param name="db">The database context used for executing database operations.</param>
+    /// <param name="roadmapBuilder">The roadmap builder used for constructing migration roadmaps.</param>
+    /// <param name="migrationTransaction">The transaction manager responsible for handling migration transactions.</param>
     /// <param name="migrationService">The migration service responsible for handling migration operations and scripts.</param>
     /// <param name="options">The migration options containing configuration settings for the migration process.</param>
     /// <param name="logger">The logger used for logging migration-related information and errors, if available.</param>
@@ -28,8 +29,9 @@ namespace Sqlist.NET.Migration
         IDbContext db,
         IMigrationService migrationService,
         IRoadmapBuilder roadmapBuilder,
+        IMigrationTransactionManager migrationTransaction,
         IOptions<MigrationOptions> options,
-        ILogger<MigrationContext>? logger = null) : IMigrationContext
+        ILogger<MigrationContext> logger) : IMigrationContext
     {
         private readonly MigrationOptions _options = options.Value;
 
@@ -89,8 +91,8 @@ namespace Sqlist.NET.Migration
 
         private void LogInitialization(Version? targetVersion)
         {
-            logger?.LogInformation("Initializing migration...");
-            logger?.LogInformation("Target version: {version}", targetVersion?.ToString() ?? "Not specified");
+            logger.LogInformation("Initializing migration...");
+            logger.LogInformation("Target version: {version}", targetVersion?.ToString() ?? "Not specified");
         }
 
         [MemberNotNull(nameof(_info))]
@@ -105,7 +107,7 @@ namespace Sqlist.NET.Migration
             var exists = await migrationService.DoesSchemaTableExistAsync(cancellationToken);
             if (!exists)
             {
-                logger?.LogDebug("No schema table could be located; the database is presumed empty.");
+                logger.LogDebug("No schema table could be located; the database is presumed empty.");
                 return;
             }
 
@@ -217,29 +219,36 @@ namespace Sqlist.NET.Migration
             ValidateMigrationState();
 
             var dbname = db.Connection.Database;
-            var oldDb = dbname + "_" + DateTime.Now.Ticks;
+            var oldName = dbname + "_" + DateTime.Now.Ticks;
 
             try
             {
-                // Prepare the database for migration by renaming the current database and creating a new one
-                await PrepareDatabaseForMigrationAsync(dbname, oldDb, cancellationToken); 
-                await ExecuteMigrationsAsync(oldDb, cancellationToken); // Execute the migration scripts and roadmap
-            }
-            catch (MigrationException ex)
-            {
-                // Log the error and clean up the database in case of a migration-specific exception
-                logger?.LogError(ex, "An error has occurred during migration; cleaning up...");
-                await CleanupDatabaseAsync(dbname, oldDb, ex, cancellationToken);
-                throw;
+                if (_info.CurrentVersion is not null)
+                {
+                    await migrationTransaction.PrepareDatabaseForMigrationAsync(dbname, oldName, cancellationToken);
+                }
+                await ExecuteMigrationsAsync(oldName, cancellationToken);
             }
             catch (Exception ex)
             {
-                // Log the error and clean up the database
-                logger?.LogError("An unexpected error occurred during migration; cleaning up...");
-                await CleanupDatabaseAsync(dbname, oldDb, ex, cancellationToken);
-
-                throw new MigrationException("An unexpected error occurred during migration.", ex);
+                logger.LogError(ex, "An error has occurred during migration; cleaning up...");
+                await migrationTransaction.RollbackMigrationAsync(dbname, oldName, cancellationToken);
+                
+                if (ex is not MigrationException)
+                    throw new MigrationException("An unexpected error occurred during migration.", ex);
+                
+                throw;
             }
+        }
+
+        [MemberNotNull(nameof(_info))]
+        private void ValidateMigrationState()
+        {
+            if (string.IsNullOrEmpty(db.DefaultDatabase))
+                throw new MigrationException(Resources.UnsupportedDatabase);
+
+            if (!Initialized)
+                throw new MigrationException(Resources.MigrationNotInitialized);
         }
         
         /// <summary>
@@ -256,65 +265,7 @@ namespace Sqlist.NET.Migration
 
             await RecordMigrationPhaseAsync(cancellationToken);
 
-            logger?.LogInformation("Data migration is successfully completed.");
-        }
-
-        private void ValidateMigrationState()
-        {
-            if (string.IsNullOrEmpty(db.DefaultDatabase))
-                throw new MigrationException(Resources.UnsupportedDatabase);
-
-            if (!Initialized)
-                throw new MigrationException(Resources.MigrationNotInitialized);
-        }
-
-        /// <summary>
-        /// Prepares the database for migration by renaming the current database and creating a new one.
-        /// </summary>
-        /// <param name="dbname">The name of the new database.</param>
-        /// <param name="oldDb">The name of the old database to be renamed.</param>
-        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-        private async Task PrepareDatabaseForMigrationAsync(string dbname, string oldDb, CancellationToken cancellationToken)
-        {
-            if (_info!.CurrentVersion is null)
-                return;
-
-            await db.TerminateDatabaseConnectionsAsync(dbname, cancellationToken);
-            await migrationService.RenameDatabaseAsync(dbname, oldDb, cancellationToken);
-            await migrationService.CreateDatabaseAsync(dbname, cancellationToken);
-
-            logger?.LogInformation("Created a new database.");
-            logger?.LogDebug("""The old database was renamed to "{name}".""", oldDb);
-
-            await db.Connection.ChangeDatabaseAsync(dbname, cancellationToken);
-        }
-
-        /// <summary>
-        /// Cleans up the database in case of an error during migration.
-        /// </summary>
-        /// <param name="dbname">The name of the new database.</param>
-        /// <param name="oldDb">The name of the old database.</param>
-        /// <param name="ex">The exception that occurred during migration.</param>
-        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-        /// <returns>A task that represents the asynchronous cleanup operation.</returns>
-        private async Task CleanupDatabaseAsync(string dbname, string oldDb, Exception ex, CancellationToken cancellationToken)
-        {
-            if (db.Connection.State != ConnectionState.Open)
-            {
-                await db.Connection.OpenAsync(cancellationToken);
-            }
-
-            if (_info!.CurrentVersion is not null)
-            {
-                await db.TerminateDatabaseConnectionsAsync(dbname, cancellationToken);
-
-                if (ex is MigrationException)
-                {
-                    await migrationService.DeleteDatabaseAsync(dbname, cancellationToken);
-                    await db.TerminateDatabaseConnectionsAsync(oldDb, cancellationToken);
-                    await migrationService.RenameDatabaseAsync(oldDb, dbname, cancellationToken);
-                }
-            }
+            logger.LogInformation("Data migration is successfully completed.");
         }
 
         /// <summary>
@@ -340,14 +291,14 @@ namespace Sqlist.NET.Migration
             await db.BeginTransactionAsync(cancellationToken);
             try
             {
-                logger?.LogInformation("Executing database scripts...");
+                logger.LogInformation("Executing database scripts...");
 
                 // Read and execute each script from the embedded resources in the scripts assembly
                 await assets.ScriptsAssembly.ReadEmbeddedResources(assets.ScriptsPath, async (resource, script) =>
                 {
                     try
                     {
-                        logger?.LogDebug("Executing script resource: {resource}", resource);
+                        logger.LogDebug("Executing script resource: {resource}", resource);
                         await db.Query().ExecuteAsync(script!, cancellationToken: cancellationToken);
                     }
                     catch (Exception ex)
@@ -359,7 +310,7 @@ namespace Sqlist.NET.Migration
                 await migrationService.CreateSchemaTableAsync(cancellationToken);
                 await db.CommitTransactionAsync(cancellationToken);
 
-                logger?.LogInformation("Database scripts are successfully executed.");
+                logger.LogInformation("Database scripts are successfully executed.");
             }
             catch (Exception)
             {
@@ -371,10 +322,10 @@ namespace Sqlist.NET.Migration
         private async Task ExecuteRoadmapAsync(string dbname, CancellationToken cancellationToken)
         {
             if (_info!.CurrentVersion is null)
-                logger?.LogInformation("No previous version of the database was found; no data migration is required.");
+                logger.LogInformation("No previous version of the database was found; no data migration is required.");
             else
             {
-                logger?.LogInformation("Performing data migration...");
+                logger.LogInformation("Performing data migration...");
                 await migrationService.MigrateDataFromAsync(dbname, _datamap!, cancellationToken);
             }
         }
