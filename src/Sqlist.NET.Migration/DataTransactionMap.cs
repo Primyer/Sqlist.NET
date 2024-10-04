@@ -9,6 +9,7 @@ using Sqlist.NET.Data;
 using Sqlist.NET.Migration.Deserialization;
 using Sqlist.NET.Migration.Deserialization.Collections;
 using Sqlist.NET.Migration.Exceptions;
+using Sqlist.NET.Migration.Properties;
 
 namespace Sqlist.NET.Migration;
 
@@ -49,6 +50,7 @@ public class DataTransactionMap : IDictionary<string, TransactionRuleDictionary>
     /// <param name="currentVersion">The version of the current DB schema.</param>
     public DataTransactionMap(IEnumerable<MigrationPhase> phases, Version? currentVersion = null)
     {
+        ValidateRoadmap(phases);
         var latest = phases.Max(p => p.Version);
 
         foreach (var phase in phases)
@@ -113,6 +115,25 @@ public class DataTransactionMap : IDictionary<string, TransactionRuleDictionary>
         {
             _map[key] = value;
             _orderList.Add(key);
+        }
+    }
+
+    private static void ValidateRoadmap(IEnumerable<MigrationPhase> roadmap)
+    {
+        if (!roadmap.Any())
+        {
+            throw new MigrationException(Resources.EmptyRoadmap);
+        }
+
+        var duplicate = roadmap
+            .GroupBy(p => p.Version)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .FirstOrDefault();
+
+        if (duplicate is not null)
+        {
+            throw new MigrationException("The roadmap contains duplicate versions: " + duplicate);
         }
     }
 

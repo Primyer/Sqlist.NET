@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Sqlist.NET.Infrastructure.Internal;
 using Sqlist.NET.Migration.Infrastructure;
-
-using System;
 
 namespace Sqlist.NET.Migration.Extensions;
 public static class SqlistBuilderExtensions
@@ -24,6 +24,8 @@ public static class SqlistBuilderExtensions
         });
 
         builder.Services.TryAddTransient<IRoadmapProvider, RoadmapProvider>();
+        builder.Services.TryAddTransient<IMigrationTransactionManager, MigrationTransactionManager>();
+        
         builder.Services.TryAddScoped<IMigrationService, MigrationService>();
         builder.Services.TryAddScoped<IMigrationContext, MigrationContext>();
 

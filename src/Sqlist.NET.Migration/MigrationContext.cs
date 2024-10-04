@@ -51,8 +51,8 @@ namespace Sqlist.NET.Migration
 
             _info = await RetrieveSchemaDetailsAsync(cancellationToken);
             
-            var datamap = BuildTransactionMap(_options, _info, _info.CurrentVersion, targetVersion);
-            var modules = BuildModularMaps(_info.ModularMigrations);
+            var datamap = await BuildTransactionMap(_options, _info, _info.CurrentVersion, targetVersion);
+            var modules = await BuildModularMaps(_info.ModularMigrations);
 
             _datamap = DataTransactionMapMerger.SafeMerge(modules);
             if (_info.CurrentVersion is not null)
@@ -122,7 +122,7 @@ namespace Sqlist.NET.Migration
             return moduleInfo;
         }
 
-        private IEnumerable<DataTransactionMap> BuildModularMaps(
+        private async Task<IEnumerable<DataTransactionMap>> BuildModularMaps(
             IReadOnlyDictionary<string, MigrationRoadmapInfo> modulesInfo)
         {
             var assets = _options.ModularAssets;
@@ -132,18 +132,18 @@ namespace Sqlist.NET.Migration
             {
                 if (!modulesInfo.TryGetValue(package, out var moduleInfo)) continue;
 
-                var moduleMap = BuildTransactionMap(assetInfo, moduleInfo, moduleInfo.CurrentVersion);
+                var moduleMap = await BuildTransactionMap(assetInfo, moduleInfo, moduleInfo.CurrentVersion);
                 datamaps.Add(moduleMap);
             }
             
             return datamaps.AsEnumerable();
         }
 
-        private DataTransactionMap BuildTransactionMap(MigrationAssetInfo assets, MigrationRoadmapInfo info,
+        private async Task<DataTransactionMap> BuildTransactionMap(MigrationAssetInfo assets, MigrationRoadmapInfo info,
             Version? currentVersion, Version? targetVersion = null)
         {
-            var phases = roadmapProvider.GetMigrationRoadmap(assets, targetVersion);
-            var datamap = roadmapProvider.Build(phases, currentVersion, targetVersion);
+            var phases = await roadmapProvider.GetMigrationRoadmapAsync(assets, targetVersion);
+            var datamap = new DataTransactionMap(phases, currentVersion);
 
             info.SetFromPhase(phases.Last(), datamap, targetVersion);
             return datamap;
@@ -272,9 +272,9 @@ namespace Sqlist.NET.Migration
             try
             {
                 logger.LogInformation("Executing database scripts...");
-
-                // Read and execute each script from the embedded resources in the scripts assembly
-                await assets.ScriptsAssembly.ReadEmbeddedResources(assets.ScriptsPath, async (resource, script) =>
+                
+                var resources = assets.ScriptsAssembly.GetEmbeddedResourcesAsync(assets.ScriptsPath);
+                await foreach (var (resource, script) in resources)
                 {
                     try
                     {
@@ -285,7 +285,7 @@ namespace Sqlist.NET.Migration
                     {
                         throw new MigrationException(string.Format(Resources.ScriptExecutionFailed, resource), ex);
                     }
-                });
+                }
 
                 await migrationService.CreateSchemaTableAsync(cancellationToken);
                 await db.CommitTransactionAsync(cancellationToken);
