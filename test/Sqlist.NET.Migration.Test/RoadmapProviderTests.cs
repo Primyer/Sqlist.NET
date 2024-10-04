@@ -1,5 +1,7 @@
-﻿using Sqlist.NET.Migration.Deserialization;
-using Sqlist.NET.Migration.Exceptions;
+﻿using Sqlist.NET.Migration.Exceptions;
+using Sqlist.NET.Migration.Infrastructure;
+using Sqlist.NET.TestResources.Properties;
+using Sqlist.NET.TestResources.Utilities;
 
 namespace Sqlist.NET.Migration.Tests;
 
@@ -7,125 +9,30 @@ public class RoadmapProviderTests
 {
     private readonly RoadmapProvider _roadmapProvider = new RoadmapProvider();
 
-    [Fact]
-    public void Build_ShouldCreateDataTransactionMap_WithOrderedPhases()
+    private readonly MigrationAssetInfo _assets = new()
     {
-        // Arrange
-        IEnumerable<MigrationPhase> phases = new List<MigrationPhase>
-        {
-            new() { Version = new Version("2.0.0") },
-            new() { Version = new Version("1.0.0") },
-            new() { Version = new Version("3.0.0") }
-        };
-        var currentVersion = new Version("1.0.0");
-        var targetVersion = new Version("3.0.0");
-
+        RoadmapAssembly = typeof(AssemblyUtility).Assembly,
+        RoadmapPath = Consts.RoadmapRscPath
+    };
+    
+    [Fact]
+    public async Task GetMigrationRoadmap_ShouldReturnListOfMigrationPhases()
+    {
         // Act
-        var result = _roadmapProvider.Build(ref phases, currentVersion, targetVersion);
+        var phases = await _roadmapProvider.GetMigrationRoadmapAsync(_assets, null); 
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(3, phases.Count()); 
-        Assert.Equal(new Version("1.0.0"), phases.ElementAt(0).Version);
-        Assert.Equal(new Version("2.0.0"), phases.ElementAt(1).Version);
-        Assert.Equal(new Version("3.0.0"), phases.ElementAt(2).Version);
+        Assert.NotNull(phases);
+        Assert.NotEmpty(phases);
     }
 
     [Fact]
-    public void Build_ShouldCreateDataTransactionMap_WithTargetVersionFiltering()
+    public void GetMigrationRoadmap_ShouldThrowException_WhenRoadmapAssemblyIsNull()
     {
         // Arrange
-        IEnumerable<MigrationPhase> phases = new List<MigrationPhase>
-        {
-            new() { Version = new Version("2.0.0") },
-            new() { Version = new Version("1.0.0") },
-            new() { Version = new Version("3.0.0") }
-        };
-        var currentVersion = new Version("1.0.0");
-        var targetVersion = new Version("2.0.0"); 
-
-        // Act
-        var result = _roadmapProvider.Build(ref phases, currentVersion, targetVersion);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, phases.Count()); 
-        Assert.Equal(new Version("1.0.0"), phases.ElementAt(0).Version);
-        Assert.Equal(new Version("2.0.0"), phases.ElementAt(1).Version); 
-    }
-
-    [Fact]
-    public void Build_ShouldThrowException_WhenRoadmapIsEmpty()
-    {
-        // Arrange
-        IEnumerable<MigrationPhase> phases = new List<MigrationPhase>(); 
-        var currentVersion = new Version("1.0.0");
+        var assets = new MigrationAssetInfo { RoadmapAssembly = null }; 
 
         // Act & Assert
-        Assert.Throws<MigrationException>(() => _roadmapProvider.Build(ref phases, currentVersion));
-    }
-    
-    [Fact]
-    public void Build_ShouldCreateDataTransactionMap_WithNullCurrentVersion()
-    {
-        // Arrange
-        IEnumerable<MigrationPhase> phases = new List<MigrationPhase>
-        {
-            new() { Version = new Version("1.0.0") },
-            new() { Version = new Version("2.0.0") }
-        };
-        Version? currentVersion = null; 
-        var targetVersion = new Version("2.0.0");
-
-        // Act
-        var result = _roadmapProvider.Build(ref phases, currentVersion, targetVersion);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, phases.Count());
-    }
-    
-    [Fact]
-    public void Build_ShouldThrowException_WhenTargetVersionIsEarlierThanCurrentVersion()
-    {
-        // Arrange
-        IEnumerable<MigrationPhase> phases = new List<MigrationPhase>
-        {
-            new() { Version = new Version("1.0.0") },
-            new() { Version = new Version("2.0.0") }
-        };
-        var currentVersion = new Version("2.0.0");
-        var targetVersion = new Version("1.0.0"); 
-
-        // Act & Assert
-        Assert.Throws<MigrationException>(() => _roadmapProvider.Build(ref phases, currentVersion, targetVersion)); 
-    }
-    
-    [Fact]
-    public void Build_ShouldThrowException_WhenPhasesContainDuplicateVersions()
-    {
-        // Arrange
-        IEnumerable<MigrationPhase> phases = new List<MigrationPhase>
-        {
-            new() { Version = new Version("1.0.0") },
-            new() { Version = new Version("2.0.0") },
-            new() { Version = new Version("2.0.0") } // Duplicate version
-        };
-        var currentVersion = new Version("1.0.0");
-        var targetVersion = new Version("3.0.0");
-
-        // Act & Assert
-        Assert.Throws<MigrationException>(() => _roadmapProvider.Build(ref phases, currentVersion, targetVersion)); 
-    }
-    
-    [Fact]
-    public void Build_ShouldThrowException_WhenRoadmapIsEmptyAndCurrentVersionIsNotNull()
-    {
-        // Arrange
-        IEnumerable<MigrationPhase> phases = new List<MigrationPhase>();
-        var currentVersion = new Version("1.0.0");
-
-        // Act & Assert
-        Assert.Throws<MigrationException>(() => _roadmapProvider.Build(ref phases, currentVersion));
+        Assert.ThrowsAsync<MigrationException>(() => _roadmapProvider.GetMigrationRoadmapAsync(assets, null));
     }
 }

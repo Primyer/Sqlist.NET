@@ -16,6 +16,63 @@ public class DataTransactionMapTests
     private readonly MigrationDeserializer _deserializer = new();
 
     [Fact]
+    public void ConstructingEmptyRoadmap_ShouldThrowException()
+    {
+        // Arrange
+        IEnumerable<MigrationPhase> phases = new List<MigrationPhase>(); 
+        var currentVersion = new Version("1.0.0");
+
+        // Act & Assert
+        Assert.Throws<MigrationException>(() => new DataTransactionMap(phases, currentVersion));
+    }
+    
+    [Fact]
+    public void Constructor_ShouldSucceed_WithNullCurrentVersion()
+    {
+        // Arrange
+        Version? currentVersion = null;
+        IEnumerable<MigrationPhase> phases = new List<MigrationPhase>
+        {
+            new() { Version = new Version("1.0.0") },
+            new() { Version = new Version("2.0.0") }
+        };
+
+        // Act
+        var result = new DataTransactionMap(phases, currentVersion);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, phases.Count());
+    }
+    
+    [Fact]
+    public void ConstructingPhases_ShouldThrowException_WhenContainDuplicateVersions()
+    {
+        // Arrange
+        IEnumerable<MigrationPhase> phases = new List<MigrationPhase>
+        {
+            new() { Version = new Version("1.0.0") },
+            new() { Version = new Version("2.0.0") },
+            new() { Version = new Version("2.0.0") } // Duplicate version
+        };
+        var currentVersion = new Version("1.0.0");
+
+        // Act & Assert
+        Assert.Throws<MigrationException>(() => new DataTransactionMap(phases, currentVersion)); 
+    }
+    
+    [Fact]
+    public void ConstructingPhases_ShouldThrowException_WhenRoadmapIsEmptyAndCurrentVersionIsNotNull()
+    {
+        // Arrange
+        IEnumerable<MigrationPhase> phases = new List<MigrationPhase>();
+        var currentVersion = new Version("1.0.0");
+
+        // Act & Assert
+        Assert.Throws<MigrationException>(() => new DataTransactionMap(phases, currentVersion));
+    }
+
+    [Fact]
     public void UpdatingUndefinedTable_ShouldThrowMigrationException()
     {
         var phase = new MigrationPhase
@@ -146,17 +203,18 @@ public class DataTransactionMapTests
     }
 
     [Fact]
-    public void MergingEmbeddedMigrationDefinitions_ShouldSucceed()
+    public async Task MergingEmbeddedMigrationDefinitions_ShouldSucceed()
     {
         // Arrange
-        var roadMap = MigrationContext.GetMigrationRoadmap(new MigrationAssetInfo
+        var roadmapProvider = new RoadmapProvider();
+        var roadmap = await roadmapProvider.GetMigrationRoadmapAsync(new MigrationAssetInfo
         {
             RoadmapAssembly = typeof(Consts).Assembly,
             RoadmapPath = Consts.RoadmapRscPath
         });
         
         // Act
-        var dataMap = new DataTransactionMap(roadMap);
+        var dataMap = new DataTransactionMap(roadmap);
 
         // Assert
         Assert.Equal(4, dataMap.Count);
