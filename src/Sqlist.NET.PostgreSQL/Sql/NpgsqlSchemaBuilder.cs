@@ -1,9 +1,9 @@
-﻿using Sqlist.NET.Sql.Constraints;
-using Sqlist.NET.Sql.Metadata;
-
-using System;
+﻿using System;
 using System.Linq;
 using System.Text;
+
+using Sqlist.NET.Sql.Constraints;
+using Sqlist.NET.Sql.Metadata;
 
 namespace Sqlist.NET.Sql;
 
@@ -288,7 +288,6 @@ internal class NpgsqlSchemaBuilder(Encloser encloser) : ISchemaBuilder
     /// <param name="currentName">The name of the database to be renamed.</param>
     /// <param name="newName">The new name of the database.</param>
     /// <returns>The SQL statement to rename the database.</returns>
-    /// <exception cref="NotImplementedException"></exception>
     public virtual string RenameDatabase(string currentName, string newName)
     {
         var builder = new StringBuilder("ALTER DATABASE ");
