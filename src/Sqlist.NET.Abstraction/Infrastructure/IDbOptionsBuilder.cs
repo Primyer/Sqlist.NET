@@ -40,8 +40,8 @@ public interface IDbOptionsBuilder
     /// <summary>
     ///     Sets a custom delimited encloser for case-sensitive naming in SQL queries.
     /// </summary>
-    /// <param name="customEncloser">The custom <see cref="Encloser"/> implementation to be used.</param>
-    void WithCaseSensitiveNaming(Encloser? customEncloser = null);
+    /// <param name="customEncloser">The custom <see cref="Enclosure"/> implementation to be used.</param>
+    void WithCaseSensitiveNaming(Enclosure? customEncloser = null);
 
     /// <summary>
     ///     Sets the default naming in SQL queries to case-insensitive.

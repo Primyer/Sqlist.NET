@@ -1,8 +1,8 @@
 ﻿namespace Sqlist.NET.Sql
 {
-    public abstract class Encloser
+    public abstract class Enclosure
     {
-        public static Encloser? Default { get; internal set; }
+        public static Enclosure? Default { get; internal set; }
 
         public abstract string? Wrap(string? val);
         public abstract string? Replace(string? val);
@@ -15,16 +15,13 @@
             if (val.Contains('`'))
                 return Replace(val);
 
-            if (val.IndexOfAny([' ', '@']) == -1)
-                return Wrap(val);
-
-            return val;
+            return val.IndexOfAny([' ', '@']) == -1 ? Wrap(val) : val;
         }
 
-        public virtual string? Join(string delimiter, params string[] vals)
+        public string Join(string delimiter, params string[] vals)
         {
             var result = string.Empty;
-            for (int i = 0; i < vals.Length; i++)
+            for (var i = 0; i < vals.Length; i++)
             {
                 result += Wrap(vals[i]);
 

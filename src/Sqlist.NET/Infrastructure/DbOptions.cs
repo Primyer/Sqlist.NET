@@ -10,5 +10,5 @@ public class DbOptions : IDbOptions
     public bool EnableSensitiveLogging { get; set; }
     public bool EnableAnalysis { get; set; }
     public MappingOrientation MappingOrientation { get; set; }
-    public Encloser? DelimitedEncloser { get; set; }
+    public Enclosure? DelimitedEnclosure { get; set; }
 }

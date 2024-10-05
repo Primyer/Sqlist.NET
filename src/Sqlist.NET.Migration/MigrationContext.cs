@@ -18,9 +18,10 @@ namespace Sqlist.NET.Migration
 {
     /// <inheritdoc cref="IMigrationContext"/>
     /// <param name="db">The database context used for executing database operations.</param>
-    /// <param name="roadmapProvider">The roadmap builder used for constructing migration roadmaps.</param>
-    /// <param name="migrationTransaction">The transaction manager responsible for handling migration transactions.</param>
     /// <param name="migrationService">The migration service responsible for handling migration operations and scripts.</param>
+    /// <param name="roadmapProvider">The roadmap builder used for constructing migration roadmaps.</param>
+    /// <param name="schemaTable">The schema table manager used for tracking migration history and defining the schema table definition.</param>
+    /// <param name="migrationTransaction">The transaction manager responsible for handling migration transactions.</param>
     /// <param name="options">The migration options containing configuration settings for the migration process.</param>
     /// <param name="logger">The logger used for logging migration-related information and errors, if available.</param>
     internal class MigrationContext(
@@ -239,13 +240,31 @@ namespace Sqlist.NET.Migration
         {
             var phase = new SchemaPhase
             {
-                Version = _info!.LatestVersion.ToString(),
+                Version = _info!.TargetVersion.ToString(),
                 Title = _info.Title,
                 Description = _info.Description,
-                Summary = _info.SchemaChanges,
+                Summary = _info.SchemaChanges
             };
 
-            await migrationService.InsertSchemaPhaseAsync(phase, cancellationToken);
+            var parentId = await migrationService.InsertSchemaPhaseAsync(phase, cancellationToken);
+            
+            if (_info.ModularMigrations.Count == 0) return;
+            var modularPhases = _info.ModularMigrations.Select(pair =>
+            {
+                var (package, info) = pair;
+
+                return new SchemaPhase
+                {
+                    Version = info.TargetVersion.ToString(),
+                    Package = package,
+                    Parent = parentId,
+                    Title = info.Title,
+                    Description = info.Description,
+                    Summary = info.SchemaChanges
+                };
+            });
+
+            await migrationService.InsertSchemaPhasesAsync(modularPhases, cancellationToken);
         }
     }
 }

@@ -64,15 +64,15 @@ public class DbOptionsBuilder(DbOptions options)
     }
 
     /// <summary>
-    ///     Sets a custom delimited encloser for case-sensitive naming in SQL queries.
+    ///     Sets a custom delimited enclosure for case-sensitive naming in SQL queries.
     /// </summary>
-    /// <param name="customEncloser">The custom <see cref="Encloser"/> implementation to be used.</param>
-    public void WithCaseSensitiveNaming(Encloser? customEncloser = null)
+    /// <param name="customEnclosure">The custom <see cref="Enclosure"/> implementation to be used.</param>
+    public void WithCaseSensitiveNaming(Enclosure? customEnclosure = null)
     {
-        Check.NotNull(customEncloser, nameof(customEncloser));
+        Check.NotNull(customEnclosure, nameof(customEnclosure));
 
         CaseSensitiveNaming = true;
-        options.DelimitedEncloser = customEncloser;
+        options.DelimitedEnclosure = customEnclosure;
     }
 
     /// <summary>
@@ -81,7 +81,7 @@ public class DbOptionsBuilder(DbOptions options)
     public void WithCaseInsensitiveNaming()
     {
         CaseSensitiveNaming = false;
-        options.DelimitedEncloser = null;
+        options.DelimitedEnclosure = null;
     }
 
     public DbOptions GetOptions() => options;

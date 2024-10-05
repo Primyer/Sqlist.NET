@@ -1,12 +1,17 @@
 ﻿namespace Sqlist.NET.Sql;
 
-/// <summary>
-///     Initializes a new instance of the <see cref="SqlColumn"/> class.
-/// </summary>
-/// <param name="name">The name of the column.</param>
-/// <param name="type">The type of the column.</param>
-public class SqlColumn(string name, string type)
+public class SqlColumn
 {
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="SqlColumn"/> class.
+    /// </summary>
+    /// <param name="name">The name of the column.</param>
+    /// <param name="type">The type of the column.</param>
+    /// <param name="notNull">The flag indicating whether the column cannot be null.</param>
+    public SqlColumn(string name, string type, bool notNull) : this(name, type)
+    {
+        NotNull = notNull;
+    }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SqlColumn"/> class.
@@ -24,22 +29,24 @@ public class SqlColumn(string name, string type)
     /// </summary>
     /// <param name="name">The name of the column.</param>
     /// <param name="type">The type of the column.</param>
-    /// <param name="notNull">The flag indicating whether the column cannot be null.</param>
-    /// <param name="defaultValue">The default value of the column.</param>
-    public SqlColumn(string name, string type, bool notNull, string defaultValue) : this(name, type, defaultValue)
+    public SqlColumn(string name, string type)
     {
-        NotNull = notNull;
+        ThrowIfNull(name);
+        ThrowIfNull(type);
+        
+        Name = name;
+        Type = type;
     }
 
     /// <summary>
     ///     Gets or sets the name of the column.
     /// </summary>
-    public string? Name { get; set; } = name;
+    public string Name { get; }
 
     /// <summary>
     ///     Gets or sets the type of the column.
     /// </summary>
-    public string? Type { get; set; } = type;
+    public string Type { get; set; }
 
     /// <summary>
     ///     Gets or sets the default value of the column.
@@ -55,6 +62,11 @@ public class SqlColumn(string name, string type)
     ///     Gets or sets the flag indicating whether to constraint this column as primary key.
     /// </summary>
     public bool PrimaryKey { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the flag indicating whether to constraint this column as auto-increment.
+    /// </summary>
+    public bool AutoIncrement { get; init; }
 
     /// <summary>
     ///     Gets or sets the flag indicating whether to constraint this column as unique.

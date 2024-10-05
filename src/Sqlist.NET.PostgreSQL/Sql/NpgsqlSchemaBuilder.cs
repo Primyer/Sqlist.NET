@@ -10,17 +10,17 @@ namespace Sqlist.NET.Sql;
 /// <summary>
 ///     Initializes a new instance of the <see cref="NpgsqlSchemaBuilder"/> class.
 /// </summary>
-/// <param name="encloser">The appopertiate <see cref="Encloser"/> implementation according to the target DBMS.</param>
-internal class NpgsqlSchemaBuilder(Encloser encloser) : ISchemaBuilder
+/// <param name="enclosure">The appropriate <see cref="Enclosure"/> implementation according to the target DBMS.</param>
+internal class NpgsqlSchemaBuilder(Enclosure enclosure) : ISchemaBuilder
 {
-    const string Tab = "    ";
+    private const string Tab = "    ";
 
     /// <summary>
     ///     Generates and returns a <c>CREATE TABLE</c> statement out of the given <paramref name="table"/>.
     /// </summary>
     /// <param name="table">The table information.</param>
     /// <returns>A <c>CREATE TABLE</c> statement.</returns>
-    public virtual string CreateTable(SqlTable table)
+    public string CreateTable(SqlTable table)
     {
         var builder = new StringBuilder("CREATE TABLE ");
 
@@ -29,19 +29,35 @@ internal class NpgsqlSchemaBuilder(Encloser encloser) : ISchemaBuilder
 
         if (!string.IsNullOrEmpty(table.Schema))
         {
-            builder.Append(encloser.Replace(table.Schema));
+            builder.Append(enclosure.Replace(table.Schema));
             builder.Append('.');
         }
 
-        builder.Append(encloser.Wrap(table.Name));
+        builder.Append(enclosure.Wrap(table.Name));
         builder.AppendLine(" (");
 
         ConfigureTablePrimaryKey(table);
 
         var length = table.Columns.Count;
+        var aiCount = 0;
+        
         for (var i = 0; i < length; i++)
         {
-            AppendColumn(builder, table.Columns[i]);
+            var column = table.Columns[i];
+            if (column.AutoIncrement)
+            {
+                if (aiCount > 1)
+                    throw new InvalidOperationException("Only one column can be auto-incremented.");
+
+                if (column.Type != "int" && column.Type != "bigint")
+                    throw new InvalidOperationException("Auto-incremented column must be of type int or bigint.");
+                
+                aiCount++;
+            }
+            
+            column.Type = GetSequentialType(column.Type);
+            AppendColumn(builder, column);
+            
             builder.AppendLine(i != length - 1 ? "," : null);
         }
 
@@ -50,15 +66,23 @@ internal class NpgsqlSchemaBuilder(Encloser encloser) : ISchemaBuilder
         builder.Append(");");
         return builder.ToString();
     }
+    
+    private static string GetSequentialType(string type) => type switch
+    {
+        "smallint" => "SMALLSERIAL",
+        "int" => "SERIAL",
+        "bigint" => "BIGSERIAL",
+        _ => throw new InvalidOperationException("Auto-incremented column must be of type smallint, int, or bigint.")
+    };
 
     /// <summary>
     ///     Generates and returns a <c>CREATE TABLE</c> statement out of the given <paramref name="table"/>.
     /// </summary>
     /// <param name="table">The table information.</param>
     /// <returns>A <c>CREATE TABLE</c> statement.</returns>
-    public virtual string DeleteTable(string table)
+    public string DeleteTable(string table)
     {
-        return $"DROP TABLE {encloser.Wrap(table)};";
+        return $"DROP TABLE {enclosure.Wrap(table)};";
     }
 
     private void ConfigureTablePrimaryKey(SqlTable table)
@@ -73,7 +97,7 @@ internal class NpgsqlSchemaBuilder(Encloser encloser) : ISchemaBuilder
                 .Select(col =>
                 {
                     col.PrimaryKey = false;
-                    return encloser.Wrap(col.Name);
+                    return enclosure.Wrap(col.Name);
                 })
                 .ToArray();
 
@@ -133,17 +157,19 @@ internal class NpgsqlSchemaBuilder(Encloser encloser) : ISchemaBuilder
             }
         }
 
-        if (builder.Length != 0)
-        {
-            tableBuilder.AppendLine(",");
-            tableBuilder.Append(builder);
-        }
+        if (builder.Length == 0) return;
+        
+        tableBuilder.AppendLine(",");
+        tableBuilder.Append(builder);
     }
 
-    protected virtual void AppendColumn(StringBuilder builder, SqlColumn column)
+    private void AppendColumn(StringBuilder builder, SqlColumn column)
     {
         builder.Append(Tab);
-        builder.Append(encloser.Wrap(column.Name) + " " + column.Type);
+        builder.Append(enclosure.Wrap(column.Name) + " " + column.Type);
+        
+        if (column.NotNull)
+            builder.Append(" NOT NULL");
 
         if (!string.IsNullOrWhiteSpace(column.Default))
         {
@@ -160,11 +186,11 @@ internal class NpgsqlSchemaBuilder(Encloser encloser) : ISchemaBuilder
         if (column.Check != null)
         {
             builder.Append(" CHECK ");
-            builder.Append(encloser.Replace(column.Check.ToString()));
+            builder.Append(enclosure.Replace(column.Check.ToString()));
         }
     }
 
-    protected virtual void AppendPrimaryKey(StringBuilder builder, PrimaryKeyConstraint constraint)
+    private void AppendPrimaryKey(StringBuilder builder, PrimaryKeyConstraint constraint)
     {
         builder.Append(Tab);
 
@@ -172,15 +198,15 @@ internal class NpgsqlSchemaBuilder(Encloser encloser) : ISchemaBuilder
         {
             builder.Append(Tab);
             builder.Append("CONSTRAINT ");
-            builder.Append(encloser.Wrap(constraint.Name) + " ");
+            builder.Append(enclosure.Wrap(constraint.Name) + " ");
         }
 
         builder.Append("PRIMARY KEY (");
-        builder.Append(encloser.Join(", ", constraint.Columns));
+        builder.Append(enclosure.Join(", ", constraint.Columns));
         builder.Append(')');
     }
 
-    protected virtual void AppendForeignKey(StringBuilder builder, ForeignKeyConstraint constraint)
+    private void AppendForeignKey(StringBuilder builder, ForeignKeyConstraint constraint)
     {
         builder.Append(Tab);
 
@@ -188,30 +214,30 @@ internal class NpgsqlSchemaBuilder(Encloser encloser) : ISchemaBuilder
         {
             builder.Append(Tab);
             builder.Append("CONSTRAINT ");
-            builder.Append(encloser.Wrap(constraint.Name) + " ");
+            builder.Append(enclosure.Wrap(constraint.Name) + " ");
         }
 
         builder.Append("FOREIGN KEY (");
-        builder.Append(encloser.Join(", ", constraint.Columns));
+        builder.Append(enclosure.Join(", ", constraint.Columns));
         builder.AppendLine(")");
 
         builder.Append(Tab);
         builder.Append("REFERENCES ");
-        builder.Append(encloser.Wrap(constraint.References.Table));
+        builder.Append(enclosure.Wrap(constraint.References.Table));
         builder.Append(" (");
-        builder.Append(encloser.Join(", ", constraint.References.Columns));
+        builder.Append(enclosure.Join(", ", constraint.References.Columns));
         builder.AppendLine(")");
 
         builder.Append(Tab);
         builder.Append("ON UPDATE ");
-        builder.AppendLine(GetReferencialAction(constraint.OnUpdate));
+        builder.AppendLine(GetReferentialAction(constraint.OnUpdate));
 
         builder.Append(Tab);
         builder.Append("ON DELETE ");
-        builder.Append(GetReferencialAction(constraint.OnDelete));
+        builder.Append(GetReferentialAction(constraint.OnDelete));
     }
 
-    private static string GetReferencialAction(ReferencialAction action) => action switch
+    private static string GetReferentialAction(ReferencialAction action) => action switch
     {
         ReferencialAction.Restrict => "RESTRICT",
         ReferencialAction.Cascade => "CASCADE",
@@ -220,7 +246,7 @@ internal class NpgsqlSchemaBuilder(Encloser encloser) : ISchemaBuilder
         _ => "NO ACTION"
     };
 
-    protected virtual void AppendUnique(StringBuilder builder, UniqueConstraint constraint)
+    private void AppendUnique(StringBuilder builder, UniqueConstraint constraint)
     {
         builder.Append(Tab);
 
@@ -228,15 +254,15 @@ internal class NpgsqlSchemaBuilder(Encloser encloser) : ISchemaBuilder
         {
             builder.Append(Tab);
             builder.Append("CONSTRAINT ");
-            builder.Append(encloser.Wrap(constraint.Name) + " ");
+            builder.Append(enclosure.Wrap(constraint.Name) + " ");
         }
 
         builder.Append("UNIQUE (");
-        builder.Append(encloser.Join(", ", constraint.Columns));
+        builder.Append(enclosure.Join(", ", constraint.Columns));
         builder.Append(')');
     }
 
-    protected virtual void AppendCheck(StringBuilder builder, CheckConstraint constraint)
+    private void AppendCheck(StringBuilder builder, CheckConstraint constraint)
     {
         builder.Append(Tab);
 
@@ -244,24 +270,24 @@ internal class NpgsqlSchemaBuilder(Encloser encloser) : ISchemaBuilder
         {
             builder.Append(Tab);
             builder.Append("CONSTRAINT ");
-            builder.Append(encloser.Wrap(constraint.Name) + " ");
+            builder.Append(enclosure.Wrap(constraint.Name) + " ");
         }
 
         builder.Append("CHECK (");
-        builder.Append(encloser.Reformat(constraint.Condition?.ToString()));
+        builder.Append(enclosure.Reformat(constraint.Condition?.ToString()));
         builder.Append(')');
     }
 
     /// <summary>
-    ///     Generates and returns a <c>CRAETE DATABASE</c> statement for the specified <paramref name="database"/>.
+    ///     Generates and returns a <c>CREATE DATABASE</c> statement for the specified <paramref name="database"/>.
     /// </summary>
     /// <param name="database">The name of the database to be created.</param>
     /// <returns>A <c>CREATE DATABASE</c> statement for the specified <paramref name="database"/>.</returns>
-    public virtual string CreateDatabase(string database)
+    public string CreateDatabase(string database)
     {
         var builder = new StringBuilder("CREATE DATABASE ");
 
-        builder.Append(encloser.Wrap(database));
+        builder.Append(enclosure.Wrap(database));
         builder.Append(';');
 
         return builder.ToString();
@@ -272,11 +298,11 @@ internal class NpgsqlSchemaBuilder(Encloser encloser) : ISchemaBuilder
     /// </summary>
     /// <param name="database">The name of the database to be created.</param>
     /// <returns>A <c>DELETE DATABASE</c> statement for the specified <paramref name="database"/>.</returns>
-    public virtual string DeleteDatabase(string database)
+    public string DeleteDatabase(string database)
     {
         var builder = new StringBuilder("DROP DATABASE ");
 
-        builder.Append(encloser.Wrap(database));
+        builder.Append(enclosure.Wrap(database));
         builder.Append(';');
 
         return builder.ToString();
@@ -288,13 +314,13 @@ internal class NpgsqlSchemaBuilder(Encloser encloser) : ISchemaBuilder
     /// <param name="currentName">The name of the database to be renamed.</param>
     /// <param name="newName">The new name of the database.</param>
     /// <returns>The SQL statement to rename the database.</returns>
-    public virtual string RenameDatabase(string currentName, string newName)
+    public string RenameDatabase(string currentName, string newName)
     {
         var builder = new StringBuilder("ALTER DATABASE ");
 
-        builder.Append(encloser.Wrap(currentName));
+        builder.Append(enclosure.Wrap(currentName));
         builder.Append(" RENAME TO ");
-        builder.Append(encloser.Wrap(newName));
+        builder.Append(enclosure.Wrap(newName));
         builder.Append(';');
 
         return builder.ToString();

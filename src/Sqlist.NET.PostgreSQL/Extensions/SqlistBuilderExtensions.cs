@@ -1,12 +1,12 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Infrastructure.Internal;
 using Sqlist.NET.Sql;
-
-using System;
 
 namespace Sqlist.NET.Extensions
 {
@@ -26,7 +26,7 @@ namespace Sqlist.NET.Extensions
             builder.Services.PostConfigure<NpgsqlOptions>(options =>
             {
                 configureOptions?.Invoke(new NpgsqlOptionsBuilder(options));
-                options.DelimitedEncloser ??= new NpgsqlEncloser();
+                options.DelimitedEnclosure ??= new NpgsqlEnclosure();
             });
 
             builder.WithContext<DbContext>();

@@ -28,10 +28,10 @@ public class NpgsqlBuilderFactory : ISqlBuilderFactory
 
     public ISqlBuilder Sql(string? schema, string? table)
     {
-        return Sql(new DummyEncloser(), schema, table);
+        return Sql(new DummyEnclosure(), schema, table);
     }
 
-    static NpgsqlBuilder Sql(Encloser? encloser, string? schema, string? table)
+    static NpgsqlBuilder Sql(Enclosure? encloser, string? schema, string? table)
     {
         return table is null
             ? new NpgsqlBuilder(encloser)

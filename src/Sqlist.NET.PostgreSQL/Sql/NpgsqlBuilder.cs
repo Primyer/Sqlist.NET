@@ -1,7 +1,7 @@
-﻿using Sqlist.NET.Metadata;
-
-using System;
+﻿using System;
 using System.Text;
+
+using Sqlist.NET.Metadata;
 
 namespace Sqlist.NET.Sql
 {
@@ -10,15 +10,15 @@ namespace Sqlist.NET.Sql
         /// <summary>
         ///     Initalizes a new instance of the <see cref="NpgsqlBuilder"/> class.
         /// </summary>
-        public NpgsqlBuilder() : base(new NpgsqlEncloser())
+        public NpgsqlBuilder() : base(new NpgsqlEnclosure())
         {
         }
 
         /// <summary>
         ///     Initalizes a new instance of the <see cref="NpgsqlBuilder"/> class.
         /// </summary>
-        /// <param name="encloser">The appopertiate <see cref="Encloser"/> implementation according to the target DBMS.</param>
-        public NpgsqlBuilder(Encloser? encloser) : base(encloser)
+        /// <param name="encloser">The appopertiate <see cref="Enclosure"/> implementation according to the target DBMS.</param>
+        public NpgsqlBuilder(Enclosure? encloser) : base(encloser)
         {
         }
 
@@ -26,7 +26,7 @@ namespace Sqlist.NET.Sql
         ///     Initializes a new instance of the <see cref="NpgsqlBuilder"/> class.
         /// </summary>
         /// <param name="table">The name of table to base the statement on.</param>
-        public NpgsqlBuilder(string table) : base(new NpgsqlEncloser(), table)
+        public NpgsqlBuilder(string table) : base(new NpgsqlEnclosure(), table)
         {
         }
 
@@ -35,17 +35,17 @@ namespace Sqlist.NET.Sql
         /// </summary>
         /// <param name="schema">The name of the schema where the table exists.</param>
         /// <param name="table">The name of table to base the statement on.</param>
-        public NpgsqlBuilder(string? schema, string table) : base(new NpgsqlEncloser(), schema, table)
+        public NpgsqlBuilder(string? schema, string table) : base(new NpgsqlEnclosure(), schema, table)
         {
         }
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="NpgsqlBuilder"/> class.
         /// </summary>
-        /// <param name="encloser">The appopertiate <see cref="Sql.Encloser"/> implementation according to the target DBMS.</param>
+        /// <param name="encloser">The appopertiate <see cref="Enclosure"/> implementation according to the target DBMS.</param>
         /// <param name="schema">The name of the schema where the table exists.</param>
         /// <param name="table">The name of table to base the statement on.</param>
-        public NpgsqlBuilder(Encloser? encloser, string? schema, string table) : base(encloser ?? new NpgsqlEncloser(), schema, table)
+        public NpgsqlBuilder(Enclosure? encloser, string? schema, string table) : base(encloser ?? new NpgsqlEnclosure(), schema, table)
         {
         }
 
@@ -55,7 +55,7 @@ namespace Sqlist.NET.Sql
         /// <param name="table">The table to join.</param>
         public void CrossJoin(string table)
         {
-            Join($"CROSS JOIN " + (table.Contains(' ') ? Encloser.Replace(table) : Encloser.Wrap(table)));
+            Join($"CROSS JOIN " + (table.Contains(' ') ? Enclosure.Replace(table) : Enclosure.Wrap(table)));
         }
 
         /// <summary>
@@ -98,7 +98,7 @@ namespace Sqlist.NET.Sql
 
             for (var i = 0; i < keys.Length; i++)
             {
-                builder.Append(Encloser.Wrap(keys[i]));
+                builder.Append(Enclosure.Wrap(keys[i]));
 
                 if (i != keys.Length - 1)
                     builder.Append(", ");

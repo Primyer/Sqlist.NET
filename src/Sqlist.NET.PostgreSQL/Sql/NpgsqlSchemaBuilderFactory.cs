@@ -12,7 +12,7 @@ internal class NpgsqlSchemaBuilderFactory(IOptions<DbOptions> options) : ISchema
 {
     public ISchemaBuilder Create()
     {
-        var encloser = options.Value.DelimitedEncloser ?? new DummyEncloser();
+        var encloser = options.Value.DelimitedEnclosure ?? new DummyEnclosure();
         return new NpgsqlSchemaBuilder(encloser);
     }
 }

@@ -11,7 +11,8 @@ public interface IMigrationService
     Task<bool> DoesSchemaTableExistAsync(CancellationToken cancellationToken);
     Task<SchemaPhase> GetLastSchemaPhaseAsync(CancellationToken cancellationToken);
     Task<IEnumerable<SchemaPhase>> GetModularSchemaPhasesAsync(CancellationToken cancellationToken);
-    Task InsertSchemaPhaseAsync(SchemaPhase phase, CancellationToken cancellationToken);
+    Task<int> InsertSchemaPhaseAsync(SchemaPhase phase, CancellationToken cancellationToken);
     Task MigrateDataFromAsync(string dbname, DataTransactionMap dataMap, CancellationToken cancellationToken);
     Task RenameDatabaseAsync(string currentName, string newName, CancellationToken cancellationToken);
+    Task InsertSchemaPhasesAsync(IEnumerable<SchemaPhase> phases, CancellationToken cancellationToken);
 }

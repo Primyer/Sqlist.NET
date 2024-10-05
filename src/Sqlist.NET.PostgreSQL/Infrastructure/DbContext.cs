@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.Options;
+﻿using System.Threading;
+using System.Threading.Tasks;
+
+using Microsoft.Extensions.Options;
 
 using Npgsql;
-
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Sqlist.NET.Infrastructure
 {
@@ -27,7 +27,7 @@ namespace Sqlist.NET.Infrastructure
         public override NpgsqlOptions Options => options.Value;
 
         /// <inheritdoc />
-        public override TypeMapper TypeMapper => NpgsqlTypeMapper.Instance;
+        public override TypeMapper TypeMapper => NpgsqlTypeMapper.Default;
 
         public override NpgsqlDataSource BuildDataSource(string? connectionString = null)
         {

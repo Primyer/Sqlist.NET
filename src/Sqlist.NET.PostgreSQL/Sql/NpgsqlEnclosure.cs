@@ -1,6 +1,6 @@
 ﻿namespace Sqlist.NET.Sql
 {
-    public class NpgsqlEncloser : Encloser
+    public class NpgsqlEnclosure : Enclosure
     {
         public const char DI = '\"';
 

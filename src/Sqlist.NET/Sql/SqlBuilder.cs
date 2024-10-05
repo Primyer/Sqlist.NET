@@ -1,6 +1,6 @@
-﻿using Sqlist.NET.Utilities;
+﻿using System.Text;
 
-using System.Text;
+using Sqlist.NET.Utilities;
 
 namespace Sqlist.NET.Sql;
 
@@ -10,8 +10,8 @@ namespace Sqlist.NET.Sql;
 /// <remarks>
 ///     Initalizes a new instance of the <see cref="SqlBuilder"/> class.
 /// </remarks>
-/// <param name="encloser">The appopertiate <see cref="Sql.Encloser"/> implementation according to the target DBMS.</param>
-public class SqlBuilder(Encloser? encloser) : ISqlBuilder
+/// <param name="encloser">The appopertiate <see cref="Enclosure"/> implementation according to the target DBMS.</param>
+public class SqlBuilder(Enclosure? encloser) : ISqlBuilder
 {
     private const string Tab = "    ";
     private string? _tableName;
@@ -19,34 +19,34 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
     /// <summary>
     ///     Initalizes a new instance of the <see cref="SqlBuilder"/> class.
     /// </summary>
-    public SqlBuilder() : this(Encloser.Default)
+    public SqlBuilder() : this(Enclosure.Default)
     { }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SqlBuilder"/> class.
     /// </summary>
-    /// <param name="encloser">The appopertiate <see cref="Sql.Encloser"/> implementation according to the target DBMS.</param>
+    /// <param name="encloser">The appopertiate <see cref="Enclosure"/> implementation according to the target DBMS.</param>
     /// <param name="schema">The name of the schema where the table exists.</param>
     /// <param name="table">The name of table to base the statement on.</param>
-    public SqlBuilder(Encloser? encloser, string? schema, string table) : this(encloser, table)
+    public SqlBuilder(Enclosure? encloser, string? schema, string table) : this(encloser, table)
     {
         if (!string.IsNullOrEmpty(schema))
-            TableName = Encloser.Replace(schema) + "." + TableName;
+            TableName = Enclosure.Replace(schema) + "." + TableName;
     }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SqlBuilder"/> class.
     /// </summary>
-    /// <param name="encloser">The appopertiate <see cref="Sql.Encloser"/> implementation according to the target DBMS.</param>
+    /// <param name="encloser">The appopertiate <see cref="Enclosure"/> implementation according to the target DBMS.</param>
     /// <param name="table">The name of table to base the statement on.</param>
-    public SqlBuilder(Encloser? encloser, string table) : this(encloser)
+    public SqlBuilder(Enclosure? encloser, string table) : this(encloser)
     {
         TableName = table ?? throw new ArgumentNullException(nameof(table));
     }
 
     protected Dictionary<string, StringBuilder> Builders { get; } = [];
 
-    public Encloser Encloser { get; set; } = encloser ?? new DummyEncloser();
+    public Enclosure Enclosure { get; set; } = encloser ?? new DummyEnclosure();
 
     /// <summary>
     ///     Gets or sets the name of the table name that the to-be-generated statement should base on.
@@ -54,7 +54,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
     public string? TableName
     {
         get => _tableName;
-        set => _tableName = Encloser.Reformat(value);
+        set => _tableName = Enclosure.Reformat(value);
     }
 
     /// <summary>
@@ -69,7 +69,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
 
         for (var i = 0; i < fields.Length; i++)
         {
-            builder.Append(Encloser.Reformat(fields[i]));
+            builder.Append(Enclosure.Reformat(fields[i]));
             builder.Append(" = ");
             builder.Append('@' + fields[i]);
 
@@ -88,9 +88,9 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         if (builder.Length != 0)
             builder.Append($",\n{Tab}");
 
-        builder.Append(Encloser.Reformat(pair.Item1));
+        builder.Append(Enclosure.Reformat(pair.Item1));
         builder.Append(" = ");
-        builder.Append(Encloser.Replace(pair.Item2));
+        builder.Append(Enclosure.Replace(pair.Item2));
     }
 
     /// <summary>
@@ -106,9 +106,9 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         var count = 0;
         foreach (var (key, value) in pairs)
         {
-            builder.Append(Encloser.Reformat(key));
+            builder.Append(Enclosure.Reformat(key));
             builder.Append(" = ");
-            builder.Append(Encloser.Replace(value));
+            builder.Append(Enclosure.Replace(value));
 
             if (count != pairs.Count - 1)
                 builder.Append($",\n{Tab}");
@@ -126,7 +126,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         var builder = GetOrCreateBuilder("from");
         builder.AppendLine();
         builder.Append("FROM ");
-        builder.Append(Encloser.Reformat(entity));
+        builder.Append(Enclosure.Reformat(entity));
     }
 
     /// <summary>
@@ -321,7 +321,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
     /// <param name="condition">The condition of join operation.</param>
     public virtual void Join(string type, string alias, string condition, Action<ISqlBuilder> configureSql)
     {
-        var sql = new SqlBuilder(Encloser);
+        var sql = new SqlBuilder(Enclosure);
         configureSql.Invoke(sql);
 
         var stmt = Indent(sql.ToSelect());
@@ -337,7 +337,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
     /// <param name="condition">The condition of join operation.</param>
     public virtual void Join(string type, string entity, string? condition = null)
     {
-        Join($"{type} JOIN {Encloser.Reformat(entity)} ON " + (condition is null ? "true" : Encloser.Reformat(condition)));
+        Join($"{type} JOIN {Enclosure.Reformat(entity)} ON " + (condition is null ? "true" : Enclosure.Reformat(condition)));
     }
 
     /// <summary>
@@ -351,7 +351,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         var clause = new ConditionalClause();
         condition.Invoke(clause);
 
-        Join($"{type} JOIN {Encloser.Reformat(entity)} ON " + Encloser.Reformat(clause.ToString()));
+        Join($"{type} JOIN {Enclosure.Reformat(entity)} ON " + Enclosure.Reformat(clause.ToString()));
     }
 
     /// <summary>
@@ -382,7 +382,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         var builder = Builders["where"] = new StringBuilder();
 
         builder.Append("\nWHERE ");
-        builder.Append(Encloser.Replace(condition));
+        builder.Append(Enclosure.Replace(condition));
     }
 
     /// <summary>
@@ -444,7 +444,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         if (!Builders.TryGetValue("where", out var builder))
             throw new InvalidOperationException("The 'where' condition wasn't initialized.");
 
-        builder.Append(" " + Encloser.Reformat(condition));
+        builder.Append(" " + Enclosure.Reformat(condition));
     }
 
     /// <summary>
@@ -460,7 +460,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         if (builder.Length != 0)
             builder.Append(", ");
 
-        builder.Append(reformat ? Encloser.Reformat(field) : field);
+        builder.Append(reformat ? Enclosure.Reformat(field) : field);
     }
 
     /// <summary>
@@ -477,7 +477,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
 
         for (var i = 0; i < fields.Length; i++)
         {
-            builder.Append(Encloser.Reformat(fields[i]));
+            builder.Append(Enclosure.Reformat(fields[i]));
 
             if (i != fields.Length - 1)
                 builder.Append(", ");
@@ -505,7 +505,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         var builder = GetOrCreateBuilder("filters");
 
         builder.AppendLine();
-        builder.Append($"WINDOW {Encloser.Replace(alias)} AS ({Encloser.Replace(content)})");
+        builder.Append($"WINDOW {Enclosure.Replace(alias)} AS ({Enclosure.Replace(content)})");
     }
 
     /// <summary>
@@ -519,7 +519,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         var builder = GetOrCreateBuilder("filters");
 
         builder.Append("\nGROUP BY ");
-        builder.Append(Encloser.Reformat(field));
+        builder.Append(Enclosure.Reformat(field));
     }
 
     /// <summary>
@@ -533,7 +533,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         var result = string.Empty;
         for (var i = 0; i < fields.Length; i++)
         {
-            result += Encloser.Wrap(fields[i]);
+            result += Enclosure.Wrap(fields[i]);
 
             if (i != fields.Length - 1)
                 result += ", ";
@@ -555,7 +555,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         var builder = GetOrCreateBuilder("filters");
 
         builder.Append("\nORDER BY ");
-        builder.Append(Encloser.Reformat(field));
+        builder.Append(Enclosure.Reformat(field));
     }
 
     /// <summary>
@@ -569,7 +569,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         var result = string.Empty;
         for (var i = 0; i < fields.Length; i++)
         {
-            result += Encloser.Wrap(fields[i]);
+            result += Enclosure.Wrap(fields[i]);
 
             if (i != fields.Length - 1)
                 result += ", ";
@@ -617,7 +617,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         var builder = GetOrCreateBuilder("filters");
 
         builder.Append("\nHAVING ");
-        builder.Append(Encloser.Reformat(condition));
+        builder.Append(Enclosure.Reformat(condition));
     }
 
     /// <summary>
@@ -639,7 +639,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
     /// <param name="body">The body as a separate <see cref="SqlBuilder"/>.</param>
     public virtual void With(string name, string[] fields, Func<ISqlBuilder, string> body)
     {
-        var builder = new SqlBuilder(Encloser);
+        var builder = new SqlBuilder(Enclosure);
         var result = body.Invoke(builder);
 
         RegisterWith(name, fields, result);
@@ -664,7 +664,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
     /// <param name="body">The body as a separate <see cref="SqlBuilder"/>.</param>
     public virtual void RecursiveWith(string name, string[] fields, Func<ISqlBuilder, string> body)
     {
-        var builder = new SqlBuilder(Encloser);
+        var builder = new SqlBuilder(Enclosure);
         var result = body.Invoke(builder);
 
         RegisterWith(name, fields, result, true);
@@ -690,10 +690,10 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         if (recursive && (builder.Length == 5 || builder[5] != 'R'))
             builder.Insert(5, "RECURSIVE ");
 
-        builder.Append(Encloser.Wrap(name));
+        builder.Append(Enclosure.Wrap(name));
 
         if (fields.Length != 0)
-            builder.Append($" ({Encloser.Join(", ", fields)})");
+            builder.Append($" ({Enclosure.Join(", ", fields)})");
 
         builder.AppendLine(" AS (");
         Indent(body, builder);
@@ -799,7 +799,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         Check.NotNullOrEmpty(type);
         Check.NotNull(query);
 
-        var result = query.Invoke(new SqlBuilder(Encloser));
+        var result = query.Invoke(new SqlBuilder(Enclosure));
         if (string.IsNullOrEmpty(result))
             throw new InvalidOperationException("The query result cannot be null or empty");
 
@@ -825,7 +825,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         else
             for (var i = 0; i < fields.Length; i++)
             {
-                result += Encloser.Reformat(fields[i]);
+                result += Enclosure.Reformat(fields[i]);
 
                 if (i != fields.Length - 1)
                     result += ", ";
@@ -855,7 +855,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
     /// <param name="sql">the inner SQL content of the condition.</param>
     public virtual void WhereNotExists(Action<ISqlBuilder> sql)
     {
-        var builder = new SqlBuilder(Encloser);
+        var builder = new SqlBuilder(Enclosure);
         sql.Invoke(builder);
 
         WhereNotExists(builder.ToSelect());
@@ -879,7 +879,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
     /// <returns>A <c>CAST</c> statement of the specified <paramref name="field"/> to the given <paramref name="type"/>.</returns>
     public virtual string Cast(string field, string type)
     {
-        return $"CAST ({Encloser.Reformat(field)} AS {Encloser.Replace(type)})";
+        return $"CAST ({Enclosure.Reformat(field)} AS {Enclosure.Replace(type)})";
     }
 
     /// <summary>
@@ -981,7 +981,7 @@ public class SqlBuilder(Encloser? encloser) : ISqlBuilder
         }
         else
         {
-            var sql = new SqlBuilder(Encloser);
+            var sql = new SqlBuilder(Enclosure);
 
             select.Invoke(sql);
             result.Append(sql.ToSelect());

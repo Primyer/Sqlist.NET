@@ -47,7 +47,7 @@ public class NpgsqlDataTransfer(DbContext db, ISchemaBuilderFactory schemaFactor
                     var notEnum = !(rule.IsEnum ?? false);
 
                     var npgType = notEnum ? NpgsqlTypeMapper.GetNpgsqlDbType(rule.Type!) : NpgsqlDbType.Text;
-                    var clrType = notEnum ? NpgsqlTypeMapper.Instance.GetType(rule.Type!) : typeof(string);
+                    var clrType = notEnum ? NpgsqlTypeMapper.Default.GetType(rule.Type!) : typeof(string);
 
                     try
                     {

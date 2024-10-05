@@ -1,9 +1,7 @@
-﻿using System.Text;
-
-namespace Sqlist.NET.Sql;
+﻿namespace Sqlist.NET.Sql;
 public interface ISqlBuilder
 {
-    Encloser Encloser { get; set; }
+    Enclosure Enclosure { get; set; }
     string? TableName { get; set; }
 
     void AppendAnd(string condition);

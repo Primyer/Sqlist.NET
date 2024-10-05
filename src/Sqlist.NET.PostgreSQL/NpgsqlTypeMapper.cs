@@ -1,6 +1,4 @@
-﻿using NpgsqlTypes;
-
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -8,6 +6,8 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
+
+using NpgsqlTypes;
 
 namespace Sqlist.NET
 {
@@ -234,6 +234,7 @@ namespace Sqlist.NET
             [typeof(Range[])] = NpgsqlDbType.Multirange
         };
 
+        private static readonly Lazy<NpgsqlTypeMapper> Instance = new(() => new NpgsqlTypeMapper());
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="NpgsqlTypeMapper"/> class.
@@ -241,7 +242,7 @@ namespace Sqlist.NET
         private NpgsqlTypeMapper()
         { }
 
-        public static NpgsqlTypeMapper Instance => new();
+        public static NpgsqlTypeMapper Default => Instance.Value;
 
         /// <inheritdoc />
         public override string TypeName(DbType dbType)
@@ -259,7 +260,7 @@ namespace Sqlist.NET
                 : type;
         }
 
-        public virtual string TypeName(NpgsqlDbType dbType)
+        private static string TypeName(NpgsqlDbType dbType)
         {
             try
             {
@@ -276,7 +277,8 @@ namespace Sqlist.NET
             var normalized = NormalizeType(type);
 
             return type.Contains('[')
-                ? NpgsqlDbType.Array | NameDbTypePairs[normalized]
+                // ReSharper disable once BitwiseOperatorOnEnumWithoutFlags
+                ? NameDbTypePairs[normalized] | NpgsqlDbType.Array
                 : NameDbTypePairs[normalized];
         }
 

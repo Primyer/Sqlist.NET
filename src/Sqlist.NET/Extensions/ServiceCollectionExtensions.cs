@@ -20,7 +20,8 @@ public static class ServiceCollectionExtensions
     /// <returns>The <see cref="SqlistBuilder"/>.</returns>
     public static SqlistBuilder AddSqlist(this IServiceCollection services, Action<DbOptionsBuilder>? configureOptions = null)
     {
-        var configure = new ConfigureNamedOptions<DbOptions>(null, options => configureOptions?.Invoke(new DbOptionsBuilder(options)));
+        var configure = new ConfigureNamedOptions<DbOptions>(null,
+            options => configureOptions?.Invoke(new DbOptionsBuilder(options)));
 
         services.TryAddSingleton<IConfigureOptions<DbOptions>>(configure);
         services.TryAddScoped<ITransactionManager, TransactionManager>();

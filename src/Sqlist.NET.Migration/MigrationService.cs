@@ -10,6 +10,7 @@ using Sqlist.NET.Infrastructure;
 using Sqlist.NET.Migration.Infrastructure;
 using Sqlist.NET.Migration.Properties;
 using Sqlist.NET.Sql;
+using Sqlist.NET.Utilities;
 
 namespace Sqlist.NET.Migration;
 
@@ -23,7 +24,11 @@ internal class MigrationService(IDbContext db, ISchemaBuilderFactory schemaFacto
     {
         Columns =
         {
-            new(Consts.Id, db.TypeMapper.TypeName<int>()) { PrimaryKey = true },
+            new(Consts.Id, db.TypeMapper.TypeName<int>(), true)
+            {
+                PrimaryKey = true,
+                AutoIncrement = true
+            },
             new(Consts.Version, db.TypeMapper.TypeName<string>(16)),
             new(Consts.Package, db.TypeMapper.TypeName<string>(128)),
             new(Consts.Parent, db.TypeMapper.TypeName<int>()),
@@ -160,28 +165,25 @@ internal class MigrationService(IDbContext db, ISchemaBuilderFactory schemaFacto
         return qry.RetrieveAsync<SchemaPhase>(stmt, cancellationToken: cancellationToken);
     }
 
-    public Task InsertSchemaPhaseAsync(SchemaPhase phase, CancellationToken cancellationToken)
+    public Task<int> InsertSchemaPhaseAsync(SchemaPhase phase, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         var sql = CreateSqlBuilder();
 
         sql.RegisterFields([
-            Consts.Id,
-            Consts.Version,
-            Consts.Package,
-            Consts.Parent,
-            Consts.Title,
-            Consts.Description,
-            Consts.Summary,
+            Consts.Id, Consts.Version, Consts.Package, Consts.Parent, Consts.Title, Consts.Description, Consts.Summary,
             Consts.Applied
         ]);
-        sql.RegisterValues(["@Id", "@Version", "@Package", "@Parent", "@Title", "@Description", "@Summary", "@Applied"]);
+        sql.RegisterValues([
+            "@Id", "@Version", "@Package", "@Parent", "@Title", "@Description", "@Summary", "@Applied"
+        ]);
+        sql.RegisterReturningFields(Consts.Id);
 
         var stmt = sql.ToInsert();
         var qry = db.Query();
 
-        return qry.ExecuteAsync(stmt, new
+        return qry.FirstOrDefaultAsync<int>(stmt, new
         {
             phase.Id,
             phase.Version,
@@ -192,6 +194,36 @@ internal class MigrationService(IDbContext db, ISchemaBuilderFactory schemaFacto
             phase.Summary,
             phase.Applied
         }, cancellationToken: cancellationToken);
+    }
+
+    public Task InsertSchemaPhasesAsync(IEnumerable<SchemaPhase> phases, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var sql = CreateSqlBuilder();
+        var fields = new[]
+        {
+            Consts.Id, Consts.Version, Consts.Package, Consts.Parent, Consts.Title, Consts.Description,
+            Consts.Summary, Consts.Applied
+        };
+
+        sql.RegisterFields(fields);
+        sql.RegisterBulkValues(fields.Length, phases.Count());
+
+        var stmt = sql.ToInsert();
+        var prms = new BulkParameters(phases.Select(phase => new
+        {
+            phase.Id,
+            phase.Version,
+            phase.Package,
+            phase.Parent,
+            phase.Title,
+            phase.Description,
+            phase.Summary,
+            phase.Applied
+        }));
+
+        return db.Query().FirstOrDefaultAsync<int>(stmt, prms, cancellationToken: cancellationToken);
     }
 
     private SqlBuilder CreateSqlBuilder()

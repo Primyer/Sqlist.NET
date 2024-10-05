@@ -37,5 +37,5 @@ internal interface IDbOptions
     /// <summary>
     ///     Gets or sets the delimited encloser for case-sensitive naming in SQL queries.
     /// </summary>
-    Encloser? DelimitedEncloser { get; }
+    Enclosure? DelimitedEnclosure { get; }
 }

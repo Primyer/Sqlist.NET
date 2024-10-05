@@ -24,8 +24,8 @@ public readonly struct SqlistBuilder
         Services.AddScoped<IDbContext, T>(sp => sp.GetRequiredService<T>());
     }
 
-    public void WithDelimitedEncloser(Encloser encloser)
+    public void WithDelimitedEncloser(Enclosure enclosure)
     {
-        Encloser.Default = encloser;
+        Enclosure.Default = enclosure;
     }
 }
