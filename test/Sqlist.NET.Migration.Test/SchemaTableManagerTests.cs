@@ -20,7 +20,7 @@ public class SchemaTableManagerTests
     {
         var mockTypeMapper = new Mock<ITypeMapper>();
         
-        mockTypeMapper.Setup(x => x.TypeName<It.IsAnyType>())
+        mockTypeMapper.Setup(x => x.TypeName<It.IsAnyType>(It.IsAny<uint?>(), It.IsAny<int?>()))
             .Returns(new InvocationFunc(call => call.Method.GetGenericArguments()[0].Name));
         
         _mockDbContext.Setup(x => x.TypeMapper).Returns(mockTypeMapper.Object);
