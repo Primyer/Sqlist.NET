@@ -14,7 +14,16 @@ using Sqlist.NET.Migration.Properties;
 
 namespace Sqlist.NET.Migration;
 
-internal class SchemaTableManager(IDbContext db, MigrationService migrationService, IOptions<MigrationOptions> options,
+/// <summary>
+/// Manages the schema table used to track migration history, providing methods for retrieving schema details
+/// and defining the schema table structure.
+/// </summary>
+/// <param name="db">The database context used for executing database operations.</param>
+/// <param name="migrationService">The migration service responsible for handling migration operations and scripts.</param>
+/// <param name="options">The migration options containing configuration settings for the migration process.</param>
+/// <param name="logger">The logger used for logging migration-related information and errors, if available.</param>
+internal class SchemaTableManager(
+    IDbContext db, MigrationService migrationService, IOptions<MigrationOptions> options,
     ILogger<SchemaTableManager> logger) : ISchemaTableManager
 {
     private readonly MigrationOptions _options = options.Value;
@@ -37,7 +46,15 @@ internal class SchemaTableManager(IDbContext db, MigrationService migrationServi
         }
     };
     
-    public async Task<Version?> GetSchemaVersionAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Gets the current schema version from the database.
+    /// </summary>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation, containing the current schema version
+    /// as a <see cref="Version"/> object, or null if no schema table is found.
+    /// </returns>
+    private async Task<Version?> GetSchemaVersionAsync(CancellationToken cancellationToken)
     {
         var exists = await migrationService.DoesSchemaTableExistAsync(cancellationToken);
         if (!exists)
@@ -52,6 +69,7 @@ internal class SchemaTableManager(IDbContext db, MigrationService migrationServi
         return new(mainPhase.Version);
     }
 
+    /// <inheritdoc />
     public async Task<MigrationOperationInfo> RetrieveSchemaDetailsAsync(CancellationToken cancellationToken)
     {
         var version = await GetSchemaVersionAsync(cancellationToken);
@@ -62,7 +80,15 @@ internal class SchemaTableManager(IDbContext db, MigrationService migrationServi
             ModularMigrations = await GetModularRoadmapInfo(version, cancellationToken)
         };
     }
-
+    
+    /// <summary>
+    /// Retrieves information about modular migrations from the database.
+    /// </summary>
+    /// <param name="version">The current schema version.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation, containing a dictionary of modular migration information.
+    /// </returns>
     private async Task<IReadOnlyDictionary<string, MigrationRoadmapInfo>> GetModularRoadmapInfo(
         Version? version, CancellationToken cancellationToken)
     {
@@ -83,6 +109,7 @@ internal class SchemaTableManager(IDbContext db, MigrationService migrationServi
         return moduleInfo;
     }
 
+    /// <inheritdoc />
     public MigrationPhase GetSchemaTableDefinition()
     {
         var table = _options.SchemaTable ?? Consts.DefaultSchemaTable;
