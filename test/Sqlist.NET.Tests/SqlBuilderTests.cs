@@ -3,7 +3,7 @@
 namespace Sqlist.NET.Tests;
 public class SqlBuilderTests
 {
-    private readonly SqlBuilder _sqlBuilder = new(new DummyEncloser());
+    private readonly SqlBuilder _sqlBuilder = new(new DummyEnclosure());
 
     [Fact]
     public void RegisterFields_SingleField_AppendsToFieldsBuilder()
