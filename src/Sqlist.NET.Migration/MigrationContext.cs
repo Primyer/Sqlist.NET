@@ -9,8 +9,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Sqlist.NET.Infrastructure;
-using Sqlist.NET.Migration.Deserialization;
-using Sqlist.NET.Migration.Deserialization.Collections;
 using Sqlist.NET.Migration.Exceptions;
 using Sqlist.NET.Migration.Extensions;
 using Sqlist.NET.Migration.Infrastructure;
@@ -29,6 +27,7 @@ namespace Sqlist.NET.Migration
         IDbContext db,
         IMigrationService migrationService,
         IRoadmapProvider roadmapProvider,
+        ISchemaTableManager schemaTable,
         IMigrationTransactionManager migrationTransaction,
         IOptions<MigrationOptions> options,
         ILogger<MigrationContext> logger) : IMigrationContext
@@ -49,7 +48,7 @@ namespace Sqlist.NET.Migration
         {
             LogInitialization(targetVersion);
 
-            _info = await RetrieveSchemaDetailsAsync(cancellationToken);
+            _info = await schemaTable.RetrieveSchemaDetailsAsync(cancellationToken);
             
             var datamap = await BuildTransactionMap(_options, _info, _info.CurrentVersion, targetVersion, cancellationToken);
             var modules = await BuildModularMaps(_info.ModularMigrations);
@@ -57,7 +56,7 @@ namespace Sqlist.NET.Migration
             _datamap = DataTransactionMapMerger.SafeMerge(modules);
             if (_info.CurrentVersion is not null)
             {
-                var phase = CreateSchemaTablePhase();
+                var phase = schemaTable.GetSchemaTableDefinition();
                 _datamap.Merge(phase, _info.CurrentVersion);
             }
             
@@ -72,54 +71,6 @@ namespace Sqlist.NET.Migration
         {
             logger.LogInformation("Initializing migration...");
             logger.LogInformation("Target version: {version}", targetVersion?.ToString() ?? "Not specified");
-        }
-
-        private async Task<MigrationOperationInfo> RetrieveSchemaDetailsAsync(CancellationToken cancellationToken)
-        {
-            var info = new MigrationOperationInfo
-            {
-                CurrentVersion = await GetLatestVersionAsync(cancellationToken)
-            };
-
-            if (info.CurrentVersion is not null)
-            {
-                info.ModularMigrations = await GetModularRoadmapInfo(cancellationToken);
-            }
-
-            return info;
-        }
-
-        private async Task<Version?> GetLatestVersionAsync(CancellationToken cancellationToken)
-        {
-            var exists = await migrationService.DoesSchemaTableExistAsync(cancellationToken);
-            if (!exists)
-            {
-                logger.LogDebug("No schema table could be located; the database is presumed empty.");
-                return null;
-            }
-
-            var mainPhase = await migrationService.GetLastSchemaPhaseAsync(cancellationToken);
-            if (mainPhase is null) return null;
-
-            return new(mainPhase.Version);
-        }
-
-        private async Task<IReadOnlyDictionary<string, MigrationRoadmapInfo>> GetModularRoadmapInfo(
-            CancellationToken cancellationToken)
-        {
-            if (_info?.CurrentVersion is null)
-                return new Dictionary<string, MigrationRoadmapInfo>();
-
-            var moduleInfo = new Dictionary<string, MigrationRoadmapInfo>();
-            var modularPhases = await migrationService.GetModularSchemaPhasesAsync(cancellationToken);
-
-            foreach (var phase in modularPhases)
-            {
-                if (phase.Package is null) continue;
-                moduleInfo.Add(phase.Package, new MigrationRoadmapInfo { CurrentVersion = new Version(phase.Version) });
-            }
-
-            return moduleInfo;
         }
 
         private async Task<IEnumerable<DataTransactionMap>> BuildModularMaps(
@@ -148,33 +99,6 @@ namespace Sqlist.NET.Migration
 
             info.SetFromPhase(phases.Last(), datamap, targetVersion);
             return datamap;
-        }
-
-        private MigrationPhase CreateSchemaTablePhase()
-        {
-            var tableName = _options.SchemaTable ?? Consts.DefaultSchemaTable;
-            var stringType = db.TypeMapper.TypeName<string>();
-            var definition = new ColumnDefinition(stringType);
-
-            var phase = new MigrationPhase();
-            var columns = new DefinitionCollection
-            {
-                Columns =
-                {
-                    KeyValuePair.Create(Consts.Id,
-                        new ColumnDefinition(db.TypeMapper.TypeName<int>()) { IsSequence = true }),
-                    KeyValuePair.Create(Consts.Package, definition),
-                    KeyValuePair.Create(Consts.Version, definition),
-                    KeyValuePair.Create(Consts.Parent, new ColumnDefinition(db.TypeMapper.TypeName<int>())),
-                    KeyValuePair.Create(Consts.Title, definition),
-                    KeyValuePair.Create(Consts.Description, definition),
-                    KeyValuePair.Create(Consts.Summary, definition),
-                    KeyValuePair.Create(Consts.Applied, new ColumnDefinition(db.TypeMapper.TypeName<DateTime>())),
-                }
-            };
-
-            phase.Guidelines.Create.Add(tableName, columns);
-            return phase;
         }
 
         private static void LogOperationInfo(MigrationOperationInfo info, ILogger logger)
