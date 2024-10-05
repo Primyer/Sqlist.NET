@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Sqlist.NET.Migration.Deserialization;
@@ -14,8 +15,8 @@ namespace Sqlist.NET.Migration;
 internal class RoadmapProvider : IRoadmapProvider
 {
     /// <inheritdoc />
-    public async Task<IEnumerable<MigrationPhase>> GetMigrationRoadmapAsync(
-        MigrationAssetInfo assets, Version? targetVersion = null)
+    public async Task<IEnumerable<MigrationPhase>> GetMigrationRoadmapAsync(MigrationAssetInfo assets,
+        Version? targetVersion = null, CancellationToken cancellationToken = default)
     {
         var deserializer = new MigrationDeserializer();
         var phasesList = new List<MigrationPhase>();
@@ -26,7 +27,7 @@ internal class RoadmapProvider : IRoadmapProvider
             throw new MigrationException(errorMessage);
         }
 
-        var resources = assets.RoadmapAssembly.GetEmbeddedResourcesAsync(assets.RoadmapPath);
+        var resources = assets.RoadmapAssembly.GetEmbeddedResourcesAsync(assets.RoadmapPath, cancellationToken);
         await foreach (var (_, content) in resources)
         {
             var phase = deserializer.DeserializePhase(content!);
