@@ -58,10 +58,21 @@ public abstract class TypeMapper : ITypeMapper
     };
 
     /// <inheritdoc />
-    public string TypeName<T>()
+    public string TypeName<T>(uint? precision = null, int? scale = null)
     {
-        var dbType = ToDbType(typeof(T));
-        return TypeName(dbType);
+        if (scale.HasValue && !precision.HasValue)
+        {
+            throw new InvalidOperationException("Precision must be specified when scale is specified.");
+        }
+        
+        var type = ToDbType(typeof(T));
+        var name = TypeName(type);
+        
+        if (string.Join(',', precision, scale) is { Length: > 0 } pair)
+        {
+            name += $" ({pair})";
+        }
+        return name;
     }
 
     /// <inheritdoc />
@@ -74,7 +85,7 @@ public abstract class TypeMapper : ITypeMapper
     /// <inheritdoc />
     public DbType ToDbType(Type type)
     {
-        return DbTypes.TryGetValue(type, out DbType value) ? value : DbType.Object;
+        return DbTypes.GetValueOrDefault(type, DbType.Object);
     }
 
     /// <inheritdoc />
