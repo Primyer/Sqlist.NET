@@ -23,7 +23,7 @@ namespace Sqlist.NET.Migration;
 /// <param name="options">The migration options containing configuration settings for the migration process.</param>
 /// <param name="logger">The logger used for logging migration-related information and errors, if available.</param>
 internal class SchemaTableManager(
-    IDbContext db, MigrationService migrationService, IOptions<MigrationOptions> options,
+    IDbContext db, IMigrationService migrationService, IOptions<MigrationOptions> options,
     ILogger<SchemaTableManager> logger) : ISchemaTableManager
 {
     private readonly MigrationOptions _options = options.Value;
