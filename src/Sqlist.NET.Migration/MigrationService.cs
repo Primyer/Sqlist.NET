@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,15 +13,37 @@ using Sqlist.NET.Sql;
 
 namespace Sqlist.NET.Migration;
 
-internal class MigrationService(
-    IDbContext db,
-    ISchemaBuilderFactory schemaFactory,
-    ISqlBuilderFactory sqlFactory,
-    IDataTransfer transfer,
-    IOptions<MigrationOptions> options) : IMigrationService
+internal class MigrationService(IDbContext db, ISchemaBuilderFactory schemaFactory, ISqlBuilderFactory sqlFactory,
+    IDataTransfer transfer, IOptions<MigrationOptions> options) : IMigrationService
 {
     private readonly MigrationOptions _options = options.Value;
-    private readonly string _schemaTable = options.Value.SchemaTable ?? Consts.DefaultSchemaTable;
+    
+    private readonly SqlTable _schemaTableDefinition = new SqlTable(
+        options.Value.SchemaTableSchema, options.Value.SchemaTable)
+    {
+        Columns =
+        {
+            new(Consts.Id, db.TypeMapper.TypeName<int>()) { PrimaryKey = true },
+            new(Consts.Version, db.TypeMapper.TypeName<string>(16)),
+            new(Consts.Package, db.TypeMapper.TypeName<string>(128)),
+            new(Consts.Parent, db.TypeMapper.TypeName<int>()),
+            new(Consts.Title, db.TypeMapper.TypeName<string>()),
+            new(Consts.Description, db.TypeMapper.TypeName<string>()),
+            new(Consts.Summary, db.TypeMapper.TypeName<string>()),
+            new(Consts.Applied, db.TypeMapper.TypeName<DateTime>(), "CURRENT_TIMESTAMP")
+        },
+        Constraints =
+        {
+            ForeignKeys =
+            {
+                new([Consts.Parent]) { References = new(options.Value.SchemaTable, Consts.Id) }
+            },
+            Uniques =
+            {
+                new([Consts.Package, Consts.Version])
+            }
+        }
+    };
 
     public async Task MigrateDataFromAsync(string dbname, DataTransactionMap dataMap, CancellationToken cancellationToken)
     {
@@ -87,39 +110,13 @@ internal class MigrationService(
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var table = new SqlTable(_options.SchemaTableSchema, _schemaTable)
-        {
-            Columns =
-            {
-                new(Consts.Id, "int") { PrimaryKey = true },
-                new(Consts.Version, "varchar (16)"),
-                new(Consts.Package, "varchar (128)"),
-                new(Consts.Parent, "int"),
-                new(Consts.Title, "text"),
-                new(Consts.Description, "text"),
-                new(Consts.Summary, "text"),
-                new(Consts.Applied, "timestamp without time zone", "current_timestamp")
-            },
-            Constraints =
-            {
-                ForeignKeys =
-                {
-                    new([Consts.Parent]) { References = new(_schemaTable, Consts.Id) }
-                },
-                Uniques =
-                {
-                    new([Consts.Package, Consts.Version])
-                }
-            }
-        };
-
-        var sql = schemaFactory.Create().CreateTable(table);
+        var sql = schemaFactory.Create().CreateTable(_schemaTableDefinition);
         var qry = db.Query();
 
         return qry.ExecuteAsync(sql, cancellationToken: cancellationToken);
     }
 
-    public virtual Task<bool> DoesSchemaTableExistAsync(CancellationToken cancellationToken)
+    public Task<bool> DoesSchemaTableExistAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -137,7 +134,7 @@ internal class MigrationService(
         return qry.FirstOrDefaultAsync<bool>(stmt, cancellationToken: cancellationToken);
     }
 
-    public virtual Task<SchemaPhase> GetLastSchemaPhaseAsync(CancellationToken cancellationToken)
+    public Task<SchemaPhase> GetLastSchemaPhaseAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -149,24 +146,8 @@ internal class MigrationService(
 
         return qry.FirstOrDefaultAsync<SchemaPhase>(stmt, cancellationToken: cancellationToken);
     }
-
-    public virtual Task<IEnumerable<SchemaPhase>> GetModularPhasesAsync(CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        var sql = CreateSqlBuilder();
-
-        sql.Where(c => c.NotNull(Consts.Parent));
-        sql.GroupBy(Consts.Package);
-        sql.OrderBy(Consts.Applied + " desc");
-
-        var stmt = sql.ToSelect();
-        var qry = db.Query();
-
-        return qry.RetrieveAsync<SchemaPhase>(stmt, cancellationToken: cancellationToken);
-    }
-
-    public virtual Task<IEnumerable<SchemaPhase>> GetModularSchemaPhasesAsync(CancellationToken cancellationToken)
+    
+    public Task<IEnumerable<SchemaPhase>> GetModularSchemaPhasesAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -179,7 +160,7 @@ internal class MigrationService(
         return qry.RetrieveAsync<SchemaPhase>(stmt, cancellationToken: cancellationToken);
     }
 
-    public virtual Task InsertSchemaPhaseAsync(SchemaPhase phase, CancellationToken cancellationToken)
+    public Task InsertSchemaPhaseAsync(SchemaPhase phase, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -215,6 +196,6 @@ internal class MigrationService(
 
     private SqlBuilder CreateSqlBuilder()
     {
-        return new SqlBuilder(null, _options.SchemaTableSchema, _schemaTable);
+        return new SqlBuilder(null, _options.SchemaTableSchema, _options.SchemaTable);
     }
 }

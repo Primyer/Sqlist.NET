@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Reflection;
 
+using Sqlist.NET.Migration.Properties;
+
 namespace Sqlist.NET.Migration.Infrastructure;
 public class MigrationOptions : MigrationAssetInfo
 {
@@ -19,7 +21,7 @@ public class MigrationOptions : MigrationAssetInfo
         set => _roadmapAssembly = value;
     }
 
-    public string? SchemaTable { get; set; }
+    public string SchemaTable { get; set; } = Consts.DefaultSchemaTable;
     public string? SchemaTableSchema { get; set; }
 
     public Dictionary<string, MigrationAssetInfo> ModularAssets { get; } = [];
