@@ -28,7 +28,7 @@ public class NpgsqlBuilderFactory : ISqlBuilderFactory
 
     public ISqlBuilder Sql(string? schema, string? table)
     {
-        return Sql(new DummyEnclosure(), schema, table);
+        return Sql(new NpgsqlEnclosure(), schema, table);
     }
 
     static NpgsqlBuilder Sql(Enclosure? encloser, string? schema, string? table)
