@@ -1,5 +1,5 @@
 ﻿namespace Sqlist.NET;
-internal interface ITransactionManager
+public interface ITransactionManager
 {
 
     /// <summary>
