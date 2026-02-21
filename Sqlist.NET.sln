@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.5.33530.505
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11512.155 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sqlist.NET", "src\Sqlist.NET\Sqlist.NET.csproj", "{465450FC-B616-4057-87A0-B6BB7EE15814}"
 EndProject
@@ -37,6 +37,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dotnet-sqlist", "src\dotnet-sqlist\dotnet-sqlist.csproj", "{FDD6D17D-341C-4EE7-A5BF-3D79CB273D5B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqlist.NET.Firebird", "src\Sqlist.NET.Firebird\Sqlist.NET.Firebird.csproj", "{FDB499E4-0C31-4BD5-A8D7-973C542FC398}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -92,6 +94,10 @@ Global
 		{FDD6D17D-341C-4EE7-A5BF-3D79CB273D5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FDD6D17D-341C-4EE7-A5BF-3D79CB273D5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FDD6D17D-341C-4EE7-A5BF-3D79CB273D5B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDB499E4-0C31-4BD5-A8D7-973C542FC398}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDB499E4-0C31-4BD5-A8D7-973C542FC398}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDB499E4-0C31-4BD5-A8D7-973C542FC398}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDB499E4-0C31-4BD5-A8D7-973C542FC398}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -109,6 +115,7 @@ Global
 		{C9D34B45-E876-44A9-8DC8-9B34DE9209D5} = {48BD4DC6-DAE1-40F5-8458-4E9C95C4235B}
 		{C349F626-8F4A-4045-96CA-B4547303A58B} = {48BD4DC6-DAE1-40F5-8458-4E9C95C4235B}
 		{FDD6D17D-341C-4EE7-A5BF-3D79CB273D5B} = {1F6BF5DE-ED17-4B9F-A3F5-9175C6A3CD99}
+		{FDB499E4-0C31-4BD5-A8D7-973C542FC398} = {1F6BF5DE-ED17-4B9F-A3F5-9175C6A3CD99}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FB33ADC0-801E-4A58-9D91-0EDCE9392553}
