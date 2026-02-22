@@ -22,6 +22,7 @@ namespace Sqlist.NET.Extensions
 
             builder.WithContext<DbContext>();
 
+            builder.Services.TryAddSingleton<ISqlBuilderFactory, FirebirdBuilderFactory>();
             builder.Services.TryAddSingleton<IOptions<DbOptions>>(sp => sp.GetRequiredService<IOptions<FirebirdOptions>>());
 
             return builder;
